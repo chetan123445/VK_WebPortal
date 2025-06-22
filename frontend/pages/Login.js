@@ -1,9 +1,14 @@
 "use client";
 import React, { useState } from "react";
+<<<<<<< HEAD
 import Register from "./Register";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
+=======
+
+export default function Login({ onBack }) {
+>>>>>>> cf4e8b6 (login page)
   const [mode, setMode] = useState("password"); // "password" or "otp"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,13 +16,17 @@ export default function Login() {
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+<<<<<<< HEAD
   const [showRegister, setShowRegister] = useState(false);
   const [showNotFoundPopup, setShowNotFoundPopup] = useState(false);
   const router = useRouter();
+=======
+>>>>>>> cf4e8b6 (login page)
 
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
     setError("");
+<<<<<<< HEAD
     setMsg("");
     const cleanEmail = email.trim().toLowerCase();
     try {
@@ -47,11 +56,19 @@ export default function Login() {
     } catch (err) {
       setError("Login failed. Please try again.");
     }
+=======
+    // Replace with your backend API call
+    // Example:
+    // const res = await fetch('/api/user/login', { ... });
+    // if (res.ok) { ... } else { setError("Invalid credentials"); }
+    setMsg("Password login attempted (implement backend call).");
+>>>>>>> cf4e8b6 (login page)
   };
 
   const handleSendOtp = async () => {
     setError("");
     setMsg("");
+<<<<<<< HEAD
     try {
       const res = await fetch("http://localhost:8000/api/user/send-login-otp", {
         method: "POST",
@@ -68,11 +85,20 @@ export default function Login() {
     } catch (err) {
       setError("Failed to send OTP. Please try again.");
     }
+=======
+    // Replace with your backend API call
+    // Example:
+    // const res = await fetch('/api/user/send-otp', { ... });
+    // if (res.ok) setOtpSent(true); else setError("Failed to send OTP");
+    setOtpSent(true);
+    setMsg("OTP sent to your email (implement backend call).");
+>>>>>>> cf4e8b6 (login page)
   };
 
   const handleOtpLogin = async (e) => {
     e.preventDefault();
     setError("");
+<<<<<<< HEAD
     setMsg("");
     try {
       const res = await fetch("http://localhost:8000/api/user/verify-login-otp", {
@@ -91,6 +117,13 @@ export default function Login() {
     } catch (err) {
       setError("OTP login failed. Please try again.");
     }
+=======
+    // Replace with your backend API call
+    // Example:
+    // const res = await fetch('/api/user/login-otp', { ... });
+    // if (res.ok) { ... } else { setError("Invalid OTP"); }
+    setMsg("OTP login attempted (implement backend call).");
+>>>>>>> cf4e8b6 (login page)
   };
 
   return (
@@ -262,6 +295,7 @@ export default function Login() {
             )}
           </form>
         )}
+<<<<<<< HEAD
         <div style={{ marginTop: 24 }}>
           <button
             onClick={() => setShowRegister(true)}
@@ -337,6 +371,25 @@ export default function Login() {
           </div>
         </div>
       )}
+=======
+        {msg && <div style={{ color: "#0f0", marginTop: 12 }}>{msg}</div>}
+        {error && <div style={{ color: "#f66", marginTop: 12 }}>{error}</div>}
+        <button
+          onClick={onBack}
+          style={{
+            marginTop: 24,
+            background: "#222",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "8px 24px",
+            cursor: "pointer"
+          }}
+        >
+          Back
+        </button>
+      </div>
+>>>>>>> cf4e8b6 (login page)
     </div>
   );
 }
