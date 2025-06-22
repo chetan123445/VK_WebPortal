@@ -1,7 +1,9 @@
 "use client";
 import React, { useState } from "react";
+import Register from "./Register";
+import { useRouter } from "next/navigation";
 
-export default function Login({ onBack }) {
+export default function Login() {
   const [mode, setMode] = useState("password"); // "password" or "otp"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -9,15 +11,42 @@ export default function Login({ onBack }) {
   const [otpSent, setOtpSent] = useState(false);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
+  const [showRegister, setShowRegister] = useState(false);
+  const [showNotFoundPopup, setShowNotFoundPopup] = useState(false);
+  const router = useRouter();
 
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
     setError("");
-    // Replace with your backend API call
-    // Example:
-    // const res = await fetch('/api/user/login', { ... });
-    // if (res.ok) { ... } else { setError("Invalid credentials"); }
-    setMsg("Password login attempted (implement backend call).");
+    setMsg("");
+    const cleanEmail = email.trim().toLowerCase();
+    try {
+      const res = await fetch("http://localhost:8000/api/user/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, password })
+      });
+      if (res.status === 404) {
+        setError("");
+        setShowNotFoundPopup(true);
+        return;
+      }
+      if (res.status === 401) {
+        setError("Incorrect password.");
+        return;
+      }
+      if (res.ok) {
+        setMsg("Login successful!");
+        setError("");
+        // Redirect to mainhome page
+        router.push("/mainhome");
+      } else {
+        const data = await res.json();
+        setError(data.message || "Login failed.");
+      }
+    } catch (err) {
+      setError("Login failed. Please try again.");
+    }
   };
 
   const handleSendOtp = async () => {
@@ -210,23 +239,81 @@ export default function Login({ onBack }) {
             )}
           </form>
         )}
+        <div style={{ marginTop: 24 }}>
+          <button
+            onClick={() => setShowRegister(true)}
+            style={{
+              background: "#fff",
+              color: "#1e3c72",
+              border: "none",
+              borderRadius: 8,
+              padding: "8px 24px",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            Register
+          </button>
+        </div>
         {msg && <div style={{ color: "#0f0", marginTop: 12 }}>{msg}</div>}
         {error && <div style={{ color: "#f66", marginTop: 12 }}>{error}</div>}
-        <button
-          onClick={onBack}
-          style={{
-            marginTop: 24,
-            background: "#222",
-            color: "#fff",
-            border: "none",
-            borderRadius: 8,
-            padding: "8px 24px",
-            cursor: "pointer"
-          }}
-        >
-          Back
-        </button>
       </div>
+      {showRegister && <Register onClose={() => setShowRegister(false)} />}
+      {showNotFoundPopup && (
+        <div style={{
+          position: "fixed",
+          top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 2000
+        }}>
+          <div style={{
+            background: "#fff",
+            color: "#222",
+            borderRadius: 16,
+            padding: 32,
+            minWidth: 320,
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+            textAlign: "center"
+          }}>
+            <div style={{ marginBottom: 18, fontWeight: 500, fontSize: "1.1rem" }}>
+              User not found. Do you want to register?
+            </div>
+            <button
+              onClick={() => {
+                setShowNotFoundPopup(false);
+                setShowRegister(true);
+              }}
+              style={{
+                background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "8px 24px",
+                fontWeight: 600,
+                cursor: "pointer",
+                marginRight: 12
+              }}
+            >
+              Yes
+            </button>
+            <button
+              onClick={() => setShowNotFoundPopup(false)}
+              style={{
+                background: "#eee",
+                color: "#1e3c72",
+                border: "none",
+                borderRadius: 8,
+                padding: "8px 24px",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+            >
+              No
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
