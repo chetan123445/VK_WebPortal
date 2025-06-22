@@ -1,7 +1,10 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 
-export default function Home({ onLogin }) {
+export default function Home() {
+  const router = useRouter();
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -43,7 +46,7 @@ export default function Home({ onLogin }) {
           Welcome to the future of learning. Explore, connect, and grow with our platform.
         </p>
         <button
-          onClick={onLogin}
+          onClick={() => router.push("/login")}
           style={{
             background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
             color: "#fff",
