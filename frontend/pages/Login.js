@@ -69,6 +69,9 @@ export default function Login({ onBack }) {
     setError("");
     setMsg("");
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c845f37 (Email and otp)
     try {
       const res = await fetch("http://localhost:8000/api/user/send-login-otp", {
         method: "POST",
@@ -85,6 +88,7 @@ export default function Login({ onBack }) {
     } catch (err) {
       setError("Failed to send OTP. Please try again.");
     }
+<<<<<<< HEAD
 =======
     // Replace with your backend API call
     // Example:
@@ -93,12 +97,17 @@ export default function Login({ onBack }) {
     setOtpSent(true);
     setMsg("OTP sent to your email (implement backend call).");
 >>>>>>> cf4e8b6 (login page)
+=======
+>>>>>>> c845f37 (Email and otp)
   };
 
   const handleOtpLogin = async (e) => {
     e.preventDefault();
     setError("");
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c845f37 (Email and otp)
     setMsg("");
     try {
       const res = await fetch("http://localhost:8000/api/user/verify-login-otp", {
@@ -117,6 +126,7 @@ export default function Login({ onBack }) {
     } catch (err) {
       setError("OTP login failed. Please try again.");
     }
+<<<<<<< HEAD
 =======
     // Replace with your backend API call
     // Example:
@@ -124,6 +134,8 @@ export default function Login({ onBack }) {
     // if (res.ok) { ... } else { setError("Invalid OTP"); }
     setMsg("OTP login attempted (implement backend call).");
 >>>>>>> cf4e8b6 (login page)
+=======
+>>>>>>> c845f37 (Email and otp)
   };
 
   return (
