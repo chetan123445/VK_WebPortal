@@ -1,4 +1,12 @@
 import express from 'express';
+
+
+const router = express.Router();
+
+
+export default router;
+
+import express from 'express';
 import { registerUser, findUserByEmail, loginUser, sendRegisterOtp, verifyRegisterOtp, sendLoginOtp, verifyLoginOtp } from '../controller/userController.js';
 
 
