@@ -52,22 +52,45 @@ export default function Login() {
   const handleSendOtp = async () => {
     setError("");
     setMsg("");
-    // Replace with your backend API call
-    // Example:
-    // const res = await fetch('/api/user/send-otp', { ... });
-    // if (res.ok) setOtpSent(true); else setError("Failed to send OTP");
-    setOtpSent(true);
-    setMsg("OTP sent to your email (implement backend call).");
+    try {
+      const res = await fetch("http://localhost:8000/api/user/send-login-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase() })
+      });
+      if (res.ok) {
+        setOtpSent(true);
+        setMsg("OTP sent to your email.");
+      } else {
+        const data = await res.json();
+        setError(data.message || "Failed to send OTP.");
+      }
+    } catch (err) {
+      setError("Failed to send OTP. Please try again.");
+    }
   };
 
   const handleOtpLogin = async (e) => {
     e.preventDefault();
     setError("");
-    // Replace with your backend API call
-    // Example:
-    // const res = await fetch('/api/user/login-otp', { ... });
-    // if (res.ok) { ... } else { setError("Invalid OTP"); }
-    setMsg("OTP login attempted (implement backend call).");
+    setMsg("");
+    try {
+      const res = await fetch("http://localhost:8000/api/user/verify-login-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), otp })
+      });
+      if (res.ok) {
+        setMsg("OTP login successful!");
+        setError("");
+        router.push("/mainhome");
+      } else {
+        const data = await res.json();
+        setError(data.message || "Invalid OTP.");
+      }
+    } catch (err) {
+      setError("OTP login failed. Please try again.");
+    }
   };
 
   return (
