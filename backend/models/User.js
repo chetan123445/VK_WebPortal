@@ -1,6 +1,10 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
   registeredAs: {
     type: String,
     enum: ['Student', 'Teacher', 'Parent'],
@@ -19,7 +23,17 @@ const userSchema = new mongoose.Schema({
     type: String
   },
   class: {
-    type: String
+    type: String,
+    required: true
+  },
+  phone: {
+    type: String,
+    required: true,
+    match: [/^\d{10}$/, 'Phone number must be 10 digits']
+  },
+  photo: {
+    data: Buffer,
+    contentType: String
   }
 });
 

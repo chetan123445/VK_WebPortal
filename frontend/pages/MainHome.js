@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { FaBars } from 'react-icons/fa';
 
+import ProfileMenu from '../app/ProfileMenu';
 // Hardcoded superadmin email for demo; in real use, get from auth/session
 const SUPERADMIN_EMAIL = "chetandudi791@gmail.com";
 
@@ -15,6 +17,7 @@ export default function MainHome() {
   const [addStatus, setAddStatus] = useState("");
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     // Assume user email is stored in localStorage after login/registration
@@ -96,59 +99,62 @@ export default function MainHome() {
       color: "#fff",
       fontFamily: "Segoe UI, Arial, sans-serif"
     }}>
-      {/* Top-right admin controls */}
+      {/* Hamburger menu top left */}
       {isSuperAdmin && (
+        <button
+          onClick={() => setMenuOpen(true)}
+          style={{
+            position: 'absolute',
+            top: 24,
+            left: 32,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            zIndex: 2100
+          }}
+          aria-label="Open menu"
+        >
+          <FaBars size={32} color="#fff" />
+        </button>
+      )}
+      {/* Side menu */}
+      {menuOpen && (
         <div style={{
-          position: "absolute",
-          top: 24,
-          right: 32,
-          display: "flex",
-          gap: 12
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: 260,
+          height: '100vh',
+          background: '#fff',
+          color: '#1e3c72',
+          boxShadow: '2px 0 16px rgba(0,0,0,0.18)',
+          zIndex: 2200,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: '32px 18px 18px 18px',
         }}>
+          <button onClick={() => setMenuOpen(false)} style={{ alignSelf: 'flex-end', background: 'none', border: 'none', fontSize: 26, color: '#1e3c72', cursor: 'pointer', marginBottom: 18 }}>&times;</button>
           <button
-            onClick={() => setShowRemoveAdmin(true)}
-            style={{
-              background: "#fff",
-              color: "#c0392b",
-              border: "none",
-              borderRadius: 6,
-              padding: "8px 18px",
-              fontWeight: 600,
-              cursor: "pointer"
-            }}
+            onClick={() => { setShowRemoveAdmin(true); setMenuOpen(false); }}
+            style={{ background: '#fff', color: '#c0392b', border: '1px solid #c0392b', borderRadius: 6, padding: '10px 0', fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}
           >
             Remove Admin
           </button>
           <button
-            onClick={() => setShowAddAdmin(true)}
-            style={{
-              background: "#fff",
-              color: "#1e3c72",
-              border: "none",
-              borderRadius: 6,
-              padding: "8px 18px",
-              fontWeight: 600,
-              cursor: "pointer"
-            }}
+            onClick={() => { setShowAddAdmin(true); setMenuOpen(false); }}
+            style={{ background: '#fff', color: '#1e3c72', border: '1px solid #1e3c72', borderRadius: 6, padding: '10px 0', fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}
           >
             Add Admin
           </button>
           <button
-            onClick={() => setShowViewAdmins(true)}
-            style={{
-              background: "#fff",
-              color: "#1e3c72",
-              border: "none",
-              borderRadius: 6,
-              padding: "8px 18px",
-              fontWeight: 600,
-              cursor: "pointer"
-            }}
+            onClick={() => { setShowViewAdmins(true); setMenuOpen(false); }}
+            style={{ background: '#fff', color: '#1e3c72', border: '1px solid #1e3c72', borderRadius: 6, padding: '10px 0', fontWeight: 600, cursor: 'pointer' }}
           >
             View Admins
           </button>
         </div>
       )}
+      <ProfileMenu userEmail={userEmail} avatarStyle={{ width: 48, height: 48, borderRadius: '50%' }} />
 
       {/* Add Admin Modal */}
       {showAddAdmin && (

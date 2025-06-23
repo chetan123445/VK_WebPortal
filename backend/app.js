@@ -15,6 +15,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use('/', router);
+app.use('/uploads', express.static('backend/public/uploads'));
 
 app.get('/', (req, res) => {
     res.send('Welcome to the VK Publications');

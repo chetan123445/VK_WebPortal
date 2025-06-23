@@ -3,6 +3,7 @@ import React, { useState } from "react";
 
 export default function Register({ onClose }) {
   const [form, setForm] = useState({
+    name: '',
     registeredAs: "Student",
     email: "",
     password: "",
@@ -62,6 +63,7 @@ export default function Register({ onClose }) {
           }
         }, 1200);
         setForm({
+          name: '',
           registeredAs: "Student",
           email: "",
           password: "",
@@ -106,6 +108,20 @@ export default function Register({ onClose }) {
         )}
         <h2 style={{ marginBottom: 18 }}>Register</h2>
         <form onSubmit={otpSent ? handleSubmit : handleSendOtp}>
+          <label>
+            Name: <span style={{ color: 'red' }}>*</span>
+            <input
+              type="text"
+              name="name"
+              placeholder="Full Name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              style={{ width: "100%", padding: 8, margin: "8px 0", borderRadius: 6, border: "1px solid #ccc" }}
+              disabled={otpSent}
+            />
+          </label>
+          <br />
           <label>
             Register As:
             <select name="registeredAs" value={form.registeredAs} onChange={handleChange} required style={{ marginLeft: 8 }}>
