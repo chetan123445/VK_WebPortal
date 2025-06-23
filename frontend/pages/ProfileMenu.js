@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import imageCompression from 'browser-image-compression';
+import { useRouter } from 'next/navigation';
 
-const DEFAULT_AVATAR = '/default-avatar.png'; // Place a default avatar in public if needed
+// ... existing code ...
+const DEFAULT_AVATAR = '/default-avatar.png'; // Correct path for default avatar in uploads folder
+// ... existing code ...// Place a default avatar in public if needed
 
 export default function ProfileMenu({ userEmail, avatarStyle }) {
   const [open, setOpen] = useState(false);
@@ -10,6 +14,7 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
   const [preview, setPreview] = useState('');
   const [status, setStatus] = useState('');
   const fileInputRef = useRef();
+  const router = useRouter();
 
   // Fetch profile on open
   useEffect(() => {
@@ -54,10 +59,26 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
     setStatus('');
   };
 
-  const handleChange = e => {
+  const handleChange = async e => {
     const { name, value, files } = e.target;
     if (name === 'photo' && files && files[0]) {
-      setForm(f => ({ ...f, photo: files[0] }));
+      const file = files[0];
+      // Only allow jpg/jpeg/png
+      if (!['image/jpeg', 'image/png', 'image/jpg'].includes(file.type)) {
+        setStatus('Only JPG and PNG files are allowed');
+        return;
+      }
+      // Compress image
+      try {
+        const compressed = await imageCompression(file, {
+          maxSizeMB: 0.2,
+          maxWidthOrHeight: 400,
+          useWebWorker: true
+        });
+        setForm(f => ({ ...f, photo: compressed }));
+      } catch (err) {
+        setStatus('Failed to compress image');
+      }
     } else {
       setForm(f => ({ ...f, [name]: value }));
     }
@@ -124,8 +145,9 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('userEmail');
-    window.location.href = '/login';
+    localStorage.clear();
+    sessionStorage.clear();
+    router.replace('/login');
   };
 
   // Avatar button (top-right)
@@ -209,7 +231,7 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
                 <input
                   type="file"
                   name="photo"
-                  accept="image/*"
+                  accept="image/png, image/jpeg, image/jpg"
                   ref={fileInputRef}
                   onChange={handleChange}
                   disabled={!editMode}

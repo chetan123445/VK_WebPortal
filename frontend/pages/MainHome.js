@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { FaBars } from 'react-icons/fa';
 
-import ProfileMenu from '../app/ProfileMenu';
+import ProfileMenu from './ProfileMenu';
 // Hardcoded superadmin email for demo; in real use, get from auth/session
 const SUPERADMIN_EMAIL = "chetandudi791@gmail.com";
 
