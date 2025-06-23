@@ -9,9 +9,12 @@ export default function MainHome() {
   const [userEmail, setUserEmail] = useState("");
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [showViewAdmins, setShowViewAdmins] = useState(false);
+  const [showRemoveAdmin, setShowRemoveAdmin] = useState(false);
   const [admins, setAdmins] = useState([]);
   const [adminForm, setAdminForm] = useState({ email: "", isSuperAdmin: false });
   const [addStatus, setAddStatus] = useState("");
+  const [removeEmail, setRemoveEmail] = useState("");
+  const [removeStatus, setRemoveStatus] = useState("");
 
   useEffect(() => {
     // Assume user email is stored in localStorage after login/registration
@@ -55,6 +58,31 @@ export default function MainHome() {
     }
   };
 
+  // Remove admin handler
+  const handleRemoveAdmin = async (e) => {
+    e.preventDefault();
+    setRemoveStatus("Removing...");
+    try {
+      const res = await fetch("http://localhost:8000/api/removeadmin", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: removeEmail,
+          requesterEmail: userEmail
+        })
+      });
+      if (res.ok) {
+        setRemoveStatus("Admin removed!");
+        setRemoveEmail("");
+      } else {
+        const data = await res.json();
+        setRemoveStatus(data.message || "Failed to remove admin");
+      }
+    } catch {
+      setRemoveStatus("Failed to remove admin");
+    }
+  };
+
   const isSuperAdmin = userEmail === SUPERADMIN_EMAIL;
 
   return (
@@ -77,6 +105,20 @@ export default function MainHome() {
           display: "flex",
           gap: 12
         }}>
+          <button
+            onClick={() => setShowRemoveAdmin(true)}
+            style={{
+              background: "#fff",
+              color: "#c0392b",
+              border: "none",
+              borderRadius: 6,
+              padding: "8px 18px",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            Remove Admin
+          </button>
           <button
             onClick={() => setShowAddAdmin(true)}
             style={{
@@ -150,6 +192,43 @@ export default function MainHome() {
                 Cancel
               </button>
               <div style={{ marginTop: 10, color: "#1e3c72", fontWeight: 500 }}>{addStatus}</div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Admin Modal */}
+      {showRemoveAdmin && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+          }}>
+            <h2 style={{ marginBottom: 18, color: "#c0392b" }}>Remove Admin</h2>
+            <form onSubmit={handleRemoveAdmin}>
+              <div style={{ marginBottom: 12 }}>
+                <label>Email:</label><br />
+                <input
+                  type="email"
+                  required
+                  value={removeEmail}
+                  onChange={e => setRemoveEmail(e.target.value)}
+                  style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+                />
+              </div>
+              <button type="submit" style={{
+                background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
+              }}>
+                Remove
+              </button>
+              <button type="button" onClick={() => { setShowRemoveAdmin(false); setRemoveStatus(""); }} style={{
+                marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+              }}>
+                Cancel
+              </button>
+              <div style={{ marginTop: 10, color: "#c0392b", fontWeight: 500 }}>{removeStatus}</div>
             </form>
           </div>
         </div>

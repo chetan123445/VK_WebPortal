@@ -33,3 +33,23 @@ export const addAdmin = async (req, res) => {
     res.status(500).json({ message: 'Failed to add admin', error: err.message });
   }
 };
+
+// Remove an admin (only superadmin can remove)
+export const removeAdmin = async (req, res) => {
+  try {
+    const { email, requesterEmail } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    // Only allow superadmin to remove admins
+    if (requesterEmail !== SUPERADMIN_EMAIL) {
+      return res.status(403).json({ message: 'Only superadmin can remove admins' });
+    }
+
+    const removed = await Admin.findOneAndDelete({ email });
+    if (!removed) return res.status(404).json({ message: 'Admin not found' });
+
+    res.status(200).json({ message: 'Admin removed' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to remove admin', error: err.message });
+  }
+};
