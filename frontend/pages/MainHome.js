@@ -17,6 +17,8 @@ export default function MainHome() {
   const [addStatus, setAddStatus] = useState("");
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false); // <-- ADD THIS LINE
+  const [menuOpen, setMenuOpen] = useState(false); // <-- ADD THIS LINE
 
   useEffect(() => {
     // Assume user email is stored in localStorage after login/registration
