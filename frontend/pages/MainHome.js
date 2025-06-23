@@ -15,11 +15,23 @@ export default function MainHome() {
   const [addStatus, setAddStatus] = useState("");
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     // Assume user email is stored in localStorage after login/registration
     const email = localStorage.getItem("userEmail") || "";
     setUserEmail(email);
+
+    // Fetch admin info for this user to check isSuperAdmin
+    if (email) {
+      fetch(`http://localhost:8000/api/getadmins`)
+        .then(res => res.json())
+        .then(data => {
+          const found = (data.admins || []).find(a => a.email === email);
+          setIsSuperAdmin(found?.isSuperAdmin === true);
+        })
+        .catch(() => setIsSuperAdmin(false));
+    }
   }, []);
 
   // Fetch admins when modal opens
@@ -82,8 +94,6 @@ export default function MainHome() {
       setRemoveStatus("Failed to remove admin");
     }
   };
-
-  const isSuperAdmin = userEmail === SUPERADMIN_EMAIL;
 
   return (
     <div style={{
