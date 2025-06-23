@@ -99,7 +99,16 @@ export default function Login() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
+      width: "100vw",
+      backgroundColor: "#f9f9f9",
+      backgroundImage: `
+        linear-gradient(135deg, rgba(0,0,0,0.03) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(0,0,0,0.03) 25%, transparent 25%),
+        linear-gradient(45deg, rgba(0,0,0,0.03) 25%, transparent 25%),
+        linear-gradient(315deg, rgba(0,0,0,0.03) 25%, transparent 25%)
+      `,
+      backgroundSize: "40px 40px",
+      backgroundPosition: "0 0, 0 20px, 20px -20px, -20px 0px",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -108,143 +117,200 @@ export default function Login() {
       fontFamily: "Segoe UI, Arial, sans-serif"
     }}>
       <div style={{
-        background: "rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.96)",
         borderRadius: 20,
-        padding: "36px 28px",
-        boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+        padding: "32px 32px",
+        boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
         textAlign: "center",
-        maxWidth: 380,
-        width: "90%"
+        maxWidth: 700,
+        minWidth: 600,
+        minHeight: 340,
+        margin: "0 auto",
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "flex-start",
+        justifyContent: "center",
+        gap: 32
       }}>
-        <h2 style={{ marginBottom: 18 }}>Login</h2>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 18 }}>
-          <button
-            style={{
-              background: mode === "password" ? "#ff8c00" : "#444",
-              color: "#fff",
-              border: "none",
-              borderRadius: "8px 0 0 8px",
-              padding: "8px 18px",
-              cursor: "pointer",
-              fontWeight: 600
-            }}
-            onClick={() => setMode("password")}
-          >
-            Email & Password
-          </button>
-          <button
-            style={{
-              background: mode === "otp" ? "#ff0080" : "#444",
-              color: "#fff",
-              border: "none",
-              borderRadius: "0 8px 8px 0",
-              padding: "8px 18px",
-              cursor: "pointer",
-              fontWeight: 600
-            }}
-            onClick={() => setMode("otp")}
-          >
-            Email & OTP
-          </button>
-        </div>
-        <div style={{ margin: "10px 0", color: "#ccc", fontWeight: 500 }}>OR</div>
-        {mode === "password" ? (
-          <form onSubmit={handlePasswordLogin} style={{ marginTop: 10 }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              style={{
-                width: "90%",
-                padding: "8px",
-                margin: "8px 0",
-                borderRadius: 6,
-                border: "1px solid #ccc"
-              }}
-            /><br />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              style={{
-                width: "90%",
-                padding: "8px",
-                margin: "8px 0",
-                borderRadius: 6,
-                border: "1px solid #ccc"
-              }}
-            /><br />
+        {/* Left side: Login method selection and Register */}
+        <div style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-start"
+        }}>
+          <div style={{
+            background: "#fff",
+            color: "#1e3c72",
+            borderRadius: 12,
+            width: 120,
+            margin: "0 auto 18px auto",
+            fontWeight: 700,
+            fontSize: "1.2rem",
+            padding: "10px 0",
+            boxShadow: "0 2px 8px rgba(30,60,114,0.08)"
+          }}>
+            Login
+          </div>
+          <div style={{
+            display: "flex",
+            justifyContent: "center",
+            width: "100%",
+            marginBottom: 18,
+            gap: 0
+          }}>
             <button
-              type="submit"
               style={{
-                background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
-                color: "#fff",
+                background: mode === "password" ? "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)" : "#f0f0f0",
+                color: mode === "password" ? "#fff" : "#1e3c72",
                 border: "none",
-                borderRadius: 8,
-                padding: "10px 28px",
-                fontSize: "1rem",
-                fontWeight: 600,
+                borderRadius: "8px 0 0 8px",
+                padding: "12px 12px",
+                fontWeight: 700,
+                fontSize: "1.05rem",
                 cursor: "pointer",
-                marginTop: 10
+                width: 120
+              }}
+              onClick={() => setMode("password")}
+            >
+              Email & Password
+            </button>
+            <button
+              style={{
+                background: mode === "otp" ? "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)" : "#f0f0f0",
+                color: mode === "otp" ? "#fff" : "#1e3c72",
+                border: "none",
+                borderRadius: "0 8px 8px 0",
+                padding: "12px 12px",
+                fontWeight: 700,
+                fontSize: "1.05rem",
+                cursor: "pointer",
+                width: 120
+              }}
+              onClick={() => setMode("otp")}
+            >
+              Email & OTP
+            </button>
+          </div>
+          <div style={{
+            fontWeight: 700,
+            color: "#1e3c72",
+            fontSize: "1.1rem",
+            margin: "10px 0"
+          }}>
+            <span style={{
+              display: "inline-block",
+              borderTop: "1px solid #ccc",
+              width: 40,
+              verticalAlign: "middle",
+              marginRight: 8
+            }}></span>
+            OR
+            <span style={{
+              display: "inline-block",
+              borderTop: "1px solid #ccc",
+              width: 40,
+              verticalAlign: "middle",
+              marginLeft: 8
+            }}></span>
+          </div>
+          <div style={{
+            background: "#fff",
+            borderRadius: 12,
+            marginTop: 32,
+            width: 120,
+            marginLeft: "auto",
+            marginRight: "auto",
+            boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
+          }}>
+            <button
+              onClick={() => setShowRegister(true)}
+              style={{
+                background: "transparent",
+                color: "#1e3c72",
+                border: "none",
+                borderRadius: 12,
+                padding: "14px 0",
+                fontWeight: 600,
+                fontSize: "1.1rem",
+                width: "100%",
+                cursor: "pointer"
               }}
             >
-              Login
+              Register
             </button>
-          </form>
-        ) : (
-          <form onSubmit={handleOtpLogin} style={{ marginTop: 10 }}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              style={{
-                width: "90%",
-                padding: "8px",
-                margin: "8px 0",
-                borderRadius: 6,
-                border: "1px solid #ccc"
-              }}
-              disabled={otpSent}
-            /><br />
-            {!otpSent ? (
-              <button
-                type="button"
-                onClick={handleSendOtp}
-                style={{
-                  background: "#ff0080",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  padding: "8px 24px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  marginTop: 10
-                }}
-              >
-                Send OTP
-              </button>
-            ) : (
-              <>
+          </div>
+        </div>
+        {/* Right side: Login form */}
+        <div style={{
+          flex: 2,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center"
+        }}>
+          {mode === "password" && (
+            <form onSubmit={handlePasswordLogin} style={{ width: "100%" }}>
+              <div style={{
+                background: "#f7f7f7",
+                borderRadius: 10,
+                margin: "0 auto 16px auto",
+                padding: "16px 0",
+                width: 260,
+                boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
+              }}>
                 <input
-                  type="text"
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={e => setOtp(e.target.value)}
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
                   required
                   style={{
-                    width: "90%",
-                    padding: "8px",
+                    width: "85%",
+                    padding: "10px",
                     margin: "8px 0",
                     borderRadius: 6,
-                    border: "1px solid #ccc"
+                    border: "1px solid #ccc",
+                    fontSize: "1rem"
                   }}
                 /><br />
+              </div>
+              <div style={{
+                background: "#f7f7f7",
+                borderRadius: 10,
+                margin: "0 auto 16px auto",
+                padding: "16px 0",
+                width: 260,
+                boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
+              }}>
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  style={{
+                    width: "85%",
+                    padding: "10px",
+                    margin: "8px 0",
+                    borderRadius: 6,
+                    border: "1px solid #ccc",
+                    fontSize: "1rem"
+                  }}
+                /><br />
+              </div>
+              <div style={{
+                background: "#f7f7f7",
+                borderRadius: 10,
+                margin: "0 auto 16px auto",
+                padding: "16px 0",
+                width: 260,
+                boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
+              }}>
                 <button
                   type="submit"
                   style={{
@@ -256,35 +322,131 @@ export default function Login() {
                     fontSize: "1rem",
                     fontWeight: 600,
                     cursor: "pointer",
-                    marginTop: 10
+                    width: "85%"
                   }}
                 >
-                  Login with OTP
+                  Login
                 </button>
-              </>
-            )}
-          </form>
-        )}
-        <div style={{ marginTop: 24 }}>
-          <button
-            onClick={() => setShowRegister(true)}
-            style={{
-              background: "#fff",
-              color: "#1e3c72",
-              border: "none",
-              borderRadius: 8,
-              padding: "8px 24px",
-              fontWeight: 600,
-              cursor: "pointer"
-            }}
-          >
-            Register
-          </button>
+              </div>
+              {msg && <div style={{ color: "#0f0", marginTop: 12 }}>{msg}</div>}
+              {error && <div style={{ color: "#f66", marginTop: 12 }}>{error}</div>}
+            </form>
+          )}
+          {mode === "otp" && (
+            <form onSubmit={handleOtpLogin} style={{ width: "100%" }}>
+              <div style={{
+                background: "#f7f7f7",
+                borderRadius: 10,
+                margin: "0 auto 16px auto",
+                padding: "16px 0",
+                width: 260,
+                boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
+              }}>
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  style={{
+                    width: "85%",
+                    padding: "10px",
+                    margin: "8px 0",
+                    borderRadius: 6,
+                    border: "1px solid #ccc",
+                    fontSize: "1rem"
+                  }}
+                  disabled={otpSent}
+                /><br />
+              </div>
+              {!otpSent ? (
+                <div style={{
+                  background: "#f7f7f7",
+                  borderRadius: 10,
+                  margin: "0 auto 16px auto",
+                  padding: "16px 0",
+                  width: 260,
+                  boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
+                }}>
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    style={{
+                      background: "#ff0080",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 8,
+                      padding: "8px 24px",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      width: "85%"
+                    }}
+                  >
+                    Send OTP
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div style={{
+                    background: "#f7f7f7",
+                    borderRadius: 10,
+                    margin: "0 auto 16px auto",
+                    padding: "16px 0",
+                    width: 260,
+                    boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
+                  }}>
+                    <input
+                      type="text"
+                      placeholder="Enter OTP"
+                      value={otp}
+                      onChange={e => setOtp(e.target.value)}
+                      required
+                      style={{
+                        width: "85%",
+                        padding: "10px",
+                        margin: "8px 0",
+                        borderRadius: 6,
+                        border: "1px solid #ccc",
+                        fontSize: "1rem"
+                      }}
+                    /><br />
+                  </div>
+                  <div style={{
+                    background: "#f7f7f7",
+                    borderRadius: 10,
+                    margin: "0 auto 16px auto",
+                    padding: "16px 0",
+                    width: 260,
+                    boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
+                  }}>
+                    <button
+                      type="submit"
+                      style={{
+                        background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 8,
+                        padding: "10px 28px",
+                        fontSize: "1rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        width: "85%"
+                      }}
+                    >
+                      Login with OTP
+                    </button>
+                  </div>
+                </>
+              )}
+              {msg && <div style={{ color: "#0f0", marginTop: 12 }}>{msg}</div>}
+              {error && <div style={{ color: "#f66", marginTop: 12 }}>{error}</div>}
+            </form>
+          )}
         </div>
-        {msg && <div style={{ color: "#0f0", marginTop: 12 }}>{msg}</div>}
-        {error && <div style={{ color: "#f66", marginTop: 12 }}>{error}</div>}
       </div>
+      {/* Register Modal */}
       {showRegister && <Register onClose={() => setShowRegister(false)} />}
+      {/* NotFound Popup */}
       {showNotFoundPopup && (
         <div style={{
           position: "fixed",

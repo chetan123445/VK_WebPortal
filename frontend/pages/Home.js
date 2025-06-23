@@ -8,7 +8,16 @@ export default function Home() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
+      width: "100vw",
+      backgroundColor: "#f9f9f9",
+      backgroundImage: `
+        linear-gradient(135deg, rgba(0,0,0,0.03) 25%, transparent 25%),
+        linear-gradient(225deg, rgba(0,0,0,0.03) 25%, transparent 25%),
+        linear-gradient(45deg, rgba(0,0,0,0.03) 25%, transparent 25%),
+        linear-gradient(315deg, rgba(0,0,0,0.03) 25%, transparent 25%)
+      `,
+      backgroundSize: "40px 40px",
+      backgroundPosition: "0 0, 0 20px, 20px -20px, -20px 0px",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",
@@ -17,13 +26,13 @@ export default function Home() {
       fontFamily: "Segoe UI, Arial, sans-serif"
     }}>
       <div style={{
-        background: "rgba(255,255,255,0.08)",
+        background: "rgba(255,255,255,0.96)",
         borderRadius: 20,
         padding: "40px 32px",
         boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
         textAlign: "center",
         maxWidth: 400,
-        width: "90%"
+        width: "95%"
       }}>
         <img
           src="https://img.icons8.com/color/96/000000/open-book--v2.png"
@@ -34,14 +43,15 @@ export default function Home() {
           fontWeight: 700,
           fontSize: "2.5rem",
           marginBottom: 16,
-          letterSpacing: 1
+          letterSpacing: 1,
+          color: "#1e3c72"
         }}>
           VK Publications
         </h1>
         <p style={{
           fontSize: "1.1rem",
           marginBottom: 32,
-          color: "#e0e0e0"
+          color: "#444"
         }}>
           Welcome to the future of learning. Explore, connect, and grow with our platform.
         </p>
@@ -68,7 +78,7 @@ export default function Home() {
       <div style={{
         marginTop: 40,
         fontSize: "0.95rem",
-        color: "#b0c4de",
+        color: "#1e3c72",
         letterSpacing: 0.5
       }}>
         © {new Date().getFullYear()} VK Publications. All rights reserved.
