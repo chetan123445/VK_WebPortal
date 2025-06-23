@@ -164,7 +164,7 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       school,
       class: userClass,
-      phone
+      phone: phone || "" // <-- Allow phone to be optional
     });
     await user.save();
     // Remove OTP after successful registration
