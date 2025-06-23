@@ -52,8 +52,15 @@ export default function Register({ onClose }) {
         body: JSON.stringify(form)
       });
       if (res.ok) {
-        setMsg("Registration successful! You can now login.");
+        setMsg("Registration successful! Redirecting...");
         setError("");
+        // Store user email for MainHome superadmin check
+        localStorage.setItem("userEmail", form.email.trim().toLowerCase());
+        setTimeout(() => {
+          if (typeof window !== "undefined") {
+            window.location.href = "/MainHome";
+          }
+        }, 1200);
         setForm({
           registeredAs: "Student",
           email: "",

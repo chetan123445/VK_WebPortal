@@ -1,0 +1,231 @@
+"use client";
+import React, { useState, useEffect } from "react";
+
+// Hardcoded superadmin email for demo; in real use, get from auth/session
+const SUPERADMIN_EMAIL = "chetandudi791@gmail.com";
+
+export default function MainHome() {
+  // Get logged-in user email from localStorage (set after login/registration)
+  const [userEmail, setUserEmail] = useState("");
+  const [showAddAdmin, setShowAddAdmin] = useState(false);
+  const [showViewAdmins, setShowViewAdmins] = useState(false);
+  const [admins, setAdmins] = useState([]);
+  const [adminForm, setAdminForm] = useState({ email: "", isSuperAdmin: false });
+  const [addStatus, setAddStatus] = useState("");
+
+  useEffect(() => {
+    // Assume user email is stored in localStorage after login/registration
+    const email = localStorage.getItem("userEmail") || "";
+    setUserEmail(email);
+  }, []);
+
+  // Fetch admins when modal opens
+  useEffect(() => {
+    if (showViewAdmins) {
+      fetch("http://localhost:8000/api/getadmins")
+        .then(res => res.json())
+        .then(data => setAdmins(data.admins || []))
+        .catch(() => setAdmins([]));
+    }
+  }, [showViewAdmins]);
+
+  // Add admin handler
+  const handleAddAdmin = async (e) => {
+    e.preventDefault();
+    setAddStatus("Adding...");
+    try {
+      const res = await fetch("http://localhost:8000/api/addadmins", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: adminForm.email,
+          isSuperAdmin: adminForm.isSuperAdmin,
+          requesterEmail: userEmail
+        })
+      });
+      if (res.ok) {
+        setAddStatus("Admin added!");
+        setAdminForm({ email: "", isSuperAdmin: false });
+      } else {
+        const data = await res.json();
+        setAddStatus(data.message || "Failed to add admin");
+      }
+    } catch {
+      setAddStatus("Failed to add admin");
+    }
+  };
+
+  const isSuperAdmin = userEmail === SUPERADMIN_EMAIL;
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      color: "#fff",
+      fontFamily: "Segoe UI, Arial, sans-serif"
+    }}>
+      {/* Top-right admin controls */}
+      {isSuperAdmin && (
+        <div style={{
+          position: "absolute",
+          top: 24,
+          right: 32,
+          display: "flex",
+          gap: 12
+        }}>
+          <button
+            onClick={() => setShowAddAdmin(true)}
+            style={{
+              background: "#fff",
+              color: "#1e3c72",
+              border: "none",
+              borderRadius: 6,
+              padding: "8px 18px",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            Add Admin
+          </button>
+          <button
+            onClick={() => setShowViewAdmins(true)}
+            style={{
+              background: "#fff",
+              color: "#1e3c72",
+              border: "none",
+              borderRadius: 6,
+              padding: "8px 18px",
+              fontWeight: 600,
+              cursor: "pointer"
+            }}
+          >
+            View Admins
+          </button>
+        </div>
+      )}
+
+      {/* Add Admin Modal */}
+      {showAddAdmin && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+          }}>
+            <h2 style={{ marginBottom: 18 }}>Add Admin</h2>
+            <form onSubmit={handleAddAdmin}>
+              <div style={{ marginBottom: 12 }}>
+                <label>Email:</label><br />
+                <input
+                  type="email"
+                  required
+                  value={adminForm.email}
+                  onChange={e => setAdminForm(f => ({ ...f, email: e.target.value }))}
+                  style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+                />
+              </div>
+              <div style={{ marginBottom: 18 }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={adminForm.isSuperAdmin}
+                    onChange={e => setAdminForm(f => ({ ...f, isSuperAdmin: e.target.checked }))}
+                  />{" "}
+                  Is Superadmin
+                </label>
+              </div>
+              <button type="submit" style={{
+                background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
+              }}>
+                Add
+              </button>
+              <button type="button" onClick={() => { setShowAddAdmin(false); setAddStatus(""); }} style={{
+                marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+              }}>
+                Cancel
+              </button>
+              <div style={{ marginTop: 10, color: "#1e3c72", fontWeight: 500 }}>{addStatus}</div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Admins Modal */}
+      {showViewAdmins && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+          }}>
+            <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
+            {/* Show superadmins first, then admins, with emails listed below each */}
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
+              <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
+                {admins.filter(a => a.isSuperAdmin).map(a => (
+                  <li key={a._id} style={{ marginBottom: 2 }}>
+                    {a.email}
+                  </li>
+                ))}
+              </ul>
+              <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {admins.filter(a => !a.isSuperAdmin).map(a => (
+                  <li key={a._id} style={{ marginBottom: 2 }}>
+                    {a.email}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button onClick={() => setShowViewAdmins(false)} style={{
+              marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+            }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{
+        background: "rgba(255,255,255,0.08)",
+        borderRadius: 20,
+        padding: "40px 32px",
+        boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+        textAlign: "center",
+        maxWidth: 400,
+        width: "90%"
+      }}>
+        <h1 style={{
+          fontWeight: 700,
+          fontSize: "2.5rem",
+          marginBottom: 16,
+          letterSpacing: 1
+        }}>
+          VK Publications Admin Panel
+        </h1>
+        <p style={{
+          fontSize: "1.1rem",
+          marginBottom: 32,
+          color: "#e0e0e0"
+        }}>
+          Manage admins and superadmins here.
+        </p>
+      </div>
+      <div style={{
+        marginTop: 40,
+        fontSize: "0.95rem",
+        color: "#b0c4de",
+        letterSpacing: 0.5
+      }}>
+        © {new Date().getFullYear()} VK Publications. All rights reserved.
+      </div>
+    </div>
+  );
+}

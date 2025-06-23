@@ -38,8 +38,10 @@ export default function Login() {
       if (res.ok) {
         setMsg("Login successful!");
         setError("");
+        // Store user email for MainHome superadmin check
+        localStorage.setItem("userEmail", cleanEmail);
         // Redirect to mainhome page
-        router.push("/mainhome");
+        router.push("/MainHome");
       } else {
         const data = await res.json();
         setError(data.message || "Login failed.");
@@ -83,7 +85,8 @@ export default function Login() {
       if (res.ok) {
         setMsg("OTP login successful!");
         setError("");
-        router.push("/mainhome");
+        localStorage.setItem("userEmail", email.trim().toLowerCase());
+        router.push("/MainHome");
       } else {
         const data = await res.json();
         setError(data.message || "Invalid OTP.");

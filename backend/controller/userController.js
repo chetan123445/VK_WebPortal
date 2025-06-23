@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import User from '../models/User.js';
+import Admin from '../models/Admin.js';
 import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 
