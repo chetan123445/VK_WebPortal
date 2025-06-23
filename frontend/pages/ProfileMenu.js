@@ -16,10 +16,10 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
   const fileInputRef = useRef();
   const router = useRouter();
 
-  // Fetch profile on open
+  // Fetch profile on mount and when userEmail changes
   useEffect(() => {
     if (open && userEmail) {
-      fetch(`${BASE_API_URL}/profile?email=${encodeURIComponent(userEmail)}`)
+      fetch(`http://localhost:8000/api/profile?email=${encodeURIComponent(userEmail)}`)
         .then(res => res.json())
         .then(data => {
           setProfile(data.user);
@@ -34,7 +34,21 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
         })
         .catch(() => setProfile(null));
     }
-  }, [open, userEmail]);
+  }, [userEmail]);
+
+  // When modal opens, update form and preview from latest profile
+  useEffect(() => {
+    if (open && profile) {
+      setForm({
+        name: profile.name || '',
+        phone: profile.phone || '',
+        school: profile.school || '',
+        class: profile.class || '',
+        photo: null
+      });
+      setPreview(profile.photo ? profile.photo : DEFAULT_AVATAR);
+    }
+  }, [open, profile]);
 
   // Handle photo preview
   useEffect(() => {
