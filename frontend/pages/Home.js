@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
+import { BASE_API_URL } from "./apiurl";
 
 export default function Home() {
   const router = useRouter();

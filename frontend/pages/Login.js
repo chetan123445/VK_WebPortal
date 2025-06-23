@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import Register from "./Register";
 import { useRouter } from "next/navigation";
+import { BASE_API_URL } from "./apiurl";
 
 export default function Login() {
   const [mode, setMode] = useState("password"); // "password" or "otp"
@@ -21,7 +22,7 @@ export default function Login() {
     setMsg("");
     const cleanEmail = email.trim().toLowerCase();
     try {
-      const res = await fetch("http://localhost:8000/api/user/login", {
+      const res = await fetch(`${BASE_API_URL}/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, password })
@@ -55,7 +56,7 @@ export default function Login() {
     setError("");
     setMsg("");
     try {
-      const res = await fetch("http://localhost:8000/api/user/send-login-otp", {
+      const res = await fetch(`${BASE_API_URL}/user/send-login-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase() })
@@ -77,7 +78,7 @@ export default function Login() {
     setError("");
     setMsg("");
     try {
-      const res = await fetch("http://localhost:8000/api/user/verify-login-otp", {
+      const res = await fetch(`${BASE_API_URL}/user/verify-login-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim().toLowerCase(), otp })

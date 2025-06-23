@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaBars } from 'react-icons/fa';
+import { BASE_API_URL } from "./apiurl";
 
 import ProfileMenu from './ProfileMenu';
 // Hardcoded superadmin email for demo; in real use, get from auth/session
@@ -27,7 +28,7 @@ export default function MainHome() {
 
     // Fetch admin info for this user to check isSuperAdmin
     if (email) {
-      fetch(`http://localhost:8000/api/getadmins`)
+      fetch(`${BASE_API_URL}/getadmins`)
         .then(res => res.json())
         .then(data => {
           const found = (data.admins || []).find(a => a.email === email);
@@ -40,7 +41,7 @@ export default function MainHome() {
   // Fetch admins when modal opens
   useEffect(() => {
     if (showViewAdmins) {
-      fetch("http://localhost:8000/api/getadmins")
+      fetch(`${BASE_API_URL}/getadmins`)
         .then(res => res.json())
         .then(data => setAdmins(data.admins || []))
         .catch(() => setAdmins([]));
@@ -52,7 +53,7 @@ export default function MainHome() {
     e.preventDefault();
     setAddStatus("Adding...");
     try {
-      const res = await fetch("http://localhost:8000/api/addadmins", {
+      const res = await fetch(`${BASE_API_URL}/addadmins`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -78,7 +79,7 @@ export default function MainHome() {
     e.preventDefault();
     setRemoveStatus("Removing...");
     try {
-      const res = await fetch("http://localhost:8000/api/removeadmin", {
+      const res = await fetch(`${BASE_API_URL}/removeadmin`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
