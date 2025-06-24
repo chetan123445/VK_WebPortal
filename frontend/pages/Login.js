@@ -22,6 +22,28 @@ export default function Login() {
     setError("");
     setMsg("");
     const cleanEmail = email.trim().toLowerCase();
+
+    // --- ADMIN TABLE CHECK FIRST ---
+    try {
+      const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
+      if (adminRes.ok) {
+        const adminData = await adminRes.json();
+        const foundAdmin = (adminData.admins || []).find(a => a.email === cleanEmail);
+        if (foundAdmin) {
+          // Directly redirect to admin dashboard (skip user authentication)
+          localStorage.setItem("userEmail", cleanEmail);
+          setMsg("Admin login successful!");
+          setError("");
+          router.push("/admin/dashboard");
+          return;
+        }
+      }
+    } catch (err) {
+      // Ignore admin check errors, fallback to user table check
+    }
+    // --- END ADMIN TABLE CHECK ---
+
+    // --- USER TABLE CHECK ---
     try {
       const res = await fetch(`${BASE_API_URL}/user/login`, {
         method: "POST",
@@ -41,29 +63,9 @@ export default function Login() {
         const data = await res.json();
         setMsg("Login successful!");
         setError("");
-        
-        // Store JWT token and user data
         setToken(data.token);
         setUserData(data.user);
-        
-        // Store user email for MainHome superadmin check (backward compatibility)
         localStorage.setItem("userEmail", cleanEmail);
-
-        // --- ADMIN CHECK AND REDIRECT ---
-        try {
-          const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
-          if (adminRes.ok) {
-            const adminData = await adminRes.json();
-            const foundAdmin = (adminData.admins || []).find(a => a.email === cleanEmail);
-            if (foundAdmin) {
-              router.push("/admin/dashboard");
-              return;
-            }
-          }
-        } catch (err) {
-          // Ignore admin check errors, fallback to normal flow
-        }
-        // --- END ADMIN CHECK ---
 
         // Redirect to dashboard based on user type
         if (data.user && data.user.registeredAs) {
@@ -86,6 +88,7 @@ export default function Login() {
     } catch (err) {
       setError("Login failed. Please try again.");
     }
+    // --- END USER TABLE CHECK ---
   };
 
   const handleSendOtp = async () => {
@@ -113,39 +116,42 @@ export default function Login() {
     e.preventDefault();
     setError("");
     setMsg("");
+    const cleanEmail = email.trim().toLowerCase();
+
+    // --- ADMIN TABLE CHECK FIRST ---
+    try {
+      const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
+      if (adminRes.ok) {
+        const adminData = await adminRes.json();
+        const foundAdmin = (adminData.admins || []).find(a => a.email === cleanEmail);
+        if (foundAdmin) {
+          // Directly redirect to admin dashboard (skip user authentication)
+          localStorage.setItem("userEmail", cleanEmail);
+          setMsg("Admin login successful!");
+          setError("");
+          router.push("/admin/dashboard");
+          return;
+        }
+      }
+    } catch (err) {
+      // Ignore admin check errors, fallback to user table check
+    }
+    // --- END ADMIN TABLE CHECK ---
+
+    // --- USER TABLE CHECK ---
     try {
       const res = await fetch(`${BASE_API_URL}/user/verify-login-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), otp })
+        body: JSON.stringify({ email: cleanEmail, otp })
       });
       if (res.ok) {
         const data = await res.json();
         setMsg("OTP login successful!");
         setError("");
-        
-        // Store JWT token and user data
         setToken(data.token);
         setUserData(data.user);
-        
-        // Store user email for MainHome superadmin check (backward compatibility)
-        localStorage.setItem("userEmail", email.trim().toLowerCase());
-
-        // --- ADMIN CHECK AND REDIRECT ---
-        try {
-          const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
-          if (adminRes.ok) {
-            const adminData = await adminRes.json();
-            const foundAdmin = (adminData.admins || []).find(a => a.email === email.trim().toLowerCase());
-            if (foundAdmin) {
-              router.push("/admin/dashboard");
-              return;
-            }
-          }
-        } catch (err) {
-          // Ignore admin check errors, fallback to normal flow
-        }
-        // --- END ADMIN CHECK ---
+        localStorage.setItem("userEmail", cleanEmail);
 
         // Redirect to dashboard based on user type
         if (data.user && data.user.registeredAs) {
@@ -168,6 +174,7 @@ export default function Login() {
     } catch (err) {
       setError("OTP login failed. Please try again.");
     }
+    // --- END USER TABLE CHECK ---
   };
 
   return (
@@ -664,3 +671,4 @@ export default function Login() {
     </div>
   );
 }
+

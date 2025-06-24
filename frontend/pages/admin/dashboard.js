@@ -7,9 +7,6 @@ import ProfileMenu from '../ProfileMenu';
 import { getUserData, getToken } from "../../utils/auth.js";
 import { BASE_API_URL } from '../apiurl.js';
 
-// Hardcoded superadmin email for demo; in real use, get from auth/session
-const SUPERADMIN_EMAIL = "chetandudi791@gmail.com";
-
 function MainHomeContent() {
   // Get logged-in user data from JWT token
   const [userData, setUserData] = useState(null);
@@ -24,6 +21,7 @@ function MainHomeContent() {
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Fetch complete profile data
@@ -59,16 +57,22 @@ function MainHomeContent() {
 
     // Fetch complete profile data immediately
     fetchProfileData();
+  }, []);
 
-    // Fetch admin info for this user to check isSuperAdmin
+  // Check admin and superadmin status when userEmail changes
+  useEffect(() => {
     if (userEmail) {
-      fetch(`http://localhost:8000/api/getadmins`)
+      fetch(`${BASE_API_URL}/getadmins`)
         .then(res => res.json())
         .then(data => {
           const found = (data.admins || []).find(a => a.email === userEmail);
+          setIsAdmin(!!found);
           setIsSuperAdmin(found?.isSuperAdmin === true);
         })
-        .catch(() => setIsSuperAdmin(false));
+        .catch(() => {
+          setIsAdmin(false);
+          setIsSuperAdmin(false);
+        });
     }
   }, [userEmail]);
 
@@ -160,7 +164,7 @@ function MainHomeContent() {
       fontFamily: "Segoe UI, Arial, sans-serif"
     }}>
       {/* Hamburger menu top left */}
-      {isSuperAdmin && (
+      {isAdmin && isSuperAdmin && (
         <button
           onClick={() => setMenuOpen(true)}
           style={{
@@ -178,7 +182,7 @@ function MainHomeContent() {
         </button>
       )}
       {/* Side menu */}
-      {menuOpen && (
+      {menuOpen && isSuperAdmin && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -222,7 +226,7 @@ function MainHomeContent() {
       />
 
       {/* Add Admin Modal */}
-      {showAddAdmin && (
+      {showAddAdmin && isSuperAdmin && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
@@ -269,7 +273,7 @@ function MainHomeContent() {
       )}
 
       {/* Remove Admin Modal */}
-      {showRemoveAdmin && (
+      {showRemoveAdmin && isSuperAdmin && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
@@ -306,7 +310,7 @@ function MainHomeContent() {
       )}
 
       {/* View Admins Modal */}
-      {showViewAdmins && (
+      {showViewAdmins && isAdmin && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
@@ -366,7 +370,11 @@ function MainHomeContent() {
           marginBottom: 32,
           color: "#444"
         }}>
-          Manage admins and superadmins here.
+          {isSuperAdmin
+            ? "Manage admins and superadmins here."
+            : isAdmin
+              ? "You are an admin. Contact a superadmin for more privileges."
+              : "You do not have admin access."}
         </p>
       </div>
       <div style={{
