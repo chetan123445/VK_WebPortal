@@ -21,8 +21,6 @@ function MainHomeContent() {
   const [addStatus, setAddStatus] = useState("");
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Fetch complete profile data
@@ -59,23 +57,6 @@ function MainHomeContent() {
     // Fetch complete profile data immediately
     fetchProfileData();
   }, []);
-
-  // Check admin and superadmin status when userEmail changes
-  useEffect(() => {
-    if (userEmail) {
-      fetch(`${BASE_API_URL}/getadmins`)
-        .then(res => res.json())
-        .then(data => {
-          const found = (data.admins || []).find(a => a.email === userEmail);
-          setIsAdmin(!!found);
-          setIsSuperAdmin(found?.isSuperAdmin === true);
-        })
-        .catch(() => {
-          setIsAdmin(false);
-          setIsSuperAdmin(false);
-        });
-    }
-  }, [userEmail]);
 
   // Fetch admins when modal opens
   useEffect(() => {
@@ -170,28 +151,27 @@ function MainHomeContent() {
       alignItems: "center",
       justifyContent: "center",
       color: "#fff",
-      fontFamily: "Segoe UI, Arial, sans-serif"
+      fontFamily: "Segoe UI, Arial, sans-serif",
+      position: "relative" // Ensure relative positioning for absolute children
     }}>
-      {/* Hamburger menu top left */}
-      {isAdmin && isSuperAdmin && (
-        <button
-          onClick={() => setMenuOpen(true)}
-          style={{
-            position: 'absolute',
-            top: 24,
-            left: 32,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            zIndex: 2100
-          }}
-          aria-label="Open menu"
-        >
-          <FaBars size={32} color="#1e3c72" /> {/* VK Publications blue */}
-        </button>
-      )}
-      {/* Side menu */}
-      {menuOpen && isSuperAdmin && (
+      {/* Hamburger menu top left - always show for dashboard */}
+      <button
+        onClick={() => setMenuOpen(true)}
+        style={{
+          position: 'fixed',
+          top: 24,
+          left: 32,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          zIndex: 3000
+        }}
+        aria-label="Open menu"
+      >
+        <FaBars size={32} color="#1e3c72" />
+      </button>
+      {/* Side menu - always show */}
+      {menuOpen && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -207,12 +187,13 @@ function MainHomeContent() {
           padding: '32px 18px 18px 18px',
         }}>
           <button onClick={() => setMenuOpen(false)} style={{ alignSelf: 'flex-end', background: 'none', border: 'none', fontSize: 26, color: '#1e3c72', cursor: 'pointer', marginBottom: 18 }}>&times;</button>
+          {/* Show Add/Remove Admin for all admins */}
           <button
             onClick={() => { setShowRemoveAdmin(true); setMenuOpen(false); }}
             style={{
               background: '#fff',
               color: '#c0392b',
-              border: 'none', // Remove border
+              border: 'none',
               borderRadius: 6,
               padding: '10px 0',
               fontWeight: 600,
@@ -231,7 +212,7 @@ function MainHomeContent() {
             style={{
               background: '#fff',
               color: '#1e3c72',
-              border: 'none', // Remove border
+              border: 'none',
               borderRadius: 6,
               padding: '10px 0',
               fontWeight: 600,
@@ -250,7 +231,7 @@ function MainHomeContent() {
             style={{
               background: '#fff',
               color: '#1e3c72',
-              border: 'none', // Remove border
+              border: 'none',
               borderRadius: 6,
               padding: '10px 0',
               fontWeight: 600,
@@ -273,7 +254,7 @@ function MainHomeContent() {
       />
 
       {/* Add Admin Modal */}
-      {showAddAdmin && isSuperAdmin && (
+      {showAddAdmin && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
@@ -320,7 +301,7 @@ function MainHomeContent() {
       )}
 
       {/* Remove Admin Modal */}
-      {showRemoveAdmin && isSuperAdmin && (
+      {showRemoveAdmin && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
@@ -357,7 +338,7 @@ function MainHomeContent() {
       )}
 
       {/* View Admins Modal */}
-      {showViewAdmins && isAdmin && (
+      {showViewAdmins && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
@@ -417,11 +398,7 @@ function MainHomeContent() {
           marginBottom: 32,
           color: "#444"
         }}>
-          {isSuperAdmin
-            ? "Manage admins and superadmins here."
-            : isAdmin
-              ? "You are an admin. Contact a superadmin for more privileges."
-              : "You do not have admin access."}
+          Manage admins and superadmins here.
         </p>
       </div>
       <div style={{

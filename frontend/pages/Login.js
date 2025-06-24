@@ -23,25 +23,26 @@ export default function Login() {
     setMsg("");
     const cleanEmail = email.trim().toLowerCase();
 
-    // --- ADMIN TABLE CHECK FIRST ---
+    // --- SECURE ADMIN LOGIN CHECK FIRST ---
     try {
-      const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
+      const adminRes = await fetch(`${BASE_API_URL}/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, password })
+      });
       if (adminRes.ok) {
-        const adminData = await adminRes.json();
-        const foundAdmin = (adminData.admins || []).find(a => a.email === cleanEmail);
-        if (foundAdmin) {
-          // Directly redirect to admin dashboard (skip user authentication)
-          localStorage.setItem("userEmail", cleanEmail);
-          setMsg("Admin login successful!");
-          setError("");
-          router.push("/admin/dashboard");
-          return;
-        }
+        // Success: redirect to admin dashboard
+        localStorage.setItem("userEmail", cleanEmail);
+        setMsg("Admin login successful!");
+        setError("");
+        router.push("/admin/dashboard");
+        return;
       }
+      // If unauthorized, continue to user login
     } catch (err) {
       // Ignore admin check errors, fallback to user table check
     }
-    // --- END ADMIN TABLE CHECK ---
+    // --- END ADMIN LOGIN CHECK ---
 
     // --- USER TABLE CHECK ---
     try {

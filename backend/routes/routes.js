@@ -1,6 +1,6 @@
 import express from 'express';
 import { registerUser, findUserByEmail, loginUser, sendRegisterOtp, verifyRegisterOtp, sendLoginOtp, verifyLoginOtp, getProfile, updateProfile, upload, verifyToken } from '../controller/userController.js';
-import { getAdmins, addAdmin, removeAdmin, isAdmin } from '../controller/adminController.js';
+import { getAdmins, addAdmin, removeAdmin, isAdmin, adminLogin } from '../controller/adminController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import multer from 'multer';
 import studentController from '../controller/studentController.js';
@@ -44,5 +44,6 @@ router.get('/api/getadmins', getAdmins);
 router.post('/api/isadmin', isAdmin);
 router.post('/api/addadmins', addAdmin);
 router.delete('/api/removeadmin', removeAdmin);
+router.post('/api/admin/login', adminLogin); // Secure admin login route
 
 export default router;
