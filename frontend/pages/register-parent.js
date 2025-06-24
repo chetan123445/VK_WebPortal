@@ -41,6 +41,8 @@ export default function RegisterParent() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  const [showStudentRegister, setShowStudentRegister] = useState(false);
+
   // Step 1: Verify child email and send OTP
   const handleChildEmailSubmit = async (e) => {
     e.preventDefault();
@@ -64,6 +66,7 @@ export default function RegisterParent() {
         setMsg("Child found. OTP sent to child email.");
       } else {
         setError(data.message || "Child verification failed");
+        setShowStudentRegister(true); // Show register student option if not found
       }
     } catch {
       setError("Network error. Please try again.");
@@ -227,13 +230,38 @@ export default function RegisterParent() {
               style={inputStyle}
             />
             {!childOtpSent ? (
-              <button
-                type="submit"
-                disabled={loading}
-                style={btnStyle}
-              >
-                {loading ? "Verifying..." : "Verify Child Email"}
-              </button>
+              <>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={btnStyle}
+                >
+                  {loading ? "Verifying..." : "Verify Child Email"}
+                </button>
+                {/* Show Register Student option if student not found */}
+                {showStudentRegister && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={{ color: "#c00", marginBottom: 8 }}>
+                      Do you want to register the student?
+                    </div>
+                    <button
+                      type="button"
+                      style={{
+                        ...btnStyle,
+                        background: "linear-gradient(90deg, #1e3c72 0%, #ff0080 100%)",
+                        width: "100%",
+                      }}
+                      onClick={() => {
+                        setShowStudentRegister(false);
+                        // Redirect to login page (as per your request)
+                        window.location.href = "/Login";
+                      }}
+                    >
+                      Register Student
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 <input

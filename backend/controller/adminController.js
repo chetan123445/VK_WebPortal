@@ -2,6 +2,7 @@ import Admin from '../models/Admin.js';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import User from '../models/User.js'; // <-- Add this import
 dotenv.config();
 
 // Helper to generate random password of length 5-10, different each time
@@ -62,14 +63,13 @@ export const addAdmin = async (req, res) => {
     const { email, isSuperAdmin, requesterEmail } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
-    // Remove superadmin check: allow any admin to add admins
-    // const requester = await Admin.findOne({ email: requesterEmail });
-    // if (!requester || !requester.isSuperAdmin) {
-    //   return res.status(403).json({ message: 'Only superadmin can add admins' });
-    // }
-
+    // Check if already an admin
     const exists = await Admin.findOne({ email });
     if (exists) return res.status(409).json({ message: 'Admin already exists' });
+
+    // Check if already a user
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(409).json({ message: 'This email is already registered as a user and cannot be an admin.' });
 
     // Generate random password
     const randomPassword = generateRandomPassword();
