@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
+import Admin from '../models/Admin.js'; // <-- Add this
 
 const otpStore = {}; // { email: { otp, expires } }
 
@@ -23,6 +24,13 @@ export const sendOtp = async (req, res) => {
   try {
     const { email } = req.body;
     const cleanEmail = email.trim().toLowerCase();
+
+    // Check if email is an admin
+    const isAdmin = await Admin.findOne({ email: cleanEmail });
+    if (isAdmin) {
+      return res.status(409).json({ message: 'You cannot use this email. It is an admin ID. Please use a different email.' });
+    }
+
     // Block if already registered as Student or Teacher, allow Parent
     const exists = await User.findOne({ email: cleanEmail });
     if (exists) {
@@ -52,6 +60,13 @@ export const register = async (req, res) => {
   try {
     const { name, email, school, class: userClass, otp, password } = req.body;
     const cleanEmail = email.trim().toLowerCase();
+
+    // Check if email is an admin
+    const isAdmin = await Admin.findOne({ email: cleanEmail });
+    if (isAdmin) {
+      return res.status(409).json({ message: 'You cannot use this email. It is an admin ID. Please use a different email.' });
+    }
+
     // OTP check
     const record = otpStore[cleanEmail];
     if (!record || record.otp !== otp || record.expires < Date.now()) {

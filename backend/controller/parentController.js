@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
+import Admin from '../models/Admin.js'; // <-- Add this
 
 // In-memory OTP store: { email: { otp, expires } }
 const otpStore = {};
@@ -26,6 +27,12 @@ export const sendOtp = async (req, res) => {
     const { email, childEmail } = req.body;
     const parentEmail = email.trim().toLowerCase();
     const childEmailClean = childEmail.trim().toLowerCase();
+
+    // Check if parent email is an admin
+    const isAdmin = await Admin.findOne({ email: parentEmail });
+    if (isAdmin) {
+      return res.status(409).json({ message: 'You cannot use this email. It is an admin ID. Please use a different email.' });
+    }
 
     // Parent email must not be registered as Parent or Student
     const parentExists = await User.findOne({ email: parentEmail });
@@ -60,6 +67,12 @@ export const register = async (req, res) => {
     const { name, email, childEmail, otp, password } = req.body;
     const parentEmail = email.trim().toLowerCase();
     const childEmailClean = childEmail.trim().toLowerCase();
+
+    // Check if parent email is an admin
+    const isAdmin = await Admin.findOne({ email: parentEmail });
+    if (isAdmin) {
+      return res.status(409).json({ message: 'You cannot use this email. It is an admin ID. Please use a different email.' });
+    }
 
     // OTP check
     const record = otpStore[parentEmail];
