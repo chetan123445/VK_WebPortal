@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaBars } from 'react-icons/fa';
+import { FaBars, FaUserPlus, FaUserMinus, FaUsers } from 'react-icons/fa'; // Add icons
 import ProtectedRoute from '../../components/ProtectedRoute';
 
 import ProfileMenu from '../ProfileMenu';
 import { getUserData, getToken } from "../../utils/auth.js";
 import { BASE_API_URL } from '../apiurl.js';
+
 
 function MainHomeContent() {
   // Get logged-in user data from JWT token
@@ -106,6 +107,10 @@ function MainHomeContent() {
       if (res.ok) {
         setAddStatus("Admin added!");
         setAdminForm({ email: "", isSuperAdmin: false });
+        setTimeout(() => {
+          setShowAddAdmin(false);
+          setAddStatus("");
+        }, 700); // Close modal after short delay
       } else {
         const data = await res.json();
         setAddStatus(data.message || "Failed to add admin");
@@ -134,6 +139,10 @@ function MainHomeContent() {
       if (res.ok) {
         setRemoveStatus("Admin removed!");
         setRemoveEmail("");
+        setTimeout(() => {
+          setShowRemoveAdmin(false);
+          setRemoveStatus("");
+        }, 700); // Close modal after short delay
       } else {
         const data = await res.json();
         setRemoveStatus(data.message || "Failed to remove admin");
@@ -178,7 +187,7 @@ function MainHomeContent() {
           }}
           aria-label="Open menu"
         >
-          <FaBars size={32} color="#fff" />
+          <FaBars size={32} color="#1e3c72" /> {/* VK Publications blue */}
         </button>
       )}
       {/* Side menu */}
@@ -200,20 +209,58 @@ function MainHomeContent() {
           <button onClick={() => setMenuOpen(false)} style={{ alignSelf: 'flex-end', background: 'none', border: 'none', fontSize: 26, color: '#1e3c72', cursor: 'pointer', marginBottom: 18 }}>&times;</button>
           <button
             onClick={() => { setShowRemoveAdmin(true); setMenuOpen(false); }}
-            style={{ background: '#fff', color: '#c0392b', border: '1px solid #c0392b', borderRadius: 6, padding: '10px 0', fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}
+            style={{
+              background: '#fff',
+              color: '#c0392b',
+              border: 'none', // Remove border
+              borderRadius: 6,
+              padding: '10px 0',
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}
           >
+            <FaUserMinus style={{ color: '#c0392b', fontSize: 18 }} />
             Remove Admin
           </button>
           <button
             onClick={() => { setShowAddAdmin(true); setMenuOpen(false); }}
-            style={{ background: '#fff', color: '#1e3c72', border: '1px solid #1e3c72', borderRadius: 6, padding: '10px 0', fontWeight: 600, cursor: 'pointer', marginBottom: 16 }}
+            style={{
+              background: '#fff',
+              color: '#1e3c72',
+              border: 'none', // Remove border
+              borderRadius: 6,
+              padding: '10px 0',
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}
           >
+            <FaUserPlus style={{ color: '#1e3c72', fontSize: 18 }} />
             Add Admin
           </button>
           <button
             onClick={() => { setShowViewAdmins(true); setMenuOpen(false); }}
-            style={{ background: '#fff', color: '#1e3c72', border: '1px solid #1e3c72', borderRadius: 6, padding: '10px 0', fontWeight: 600, cursor: 'pointer' }}
+            style={{
+              background: '#fff',
+              color: '#1e3c72',
+              border: 'none', // Remove border
+              borderRadius: 6,
+              padding: '10px 0',
+              fontWeight: 600,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10
+            }}
           >
+            <FaUsers style={{ color: '#1e3c72', fontSize: 18 }} />
             View Admins
           </button>
         </div>

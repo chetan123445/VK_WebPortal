@@ -1,7 +1,5 @@
 import Admin from '../models/Admin.js';
 
-const SUPERADMIN_EMAIL = "chetandudi791@gmail.com";
-
 // Get all admins and superadmins
 export const getAdmins = async (req, res) => {
   try {
@@ -18,8 +16,9 @@ export const addAdmin = async (req, res) => {
     const { email, isSuperAdmin, requesterEmail } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
-    // Only allow superadmin to add admins
-    if (requesterEmail !== SUPERADMIN_EMAIL) {
+    // Check if requester is a superadmin in the Admin table
+    const requester = await Admin.findOne({ email: requesterEmail });
+    if (!requester || !requester.isSuperAdmin) {
       return res.status(403).json({ message: 'Only superadmin can add admins' });
     }
 
@@ -34,20 +33,26 @@ export const addAdmin = async (req, res) => {
   }
 };
 
-// Remove an admin (only superadmin can remove)
+// Remove an admin (only superadmin can remove, but cannot remove another superadmin)
 export const removeAdmin = async (req, res) => {
   try {
     const { email, requesterEmail } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
-    // Only allow superadmin to remove admins
-    if (requesterEmail !== SUPERADMIN_EMAIL) {
+    // Check if requester is a superadmin in the Admin table
+    const requester = await Admin.findOne({ email: requesterEmail });
+    if (!requester || !requester.isSuperAdmin) {
       return res.status(403).json({ message: 'Only superadmin can remove admins' });
     }
 
-    const removed = await Admin.findOneAndDelete({ email });
-    if (!removed) return res.status(404).json({ message: 'Admin not found' });
+    // Prevent removing another superadmin
+    const toRemove = await Admin.findOne({ email });
+    if (!toRemove) return res.status(404).json({ message: 'Admin not found' });
+    if (toRemove.isSuperAdmin) {
+      return res.status(403).json({ message: 'Cannot remove another superadmin' });
+    }
 
+    await Admin.deleteOne({ email });
     res.status(200).json({ message: 'Admin removed' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to remove admin', error: err.message });
