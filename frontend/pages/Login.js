@@ -48,7 +48,23 @@ export default function Login() {
         
         // Store user email for MainHome superadmin check (backward compatibility)
         localStorage.setItem("userEmail", cleanEmail);
-        
+
+        // --- ADMIN CHECK AND REDIRECT ---
+        try {
+          const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
+          if (adminRes.ok) {
+            const adminData = await adminRes.json();
+            const foundAdmin = (adminData.admins || []).find(a => a.email === cleanEmail);
+            if (foundAdmin) {
+              router.push("/admin/dashboard");
+              return;
+            }
+          }
+        } catch (err) {
+          // Ignore admin check errors, fallback to normal flow
+        }
+        // --- END ADMIN CHECK ---
+
         // Redirect to dashboard based on user type
         if (data.user && data.user.registeredAs) {
           if (data.user.registeredAs === "Student") {
@@ -114,7 +130,23 @@ export default function Login() {
         
         // Store user email for MainHome superadmin check (backward compatibility)
         localStorage.setItem("userEmail", email.trim().toLowerCase());
-        
+
+        // --- ADMIN CHECK AND REDIRECT ---
+        try {
+          const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
+          if (adminRes.ok) {
+            const adminData = await adminRes.json();
+            const foundAdmin = (adminData.admins || []).find(a => a.email === email.trim().toLowerCase());
+            if (foundAdmin) {
+              router.push("/admin/dashboard");
+              return;
+            }
+          }
+        } catch (err) {
+          // Ignore admin check errors, fallback to normal flow
+        }
+        // --- END ADMIN CHECK ---
+
         // Redirect to dashboard based on user type
         if (data.user && data.user.registeredAs) {
           if (data.user.registeredAs === "Student") {

@@ -53,3 +53,18 @@ export const removeAdmin = async (req, res) => {
     res.status(500).json({ message: 'Failed to remove admin', error: err.message });
   }
 };
+
+// Check if an email is an admin
+export const isAdmin = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ isAdmin: false, message: "Email required" });
+  try {
+    const admin = await Admin.findOne({ email: email.trim().toLowerCase() });
+    if (admin) {
+      return res.json({ isAdmin: true, isSuperAdmin: admin.isSuperAdmin });
+    }
+    return res.json({ isAdmin: false });
+  } catch (err) {
+    return res.status(500).json({ isAdmin: false, message: "Server error" });
+  }
+};
