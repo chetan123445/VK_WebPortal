@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import imageCompression from 'browser-image-compression';
 import { useRouter } from 'next/navigation';
+import { BASE_API_URL } from "./apiurl";
 
-// ... existing code ...
 const DEFAULT_AVATAR = '/default-avatar.png'; // Correct path for default avatar in uploads folder
 // ... existing code ...// Place a default avatar in public if needed
 
@@ -16,10 +16,10 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
   const fileInputRef = useRef();
   const router = useRouter();
 
-  // Fetch profile on mount and when userEmail changes
+  // Fetch profile on open
   useEffect(() => {
-    if (userEmail) {
-      fetch(`http://localhost:8000/api/profile?email=${encodeURIComponent(userEmail)}`)
+    if (open && userEmail) {
+      fetch(`${BASE_API_URL}/profile?email=${encodeURIComponent(userEmail)}`)
         .then(res => res.json())
         .then(data => {
           setProfile(data.user);
@@ -34,7 +34,7 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
         })
         .catch(() => setProfile(null));
     }
-  }, [userEmail]);
+  }, [open, userEmail]);
 
   // When modal opens, update form and preview from latest profile
   useEffect(() => {
@@ -101,7 +101,7 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
   const handleDeletePhoto = async () => {
     setStatus('Deleting photo...');
     try {
-      const res = await fetch('http://localhost:8000/api/profile', {
+      const res = await fetch(`${BASE_API_URL}/profile`, {
         method: 'PUT',
         body: JSON.stringify({ email: userEmail, deletePhoto: true }),
         headers: { 'Content-Type': 'application/json' }
@@ -141,7 +141,7 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
     formData.append('class', form.class);
     if (form.photo) formData.append('photo', form.photo);
     try {
-      const res = await fetch('http://localhost:8000/api/profile', {
+      const res = await fetch(`${BASE_API_URL}/profile`, {
         method: 'PUT',
         body: formData
       });
@@ -275,4 +275,4 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
       )}
     </>
   );
-} 
+}

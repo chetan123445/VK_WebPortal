@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { BASE_API_URL } from "./apiurl";
 
 export default function Register({ onClose }) {
   const [form, setForm] = useState({
@@ -24,7 +25,7 @@ export default function Register({ onClose }) {
     e.preventDefault();
     setMsg(""); setError(""); setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/user/send-register-otp", {
+      const res = await fetch(`${BASE_API_URL}/user/send-register-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: form.email.trim().toLowerCase() })
@@ -47,7 +48,7 @@ export default function Register({ onClose }) {
     setMsg(""); setError(""); setLoading(true);
     try {
       // Optionally verify OTP first (or just let backend handle it)
-      const res = await fetch("http://localhost:8000/api/user/register", {
+      const res = await fetch(`${BASE_API_URL}/user/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form)
