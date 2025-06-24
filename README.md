@@ -10,6 +10,7 @@
    ```bash
    npm install
    npm install multer
+   npm install jsonwebtoken
    ```
 3. **Start the backend server:**
    ```bash
