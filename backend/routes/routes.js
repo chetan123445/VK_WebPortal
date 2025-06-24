@@ -5,7 +5,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import multer from 'multer';
 import studentController from '../controller/studentController.js';
 import teacherController from '../controller/teacherController.js';
-import parentController from '../controller/parentController.js';
+import * as parentController from '../controller/parentController.js';
 
 const router = express.Router();
 
@@ -32,9 +32,7 @@ router.post('/api/teacher/register', teacherController.register);
 router.post('/api/teacher/find', teacherController.find);
 
 // Parent routes
-router.post('/api/parent/send-otp', parentController.sendOtp);
-router.post('/api/parent/register', parentController.register);
-router.post('/api/parent/find', parentController.find);
+router.post('/api/parent/verify-child-email', parentController.verifyChildEmail);
 
 // Protected routes (require JWT authentication)
 router.get('/api/verify-token', authenticateToken, verifyToken);

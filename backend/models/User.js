@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema({
     match: [/^\d{10}$/, 'Phone number must be 10 digits'],
     default: ""
   },
+  childEmail: {
+    type: String,
+    // Only required for Parent, so not globally required
+    default: ""
+  },
   photo: {
     data: Buffer,
     contentType: String
