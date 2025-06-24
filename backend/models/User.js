@@ -23,8 +23,7 @@ const userSchema = new mongoose.Schema({
     type: String
   },
   class: {
-    type: String,
-    required: true
+    type: String
   },
   phone: {
     type: String,
@@ -38,4 +37,5 @@ const userSchema = new mongoose.Schema({
 });
 
 const User = mongoose.model('User', userSchema);
+
 export default User;

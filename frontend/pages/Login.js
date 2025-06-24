@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import Register from "./Register";
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from "./apiurl";
+import Link from "next/link";
 
 export default function Login() {
   const [mode, setMode] = useState("password"); // "password" or "otp"
@@ -14,6 +14,7 @@ export default function Login() {
   const [msg, setMsg] = useState("");
   const [showRegister, setShowRegister] = useState(false);
   const [showNotFoundPopup, setShowNotFoundPopup] = useState(false);
+  const [showRegisterRole, setShowRegisterRole] = useState(false);
   const router = useRouter();
 
   const handlePasswordLogin = async (e) => {
@@ -229,7 +230,7 @@ export default function Login() {
             alignItems: "center"
           }}>
             <button
-              onClick={() => setShowRegister(true)}
+              onClick={() => setShowRegisterRole(true)}
               style={{
                 background: "transparent",
                 color: "#1e3c72",
@@ -445,8 +446,50 @@ export default function Login() {
           )}
         </div>
       </div>
-      {/* Register Modal */}
-      {showRegister && <Register onClose={() => setShowRegister(false)} />}
+      {/* Register Role Selection Modal */}
+      {showRegisterRole && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000
+        }}>
+          <div style={{
+            background: "#fff", color: "#222", borderRadius: 16, padding: 32, minWidth: 320,
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)", position: "relative"
+          }}>
+            <button onClick={() => setShowRegisterRole(false)} style={{
+              position: "absolute", top: 12, right: 12, background: "none",
+              border: "none", fontSize: 22, cursor: "pointer"
+            }}>&times;</button>
+            <h2 style={{ marginBottom: 18 }}>Register as</h2>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              <button
+                onClick={() => { setShowRegisterRole(false); router.push("/register-student"); }}
+                style={{
+                  background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
+                  color: "#fff", border: "none", borderRadius: 8, padding: "12px 0",
+                  fontSize: "1.1rem", fontWeight: 600, cursor: "pointer"
+                }}
+              >Student</button>
+              <button
+                onClick={() => { setShowRegisterRole(false); router.push("/register-teacher"); }}
+                style={{
+                  background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
+                  color: "#fff", border: "none", borderRadius: 8, padding: "12px 0",
+                  fontSize: "1.1rem", fontWeight: 600, cursor: "pointer"
+                }}
+              >Teacher</button>
+              <button
+                onClick={() => { setShowRegisterRole(false); router.push("/register-parent"); }}
+                style={{
+                  background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
+                  color: "#fff", border: "none", borderRadius: 8, padding: "12px 0",
+                  fontSize: "1.1rem", fontWeight: 600, cursor: "pointer"
+                }}
+              >Parent</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* NotFound Popup */}
       {showNotFoundPopup && (
         <div style={{

@@ -242,3 +242,128 @@ export const verifyLoginOtp = async (req, res) => {
     res.status(500).json({ message: 'OTP verification failed', error: err.message });
   }
 };
+
+// Helper to check email uniqueness across all user types
+async function isEmailUnique(email) {
+  const user = await User.findOne({ email });
+  return !user;
+}
+
+// Helper to check student email is not used by teacher/parent
+async function isStudentEmailUnique(email) {
+  const user = await User.findOne({ email });
+  if (!user) return true;
+  return user.registeredAs === 'Student';
+}
+
+// --- Student Registration ---
+export const registerStudent = async (req, res) => {
+  try {
+    const { name, email, school, class: userClass, otp, password } = req.body;
+    const cleanEmail = email.trim().toLowerCase();
+    // OTP check
+    const record = otpStore[cleanEmail];
+    if (!record || record.otp !== otp || record.expires < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+    // Email must not exist in any user
+    const exists = await User.findOne({ email: cleanEmail });
+    if (exists) return res.status(409).json({ message: 'Email already registered' });
+    // Also check not used as teacher/parent
+    // (already covered above, as all users are in one collection)
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      name,
+      registeredAs: 'Student',
+      email: cleanEmail,
+      password: hashedPassword,
+      school,
+      class: userClass,
+      phone: ""
+    });
+    await user.save();
+    delete otpStore[cleanEmail];
+    res.status(201).json({ message: 'Student registered successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Student registration failed', error: err.message });
+  }
+};
+
+// --- Teacher Registration ---
+export const registerTeacher = async (req, res) => {
+  try {
+    const { name, email, otp, password } = req.body;
+    const cleanEmail = email.trim().toLowerCase();
+    // OTP check
+    const record = otpStore[cleanEmail];
+    if (!record || record.otp !== otp || record.expires < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+    // Email must not exist in any user
+    const exists = await User.findOne({ email: cleanEmail });
+    if (exists) return res.status(409).json({ message: 'Email already registered' });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      name,
+      registeredAs: 'Teacher',
+      email: cleanEmail,
+      password: hashedPassword,
+      school: "",
+      class: "",
+      phone: ""
+    });
+    await user.save();
+    delete otpStore[cleanEmail];
+    res.status(201).json({ message: 'Teacher registered successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Teacher registration failed', error: err.message });
+  }
+};
+
+// --- Parent Registration ---
+export const registerParent = async (req, res) => {
+  try {
+    const { name, email, otp, password, studentEmail } = req.body;
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanStudentEmail = (studentEmail || "").trim().toLowerCase();
+    // OTP check
+    const record = otpStore[cleanEmail];
+    if (!record || record.otp !== otp || record.expires < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+    // Email must not exist in any user
+    const exists = await User.findOne({ email: cleanEmail });
+    if (exists) return res.status(409).json({ message: 'Email already registered' });
+    // Student must exist
+    const student = await User.findOne({ email: cleanStudentEmail, registeredAs: 'Student' });
+    if (!student) return res.status(404).json({ message: 'Student not found' });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new User({
+      name,
+      registeredAs: 'Parent',
+      email: cleanEmail,
+      password: hashedPassword,
+      school: "",
+      class: "",
+      phone: ""
+    });
+    await user.save();
+    delete otpStore[cleanEmail];
+    res.status(201).json({ message: 'Parent registered successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Parent registration failed', error: err.message });
+  }
+};
+
+// --- Find Student by Email ---
+export const findStudentByEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: cleanEmail, registeredAs: 'Student' });
+    if (!user) return res.status(404).json({ message: 'Student not found' });
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ message: 'Error finding student', error: err.message });
+  }
+};
