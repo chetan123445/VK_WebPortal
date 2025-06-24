@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { FaBars } from 'react-icons/fa';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 import ProfileMenu from './ProfileMenu';
 import { getUserData, getToken } from "../utils/auth.js";
