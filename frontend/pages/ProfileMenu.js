@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import imageCompression from 'browser-image-compression';
 import { useRouter } from 'next/navigation';
 
-// ... existing code ...
 const DEFAULT_AVATAR = '/default-avatar.png'; // Correct path for default avatar in uploads folder
-// ... existing code ...// Place a default avatar in public if needed
+// Place a default avatar in public if needed
 
 export default function ProfileMenu({ userEmail, userData, avatarStyle, onProfileUpdate }) {
   const [open, setOpen] = useState(false);
@@ -49,7 +48,7 @@ export default function ProfileMenu({ userEmail, userData, avatarStyle, onProfil
       });
       setPreview(profile.photo ? profile.photo : DEFAULT_AVATAR);
     }
-  };
+  }, [open, profile]);
 
   // Handle photo preview
   useEffect(() => {

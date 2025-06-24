@@ -276,3 +276,26 @@ export const verifyLoginOtp = async (req, res) => {
     res.status(500).json({ message: 'OTP verification failed', error: err.message });
   }
 };
+
+// GET /api/verify-token - Verify JWT token and return user profile
+export const verifyToken = async (req, res) => {
+  try {
+    // User is already attached to req by authenticateToken middleware
+    const user = req.user;
+    
+    // Convert photo buffer to base64 string for frontend
+    let userObj = user.toObject();
+    if (userObj.photo && userObj.photo.data) {
+      userObj.photo = `data:${userObj.photo.contentType};base64,${userObj.photo.data.toString('base64')}`;
+    } else {
+      userObj.photo = null;
+    }
+    
+    res.json({ 
+      message: 'Token verified',
+      user: userObj
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Token verification failed', error: err.message });
+  }
+};

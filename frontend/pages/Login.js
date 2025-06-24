@@ -1,6 +1,9 @@
 "use client";
 import React, { useState } from "react";
+// import Register from "./Register"; // Remove this import
 import { useRouter } from "next/navigation";
+import { BASE_API_URL } from "./apiurl";
+import { setToken, setUserData } from "../utils/auth.js";
 
 export default function Login() {
   const [mode, setMode] = useState("password"); // "password" or "otp"
@@ -12,7 +15,6 @@ export default function Login() {
   const [msg, setMsg] = useState("");
   const [showRegister, setShowRegister] = useState(false);
   const [showNotFoundPopup, setShowNotFoundPopup] = useState(false);
-  const [showRegisterRole, setShowRegisterRole] = useState(false);
   const router = useRouter();
 
   const handlePasswordLogin = async (e) => {
@@ -47,8 +49,20 @@ export default function Login() {
         // Store user email for MainHome superadmin check (backward compatibility)
         localStorage.setItem("userEmail", cleanEmail);
         
-        // Redirect to mainhome page
-        router.push("/MainHome");
+        // Redirect to dashboard based on user type
+        if (data.user && data.user.registeredAs) {
+          if (data.user.registeredAs === "Student") {
+            router.push("/student/dashboard");
+          } else if (data.user.registeredAs === "Teacher") {
+            router.push("/teacher/dashboard");
+          } else if (data.user.registeredAs === "Parent") {
+            router.push("/parent/dashboard");
+          } else {
+            router.push("/MainHome");
+          }
+        } else {
+          router.push("/MainHome");
+        }
       } else {
         const data = await res.json();
         setError(data.message || "Login failed.");
@@ -101,7 +115,20 @@ export default function Login() {
         // Store user email for MainHome superadmin check (backward compatibility)
         localStorage.setItem("userEmail", email.trim().toLowerCase());
         
-        router.push("/MainHome");
+        // Redirect to dashboard based on user type
+        if (data.user && data.user.registeredAs) {
+          if (data.user.registeredAs === "Student") {
+            router.push("/student/dashboard");
+          } else if (data.user.registeredAs === "Teacher") {
+            router.push("/teacher/dashboard");
+          } else if (data.user.registeredAs === "Parent") {
+            router.push("/parent/dashboard");
+          } else {
+            router.push("/MainHome");
+          }
+        } else {
+          router.push("/MainHome");
+        }
       } else {
         const data = await res.json();
         setError(data.message || "Invalid OTP.");
@@ -243,7 +270,7 @@ export default function Login() {
             alignItems: "center"
           }}>
             <button
-              onClick={() => setShowRegisterRole(true)}
+              onClick={() => setShowRegister(true)}
               style={{
                 background: "transparent",
                 color: "#1e3c72",
@@ -459,46 +486,89 @@ export default function Login() {
           )}
         </div>
       </div>
-      {/* Register Role Selection Modal */}
-      {showRegisterRole && (
+      {/* Register Modal: Choose type */}
+      {showRegister && (
         <div style={{
-          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000
+          position: "fixed",
+          top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 2000
         }}>
           <div style={{
-            background: "#fff", color: "#222", borderRadius: 16, padding: 32, minWidth: 320,
-            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)", position: "relative"
+            background: "#fff",
+            color: "#222",
+            borderRadius: 16,
+            padding: 32,
+            minWidth: 320,
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
+            textAlign: "center"
           }}>
-            <button onClick={() => setShowRegisterRole(false)} style={{
-              position: "absolute", top: 12, right: 12, background: "none",
-              border: "none", fontSize: 22, cursor: "pointer"
-            }}>&times;</button>
-            <h2 style={{ marginBottom: 18 }}>Register as</h2>
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ marginBottom: 18, fontWeight: 600, fontSize: "1.2rem" }}>
+              Register as:
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <button
-                onClick={() => { setShowRegisterRole(false); router.push("/register-student"); }}
+                onClick={() => { setShowRegister(false); router.push("/register-student"); }}
                 style={{
                   background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
-                  color: "#fff", border: "none", borderRadius: 8, padding: "12px 0",
-                  fontSize: "1.1rem", fontWeight: 600, cursor: "pointer"
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "12px 0",
+                  fontWeight: 600,
+                  fontSize: "1.1rem",
+                  cursor: "pointer"
                 }}
-              >Student</button>
+              >
+                Student
+              </button>
               <button
-                onClick={() => { setShowRegisterRole(false); router.push("/register-teacher"); }}
+                onClick={() => { setShowRegister(false); router.push("/register-teacher"); }}
                 style={{
-                  background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
-                  color: "#fff", border: "none", borderRadius: 8, padding: "12px 0",
-                  fontSize: "1.1rem", fontWeight: 600, cursor: "pointer"
+                  background: "linear-gradient(90deg, #1e3c72 0%, #ff8c00 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "12px 0",
+                  fontWeight: 600,
+                  fontSize: "1.1rem",
+                  cursor: "pointer"
                 }}
-              >Teacher</button>
+              >
+                Teacher
+              </button>
               <button
-                onClick={() => { setShowRegisterRole(false); router.push("/register-parent"); }}
+                onClick={() => { setShowRegister(false); router.push("/register-parent"); }}
                 style={{
-                  background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
-                  color: "#fff", border: "none", borderRadius: 8, padding: "12px 0",
-                  fontSize: "1.1rem", fontWeight: 600, cursor: "pointer"
+                  background: "linear-gradient(90deg, #ff0080 0%, #1e3c72 100%)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "12px 0",
+                  fontWeight: 600,
+                  fontSize: "1.1rem",
+                  cursor: "pointer"
                 }}
-              >Parent</button>
+              >
+                Parent
+              </button>
+              <button
+                onClick={() => setShowRegister(false)}
+                style={{
+                  background: "#eee",
+                  color: "#1e3c72",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "10px 0",
+                  fontWeight: 600,
+                  fontSize: "1.05rem",
+                  cursor: "pointer",
+                  marginTop: 8
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
