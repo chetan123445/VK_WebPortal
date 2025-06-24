@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import Register from "./Register";
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from "./apiurl";
+import { setToken, setUserData } from "../utils/auth.js";
 
 export default function Login() {
   const [mode, setMode] = useState("password"); // "password" or "otp"
@@ -37,10 +38,17 @@ export default function Login() {
         return;
       }
       if (res.ok) {
+        const data = await res.json();
         setMsg("Login successful!");
         setError("");
-        // Store user email for MainHome superadmin check
+        
+        // Store JWT token and user data
+        setToken(data.token);
+        setUserData(data.user);
+        
+        // Store user email for MainHome superadmin check (backward compatibility)
         localStorage.setItem("userEmail", cleanEmail);
+        
         // Redirect to mainhome page
         router.push("/MainHome");
       } else {
@@ -84,9 +92,17 @@ export default function Login() {
         body: JSON.stringify({ email: email.trim().toLowerCase(), otp })
       });
       if (res.ok) {
+        const data = await res.json();
         setMsg("OTP login successful!");
         setError("");
+        
+        // Store JWT token and user data
+        setToken(data.token);
+        setUserData(data.user);
+        
+        // Store user email for MainHome superadmin check (backward compatibility)
         localStorage.setItem("userEmail", email.trim().toLowerCase());
+        
         router.push("/MainHome");
       } else {
         const data = await res.json();

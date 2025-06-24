@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 import multer from 'multer';
 import path from 'path';
+import { generateToken } from '../middleware/auth.js';
 
 const otpStore = {}; // { email: { otp, expires } }
 const loginOtpStore = {}; // Separate store for login OTPs
@@ -36,13 +37,13 @@ const storage = multer.diskStorage({
 });
 export const upload = multer({ storage });
 
-// GET /api/profile?email=...
+// GET /api/profile - Get user profile (JWT authenticated)
 export const getProfile = async (req, res) => {
   try {
-    const email = (req.query.email || '').trim().toLowerCase();
-    if (!email) return res.status(400).json({ message: 'Email required' });
-    const user = await User.findOne({ email });
+    // User is already attached to req by authenticateToken middleware
+    const user = req.user;
     if (!user) return res.status(404).json({ message: 'User not found' });
+    
     // Convert photo buffer to base64 string for frontend
     let userObj = user.toObject();
     if (userObj.photo && userObj.photo.data) {
@@ -56,12 +57,12 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// PUT /api/profile (fields: email, phone, school, class, photo)
+// PUT /api/profile - Update user profile (JWT authenticated)
 export const updateProfile = async (req, res) => {
   try {
-    const { email, name, phone, school, class: userClass, deletePhoto } = req.body;
-    if (!email) return res.status(400).json({ message: 'Email required' });
-    const cleanEmail = email.trim().toLowerCase();
+    const { name, phone, school, class: userClass, deletePhoto } = req.body;
+    const userId = req.user._id;
+    
     const update = { name, phone, school, class: userClass };
     if (deletePhoto === true || deletePhoto === 'true') {
       update.photo = { data: undefined, contentType: undefined };
@@ -71,12 +72,14 @@ export const updateProfile = async (req, res) => {
         contentType: req.file.mimetype
       };
     }
-    const user = await User.findOneAndUpdate(
-      { email: cleanEmail },
+    
+    const user = await User.findByIdAndUpdate(
+      userId,
       { $set: update },
       { new: true }
     );
     if (!user) return res.status(404).json({ message: 'User not found' });
+    
     // Convert photo buffer to base64 string for frontend
     let userObj = user.toObject();
     if (userObj.photo && userObj.photo.data) {
@@ -89,6 +92,7 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: 'Error updating profile', error: err.message });
   }
 };
+
 // Verify transporter at startup
 transporter.verify(function(error, success) {
   if (error) {
@@ -197,7 +201,19 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Incorrect password" });
 
-    res.status(200).json({ message: "Login successful", user: { email: user.email, registeredAs: user.registeredAs } });
+    // Generate JWT token
+    const token = generateToken(user._id);
+
+    res.status(200).json({ 
+      message: "Login successful", 
+      token,
+      user: { 
+        id: user._id,
+        email: user.email, 
+        registeredAs: user.registeredAs,
+        name: user.name
+      } 
+    });
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }
@@ -235,10 +251,51 @@ export const verifyLoginOtp = async (req, res) => {
     if (!record || record.otp !== otp || record.expires < Date.now()) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
-    // Optionally, you can delete the OTP after successful verification
+    
+    // Get user details and generate token
+    const user = await User.findOne({ email: cleanEmail });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    // Generate JWT token
+    const token = generateToken(user._id);
+    
+    // Delete the OTP after successful verification
     delete loginOtpStore[cleanEmail];
-    res.json({ message: 'OTP verified' });
+    
+    res.json({ 
+      message: 'OTP verified',
+      token,
+      user: { 
+        id: user._id,
+        email: user.email, 
+        registeredAs: user.registeredAs,
+        name: user.name
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: 'OTP verification failed', error: err.message });
+  }
+};
+
+// GET /api/verify-token - Verify JWT token and return user profile
+export const verifyToken = async (req, res) => {
+  try {
+    // User is already attached to req by authenticateToken middleware
+    const user = req.user;
+    
+    // Convert photo buffer to base64 string for frontend
+    let userObj = user.toObject();
+    if (userObj.photo && userObj.photo.data) {
+      userObj.photo = `data:${userObj.photo.contentType};base64,${userObj.photo.data.toString('base64')}`;
+    } else {
+      userObj.photo = null;
+    }
+    
+    res.json({ 
+      message: 'Token verified',
+      user: userObj
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Token verification failed', error: err.message });
   }
 };

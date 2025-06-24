@@ -2,14 +2,18 @@
 import React, { useState, useEffect } from "react";
 import { FaBars } from 'react-icons/fa';
 import { BASE_API_URL } from "./apiurl";
-
+import ProtectedRoute from "../components/ProtectedRoute.js";
 import ProfileMenu from './ProfileMenu';
+import { getUserData, getToken } from "../utils/auth.js";
+
 // Hardcoded superadmin email for demo; in real use, get from auth/session
 const SUPERADMIN_EMAIL = "chetandudi791@gmail.com";
 
-export default function MainHome() {
-  // Get logged-in user email from localStorage (set after login/registration)
+function MainHomeContent() {
+  // Get logged-in user data from JWT token
+  const [userData, setUserData] = useState(null);
   const [userEmail, setUserEmail] = useState("");
+  const [profileData, setProfileData] = useState(null);
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [showViewAdmins, setShowViewAdmins] = useState(false);
   const [showRemoveAdmin, setShowRemoveAdmin] = useState(false);
@@ -18,30 +22,69 @@ export default function MainHome() {
   const [addStatus, setAddStatus] = useState("");
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false); // <-- ADD THIS LINE
-  const [menuOpen, setMenuOpen] = useState(false); // <-- ADD THIS LINE
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Fetch complete profile data
+  const fetchProfileData = async () => {
+    try {
+      const res = await fetch(`${BASE_API_URL}/profile`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setProfileData(data.user);
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile data:', error);
+    }
+  };
 
   useEffect(() => {
-    // Assume user email is stored in localStorage after login/registration
-    const email = localStorage.getItem("userEmail") || "";
-    setUserEmail(email);
+    // Get user data from JWT token
+    const user = getUserData();
+    if (user) {
+      setUserData(user);
+      setUserEmail(user.email);
+    } else {
+      // Fallback to localStorage for backward compatibility
+      const email = localStorage.getItem("userEmail") || "";
+      setUserEmail(email);
+    }
+
+    // Fetch complete profile data immediately
+    fetchProfileData();
 
     // Fetch admin info for this user to check isSuperAdmin
-    if (email) {
-      fetch(`http://localhost:8000/api/getadmins`)
+    if (userEmail) {
+      fetch(`${BASE_API_URL}/getadmins`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      })
         .then(res => res.json())
         .then(data => {
-          const found = (data.admins || []).find(a => a.email === email);
+          const found = (data.admins || []).find(a => a.email === userEmail);
           setIsSuperAdmin(found?.isSuperAdmin === true);
         })
         .catch(() => setIsSuperAdmin(false));
     }
-  }, []);
+  }, [userEmail]);
 
   // Fetch admins when modal opens
   useEffect(() => {
     if (showViewAdmins) {
-      fetch(`${BASE_API_URL}/getadmins`)
+      fetch(`${BASE_API_URL}/getadmins`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      })
         .then(res => res.json())
         .then(data => setAdmins(data.admins || []))
         .catch(() => setAdmins([]));
@@ -55,7 +98,10 @@ export default function MainHome() {
     try {
       const res = await fetch(`${BASE_API_URL}/addadmins`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${getToken()}`
+        },
         body: JSON.stringify({
           email: adminForm.email,
           isSuperAdmin: adminForm.isSuperAdmin,
@@ -81,7 +127,10 @@ export default function MainHome() {
     try {
       const res = await fetch(`${BASE_API_URL}/removeadmin`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${getToken()}`
+        },
         body: JSON.stringify({
           email: removeEmail,
           requesterEmail: userEmail
@@ -174,7 +223,12 @@ export default function MainHome() {
           </button>
         </div>
       )}
-      <ProfileMenu userEmail={userEmail} avatarStyle={{ width: 48, height: 48, borderRadius: '50%' }} />
+      <ProfileMenu 
+        userEmail={userEmail} 
+        userData={profileData}
+        avatarStyle={{ width: 48, height: 48, borderRadius: '50%' }} 
+        onProfileUpdate={fetchProfileData}
+      />
 
       {/* Add Admin Modal */}
       {showAddAdmin && (
@@ -333,5 +387,13 @@ export default function MainHome() {
         © {new Date().getFullYear()} VK Publications. All rights reserved.
       </div>
     </div>
+  );
+}
+
+export default function MainHome() {
+  return (
+    <ProtectedRoute>
+      <MainHomeContent />
+    </ProtectedRoute>
   );
 }

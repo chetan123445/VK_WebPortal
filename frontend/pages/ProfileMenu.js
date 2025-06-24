@@ -2,53 +2,82 @@ import React, { useState, useEffect, useRef } from 'react';
 import imageCompression from 'browser-image-compression';
 import { useRouter } from 'next/navigation';
 import { BASE_API_URL } from "./apiurl";
+import { logout, getToken, getUserData } from "../utils/auth.js";
 
-const DEFAULT_AVATAR = '/default-avatar.png'; // Correct path for default avatar in uploads folder
-// ... existing code ...// Place a default avatar in public if needed
+const DEFAULT_AVATAR = '/default-avatar.png';
 
-export default function ProfileMenu({ userEmail, avatarStyle }) {
+export default function ProfileMenu({ userEmail, userData, avatarStyle, onProfileUpdate }) {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [profile, setProfile] = useState(null);
   const [form, setForm] = useState({ name: '', phone: '', school: '', class: '', photo: null });
   const [preview, setPreview] = useState('');
   const [status, setStatus] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef();
   const router = useRouter();
 
-  // Fetch profile on open
+  // Set initial profile data from userData prop
   useEffect(() => {
-    if (open && userEmail) {
-      fetch(`${BASE_API_URL}/profile?email=${encodeURIComponent(userEmail)}`)
-        .then(res => res.json())
-        .then(data => {
-          setProfile(data.user);
-          setForm({
-            name: data.user.name || '',
-            phone: data.user.phone || '',
-            school: data.user.school || '',
-            class: data.user.class || '',
-            photo: null
-          });
-          setPreview(data.user.photo ? data.user.photo : DEFAULT_AVATAR);
-        })
-        .catch(() => setProfile(null));
-    }
-  }, [open, userEmail]);
-
-  // When modal opens, update form and preview from latest profile
-  useEffect(() => {
-    if (open && profile) {
+    if (userData && !profile) {
+      setProfile(userData);
       setForm({
-        name: profile.name || '',
-        phone: profile.phone || '',
-        school: profile.school || '',
-        class: profile.class || '',
+        name: userData.name || '',
+        phone: userData.phone || '',
+        school: userData.school || '',
+        class: userData.class || '',
         photo: null
       });
-      setPreview(profile.photo ? profile.photo : DEFAULT_AVATAR);
+      setPreview(userData.photo || DEFAULT_AVATAR);
     }
-  }, [open, profile]);
+  }, [userData, profile]);
+
+  // Fetch profile data immediately when component mounts (only if not already provided)
+  useEffect(() => {
+    if (!profile && !userData && !isLoading) {
+      fetchProfile();
+    }
+  }, []);
+
+  // Fetch profile on modal open (only if not already available)
+  useEffect(() => {
+    if (open && !profile && !userData) {
+      fetchProfile();
+    }
+  }, [open]);
+
+  const fetchProfile = async () => {
+    setIsLoading(true);
+    setStatus('');
+    try {
+      const res = await fetch(`${BASE_API_URL}/profile`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data.user);
+        setForm({
+          name: data.user.name || '',
+          phone: data.user.phone || '',
+          school: data.user.school || '',
+          class: data.user.class || '',
+          photo: null
+        });
+        setPreview(data.user.photo || DEFAULT_AVATAR);
+      } else {
+        setStatus('Failed to load profile');
+      }
+    } catch (error) {
+      console.error('Profile fetch error:', error);
+      setStatus('Failed to load profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle photo preview
   useEffect(() => {
@@ -60,16 +89,17 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
   }, [form.photo]);
 
   const handleEdit = () => setEditMode(true);
+  
   const handleCancel = () => {
     setEditMode(false);
     setForm({
-      name: profile?.name || '',
-      phone: profile?.phone || '',
-      school: profile?.school || '',
-      class: profile?.class || '',
+      name: profile?.name || userData?.name || '',
+      phone: profile?.phone || userData?.phone || '',
+      school: profile?.school || userData?.school || '',
+      class: profile?.class || userData?.class || '',
       photo: null
     });
-    setPreview(profile?.photo ? profile.photo : DEFAULT_AVATAR);
+    setPreview(profile?.photo || userData?.photo || DEFAULT_AVATAR);
     setStatus('');
   };
 
@@ -103,14 +133,19 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
     try {
       const res = await fetch(`${BASE_API_URL}/profile`, {
         method: 'PUT',
-        body: JSON.stringify({ email: userEmail, deletePhoto: true }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ deletePhoto: true })
       });
       const data = await res.json();
       if (res.ok) {
         setProfile(data.user);
         setPreview(DEFAULT_AVATAR);
-        setStatus('Photo deleted');
+        setStatus('Photo deleted successfully');
+        setTimeout(() => setStatus(''), 2000);
+        if (onProfileUpdate) onProfileUpdate();
       } else {
         setStatus(data.message || 'Failed to delete photo');
       }
@@ -125,8 +160,7 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
     return '';
   };
 
-  const handleSave = async e => {
-    e.preventDefault();
+  const handleSave = async () => {
     const validationError = validate();
     if (validationError) {
       setStatus(validationError);
@@ -134,34 +168,42 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
     }
     setStatus('Saving...');
     const formData = new FormData();
-    formData.append('email', userEmail);
     formData.append('name', form.name);
     formData.append('phone', form.phone);
     formData.append('school', form.school);
     formData.append('class', form.class);
     if (form.photo) formData.append('photo', form.photo);
+    
     try {
       const res = await fetch(`${BASE_API_URL}/profile`, {
         method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        },
         body: formData
       });
       const data = await res.json();
       if (res.ok) {
         setProfile(data.user);
         setEditMode(false);
-        setStatus('Profile updated!');
+        setStatus('Profile updated successfully!');
+        setTimeout(() => setStatus(''), 2000);
+        if (onProfileUpdate) onProfileUpdate();
       } else {
-        setStatus(data.message || 'Failed to update');
+        setStatus(data.message || 'Failed to update profile');
       }
     } catch {
-      setStatus('Failed to update');
+      setStatus('Failed to update profile');
     }
   };
 
   const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
+    logout();
     router.replace('/login');
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   // Avatar button (top-right)
@@ -170,104 +212,455 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
       <div style={{ position: 'absolute', top: 24, right: 32, zIndex: 2000 }}>
         <button
           onClick={() => setOpen(true)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            cursor: 'pointer', 
+            padding: 0,
+            borderRadius: '50%',
+            overflow: 'hidden',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            transition: 'transform 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
         >
           <img
-            src={profile?.photo ? profile.photo : DEFAULT_AVATAR}
+            src={profile?.photo || DEFAULT_AVATAR}
             alt="User Avatar"
-            style={avatarStyle || { width: 48, height: 48, borderRadius: '50%', border: '2px solid #fff', objectFit: 'cover' }}
+            style={avatarStyle || { 
+              width: 48, 
+              height: 48, 
+              borderRadius: '50%', 
+              border: '2px solid #fff', 
+              objectFit: 'cover',
+              backgroundColor: '#f0f0f0'
+            }}
           />
         </button>
       </div>
+
       {open && (
         <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh',
+          background: 'rgba(0,0,0,0.5)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          zIndex: 3000,
+          backdropFilter: 'blur(4px)'
         }}>
           <div style={{
-            background: '#fff', color: '#222', borderRadius: 16, padding: 32, minWidth: 340, boxShadow: '0 4px 24px rgba(0,0,0,0.18)', position: 'relative'
+            background: '#fff', 
+            color: '#222', 
+            borderRadius: 20, 
+            padding: 0, 
+            width: '90%',
+            maxWidth: 500,
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            position: 'relative'
           }}>
-            <button onClick={() => setOpen(false)} style={{ position: 'absolute', top: 12, right: 16, background: 'none', border: 'none', fontSize: 22, cursor: 'pointer' }}>&times;</button>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 18 }}>
-              <img
-                src={preview || DEFAULT_AVATAR}
-                alt="Profile"
-                style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', marginBottom: 8, border: '2px solid #1e3c72' }}
-              />
-              <div style={{ fontWeight: 700, fontSize: 18 }}>{profile?.name || profile?.email?.split('@')[0]}</div>
-              <div style={{ color: '#888', fontSize: 14 }}>{profile?.email}</div>
+            {/* Header */}
+            <div style={{
+              background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+              color: '#fff',
+              padding: '24px 32px',
+              textAlign: 'center',
+              position: 'relative'
+            }}>
+              <button 
+                onClick={() => setOpen(false)} 
+                style={{ 
+                  position: 'absolute', 
+                  top: 16, 
+                  right: 20, 
+                  background: 'rgba(255,255,255,0.2)', 
+                  border: 'none', 
+                  borderRadius: '50%',
+                  width: 32,
+                  height: 32,
+                  fontSize: 18, 
+                  cursor: 'pointer',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ×
+              </button>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={preview || userData?.photo || DEFAULT_AVATAR}
+                    alt="Profile"
+                    style={{ 
+                      width: 80, 
+                      height: 80, 
+                      borderRadius: '50%', 
+                      objectFit: 'cover', 
+                      border: '3px solid rgba(255,255,255,0.3)',
+                      backgroundColor: '#f0f0f0'
+                    }}
+                  />
+                  {editMode && (
+                    <button
+                      onClick={triggerFileInput}
+                      style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        right: 0,
+                        background: '#fff',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: 28,
+                        height: 28,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                      }}
+                    >
+                      📷
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 4 }}>
+                    {profile?.name || userData?.name || 'User Profile'}
+                  </div>
+                  <div style={{ opacity: 0.9, fontSize: 14 }}>
+                    {profile?.email || userData?.email || userEmail}
+                  </div>
+                </div>
+              </div>
             </div>
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <label>Name: <span style={{ color: 'red' }}>*</span>
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                  required
-                  style={{ width: '100%', padding: 7, borderRadius: 4, border: '1px solid #bbb', marginTop: 2 }}
-                />
-              </label>
-              <label>School Name:
-                <input
-                  type="text"
-                  name="school"
-                  value={form.school}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                  style={{ width: '100%', padding: 7, borderRadius: 4, border: '1px solid #bbb', marginTop: 2 }}
-                />
-              </label>
-              <label>Class:
-                <input
-                  type="text"
-                  name="class"
-                  value={form.class}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                  required
-                  style={{ width: '100%', padding: 7, borderRadius: 4, border: '1px solid #bbb', marginTop: 2 }}
-                />
-              </label>
-              <label>Phone No.:
-                <input
-                  type="text"
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                  maxLength={10}
-                  style={{ width: '100%', padding: 7, borderRadius: 4, border: '1px solid #bbb', marginTop: 2 }}
-                />
-              </label>
-              <label>Photo:
-                <input
-                  type="file"
-                  name="photo"
-                  accept="image/png, image/jpeg, image/jpg"
-                  ref={fileInputRef}
-                  onChange={handleChange}
-                  disabled={!editMode}
-                  style={{ marginTop: 2 }}
-                />
-                {editMode && profile?.photo && (
-                  <button type="button" onClick={handleDeletePhoto} style={{ marginLeft: 10, background: '#c0392b', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 14px', fontWeight: 600, cursor: 'pointer' }}>Delete Photo</button>
-                )}
-              </label>
-              {!editMode ? (
-                <button type="button" onClick={handleEdit} style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+
+            {/* Content */}
+            <div style={{ padding: '32px', maxHeight: '60vh', overflowY: 'auto' }}>
+              {isLoading ? (
+                <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                  <div style={{ fontSize: 16, color: '#666' }}>Loading profile...</div>
+                </div>
               ) : (
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button type="submit" style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
-                  <button type="button" onClick={handleCancel} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {/* Form Fields */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      name="photo"
+                      accept="image/*"
+                      onChange={handleChange}
+                      style={{ display: 'none' }}
+                    />
+
+                    {/* Name Field */}
+                    <div>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: 8, 
+                        fontWeight: 600, 
+                        color: '#333',
+                        fontSize: 14
+                      }}>
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !editMode) {
+                            e.preventDefault();
+                          }
+                        }}
+                        disabled={!editMode}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: 8,
+                          border: editMode ? '2px solid #e1e5e9' : '2px solid #f0f0f0',
+                          fontSize: 16,
+                          backgroundColor: editMode ? '#fff' : '#f8f9fa',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+
+                    {/* Email Field (Read-only) */}
+                    <div>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: 8, 
+                        fontWeight: 600, 
+                        color: '#333',
+                        fontSize: 14
+                      }}>
+                        Email Address
+                      </label>
+                      <input
+                        type="email"
+                        value={profile?.email || userData?.email || userEmail}
+                        disabled
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: 8,
+                          border: '2px solid #f0f0f0',
+                          fontSize: 16,
+                          backgroundColor: '#f8f9fa',
+                          color: '#666'
+                        }}
+                      />
+                    </div>
+
+                    {/* Phone Field */}
+                    <div>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: 8, 
+                        fontWeight: 600, 
+                        color: '#333',
+                        fontSize: 14
+                      }}>
+                        Phone Number
+                      </label>
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !editMode) {
+                            e.preventDefault();
+                          }
+                        }}
+                        disabled={!editMode}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: 8,
+                          border: editMode ? '2px solid #e1e5e9' : '2px solid #f0f0f0',
+                          fontSize: 16,
+                          backgroundColor: editMode ? '#fff' : '#f8f9fa',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
+
+                    {/* School Field */}
+                    <div>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: 8, 
+                        fontWeight: 600, 
+                        color: '#333',
+                        fontSize: 14
+                      }}>
+                        School/Institution
+                      </label>
+                      <input
+                        type="text"
+                        name="school"
+                        value={form.school}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !editMode) {
+                            e.preventDefault();
+                          }
+                        }}
+                        disabled={!editMode}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: 8,
+                          border: editMode ? '2px solid #e1e5e9' : '2px solid #f0f0f0',
+                          fontSize: 16,
+                          backgroundColor: editMode ? '#fff' : '#f8f9fa',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="Enter your school name"
+                      />
+                    </div>
+
+                    {/* Class Field */}
+                    <div>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: 8, 
+                        fontWeight: 600, 
+                        color: '#333',
+                        fontSize: 14
+                      }}>
+                        Class/Year *
+                      </label>
+                      <input
+                        type="text"
+                        name="class"
+                        value={form.class}
+                        onChange={handleChange}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !editMode) {
+                            e.preventDefault();
+                          }
+                        }}
+                        disabled={!editMode}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: 8,
+                          border: editMode ? '2px solid #e1e5e9' : '2px solid #f0f0f0',
+                          fontSize: 16,
+                          backgroundColor: editMode ? '#fff' : '#f8f9fa',
+                          transition: 'all 0.2s ease'
+                        }}
+                        placeholder="Enter your class or year"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Status Message */}
+                  {status && (
+                    <div style={{
+                      padding: '12px 16px',
+                      borderRadius: 8,
+                      backgroundColor: status.includes('success') ? '#d4edda' : '#f8d7da',
+                      color: status.includes('success') ? '#155724' : '#721c24',
+                      fontSize: 14,
+                      textAlign: 'center'
+                    }}>
+                      {status}
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+                    {!editMode ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleEdit}
+                          style={{
+                            flex: 1,
+                            padding: '12px 24px',
+                            background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 8,
+                            fontSize: 16,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.target.style.transform = 'translateY(-1px)'}
+                          onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                        >
+                          Edit Profile
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          style={{
+                            padding: '12px 24px',
+                            background: '#dc3545',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 8,
+                            fontSize: 16,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.target.style.background = '#c82333'}
+                          onMouseLeave={(e) => e.target.style.background = '#dc3545'}
+                        >
+                          Logout
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={handleSave}
+                          style={{
+                            flex: 1,
+                            padding: '12px 24px',
+                            background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 8,
+                            fontSize: 16,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.target.style.transform = 'translateY(-1px)'}
+                          onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                        >
+                          Save Changes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleCancel}
+                          style={{
+                            padding: '12px 24px',
+                            background: '#6c757d',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 8,
+                            fontSize: 16,
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.target.style.background = '#5a6268'}
+                          onMouseLeave={(e) => e.target.style.background = '#6c757d'}
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Photo Actions (only in edit mode) */}
+                  {editMode && (profile?.photo || userData?.photo) && (
+                    <div style={{ textAlign: 'center', marginTop: 16 }}>
+                      <button
+                        type="button"
+                        onClick={handleDeletePhoto}
+                        style={{
+                          padding: '8px 16px',
+                          background: '#dc3545',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 6,
+                          fontSize: 14,
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.target.style.background = '#c82333'}
+                        onMouseLeave={(e) => e.target.style.background = '#dc3545'}
+                      >
+                        Remove Photo
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
-              <div style={{ marginTop: 8, color: '#1e3c72', fontWeight: 500 }}>{status}</div>
-            </form>
-            <button onClick={handleLogout} style={{ marginTop: 18, background: '#c0392b', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer', width: '100%' }}>
-              Logout
-            </button>
+            </div>
           </div>
         </div>
       )}
