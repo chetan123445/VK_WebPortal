@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { BASE_API_URL } from "./apiurl";
+import { useRouter } from "next/navigation";
 
 // ...existing styles...
 const btnStyle = {
@@ -18,6 +19,7 @@ export default function RegisterStudent() {
   });
   const [otpSent, setOtpSent] = useState(false);
   const [msg, setMsg] = useState(""); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -60,7 +62,9 @@ export default function RegisterStudent() {
       if (res.ok) {
         setMsg("Registration successful! Redirecting...");
         localStorage.setItem("userEmail", form.email.trim().toLowerCase());
-        setTimeout(() => { window.location.href = "/student/dashboard"; }, 1200);
+        setTimeout(() => { 
+          router.replace("/student/dashboard"); 
+        }, 1200);
       } else {
         const data = await res.json(); setError(data.message || "Registration failed.");
       }

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { BASE_API_URL } from "./apiurl";
 
-// ...existing styles...
 const btnStyle = {
   background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
   color: "#fff", border: "none", borderRadius: 8, padding: "12px 0",
@@ -16,6 +16,7 @@ export default function RegisterTeacher() {
   const [form, setForm] = useState({ name: '', email: '', otp: '', password: '' });
   const [otpSent, setOtpSent] = useState(false);
   const [msg, setMsg] = useState(""); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -50,7 +51,9 @@ export default function RegisterTeacher() {
       if (res.ok) {
         setMsg("Registration successful! Redirecting...");
         localStorage.setItem("userEmail", form.email.trim().toLowerCase());
-        setTimeout(() => { window.location.href = "/teacher/dashboard"; }, 1200);
+        setTimeout(() => { 
+          router.replace("/teacher/dashboard"); 
+        }, 1200);
       } else {
         const data = await res.json(); setError(data.message || "Registration failed.");
       }

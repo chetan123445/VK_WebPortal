@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { BASE_API_URL } from "./apiurl";
 
 const btnStyle = {
@@ -33,6 +34,7 @@ export default function RegisterParent() {
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   // Step 1: Verify child email exists
   const handleVerifyChild = async (e) => {
@@ -258,7 +260,7 @@ export default function RegisterParent() {
         setMsg("Registration successful! Redirecting...");
         localStorage.setItem("userEmail", form.parentEmail.trim().toLowerCase());
         setTimeout(() => {
-          window.location.href = "/parent/dashboard";
+          router.replace("/parent/dashboard");
         }, 1200);
       } else {
         const data = await res.json();
