@@ -22,6 +22,7 @@ function MainHomeContent() {
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // Fetch complete profile data
   const fetchProfileData = async () => {
@@ -53,6 +54,10 @@ function MainHomeContent() {
       const email = localStorage.getItem("userEmail") || "";
       setUserEmail(email);
     }
+
+    // Check if user is superadmin from localStorage
+    const isSuper = typeof window !== "undefined" ? localStorage.getItem("isSuperAdmin") === "true" : false;
+    setIsSuperAdmin(isSuper);
 
     // Fetch complete profile data immediately
     fetchProfileData();
@@ -170,7 +175,7 @@ function MainHomeContent() {
       >
         <FaBars size={32} color="#1e3c72" />
       </button>
-      {/* Side menu - always show */}
+      {/* Side menu - show options based on superadmin */}
       {menuOpen && (
         <div style={{
           position: 'fixed',
@@ -187,45 +192,48 @@ function MainHomeContent() {
           padding: '32px 18px 18px 18px',
         }}>
           <button onClick={() => setMenuOpen(false)} style={{ alignSelf: 'flex-end', background: 'none', border: 'none', fontSize: 26, color: '#1e3c72', cursor: 'pointer', marginBottom: 18 }}>&times;</button>
-          {/* Show Add/Remove Admin for all admins */}
-          <button
-            onClick={() => { setShowRemoveAdmin(true); setMenuOpen(false); }}
-            style={{
-              background: '#fff',
-              color: '#c0392b',
-              border: 'none',
-              borderRadius: 6,
-              padding: '10px 0',
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginBottom: 16,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10
-            }}
-          >
-            <FaUserMinus style={{ color: '#c0392b', fontSize: 18 }} />
-            Remove Admin
-          </button>
-          <button
-            onClick={() => { setShowAddAdmin(true); setMenuOpen(false); }}
-            style={{
-              background: '#fff',
-              color: '#1e3c72',
-              border: 'none',
-              borderRadius: 6,
-              padding: '10px 0',
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginBottom: 16,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10
-            }}
-          >
-            <FaUserPlus style={{ color: '#1e3c72', fontSize: 18 }} />
-            Add Admin
-          </button>
+          {isSuperAdmin && (
+            <>
+              <button
+                onClick={() => { setShowRemoveAdmin(true); setMenuOpen(false); }}
+                style={{
+                  background: '#fff',
+                  color: '#c0392b',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '10px 0',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}
+              >
+                <FaUserMinus style={{ color: '#c0392b', fontSize: 18 }} />
+                Remove Admin
+              </button>
+              <button
+                onClick={() => { setShowAddAdmin(true); setMenuOpen(false); }}
+                style={{
+                  background: '#fff',
+                  color: '#1e3c72',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '10px 0',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  marginBottom: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10
+                }}
+              >
+                <FaUserPlus style={{ color: '#1e3c72', fontSize: 18 }} />
+                Add Admin
+              </button>
+            </>
+          )}
           <button
             onClick={() => { setShowViewAdmins(true); setMenuOpen(false); }}
             style={{
@@ -254,7 +262,7 @@ function MainHomeContent() {
       />
 
       {/* Add Admin Modal */}
-      {showAddAdmin && (
+      {showAddAdmin && isSuperAdmin && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
@@ -301,7 +309,7 @@ function MainHomeContent() {
       )}
 
       {/* Remove Admin Modal */}
-      {showRemoveAdmin && (
+      {showRemoveAdmin && isSuperAdmin && (
         <div style={{
           position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
           background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000

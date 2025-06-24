@@ -31,8 +31,20 @@ export default function Login() {
         body: JSON.stringify({ email: cleanEmail, password })
       });
       if (adminRes.ok) {
-        // Success: redirect to admin dashboard
+        // Fetch isSuperAdmin info
+        const superRes = await fetch(`${BASE_API_URL}/check-superadmin`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail })
+        });
+        let isSuperAdmin = false;
+        if (superRes.ok) {
+          const superData = await superRes.json();
+          isSuperAdmin = !!superData.isSuperAdmin;
+        }
+        // Store both email and isSuperAdmin in localStorage
         localStorage.setItem("userEmail", cleanEmail);
+        localStorage.setItem("isSuperAdmin", isSuperAdmin ? "true" : "false");
         setMsg("Admin login successful!");
         setError("");
         router.push("/admin/dashboard");

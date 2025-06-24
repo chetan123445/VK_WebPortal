@@ -89,28 +89,37 @@ export const addAdmin = async (req, res) => {
   }
 };
 
-// Remove an admin (only superadmin can remove, but cannot remove another superadmin)
-// No changes needed for password
+// Remove an admin (only superadmin can remove)
 export const removeAdmin = async (req, res) => {
   try {
     const { email, requesterEmail } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
-    // Check if requester is a superadmin in the Admin table
+    // Check if requester is a superadmin
     const requester = await Admin.findOne({ email: requesterEmail });
     if (!requester || !requester.isSuperAdmin) {
-      return res.status(403).json({ message: 'Only superadmin can remove admins' });
+      return res.status(403).json({ message: 'Only superadmins can remove admins.' });
     }
 
-    // Prevent removing another superadmin
-    const toRemove = await Admin.findOne({ email });
-    if (!toRemove) return res.status(404).json({ message: 'Admin not found' });
-    if (toRemove.isSuperAdmin) {
-      return res.status(403).json({ message: 'Cannot remove another superadmin' });
+    // Don't allow removing yourself
+    if (email === requesterEmail) {
+      return res.status(400).json({ message: "You can't remove yourself." });
+    }
+
+    // Check if admin exists
+    const admin = await Admin.findOne({ email });
+    if (!admin) return res.status(404).json({ message: 'Admin not found.' });
+
+    // Prevent removing last superadmin
+    if (admin.isSuperAdmin) {
+      const superAdminCount = await Admin.countDocuments({ isSuperAdmin: true });
+      if (superAdminCount <= 1) {
+        return res.status(400).json({ message: "At least one superadmin must remain." });
+      }
     }
 
     await Admin.deleteOne({ email });
-    res.status(200).json({ message: 'Admin removed' });
+    res.status(200).json({ message: 'Admin removed successfully.' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to remove admin', error: err.message });
   }
@@ -148,3 +157,19 @@ export const adminLogin = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+// Check if an email is a superadmin
+export const checkSuperAdmin = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ isSuperAdmin: false, message: "Email required" });
+  try {
+    const admin = await Admin.findOne({ email: email.trim().toLowerCase() });
+    if (admin && admin.isSuperAdmin) {
+      return res.json({ isSuperAdmin: true });
+    }
+    return res.json({ isSuperAdmin: false });
+  } catch (err) {
+    return res.status(500).json({ isSuperAdmin: false, message: "Server error" });
+  }
+};
+
