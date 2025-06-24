@@ -45,5 +45,7 @@ router.post('/api/isadmin', isAdmin);
 router.post('/api/addadmins', addAdmin);
 router.delete('/api/removeadmin', removeAdmin);
 router.post('/api/admin/login', adminLogin); // Secure admin login route
+// Example (not required if handled in addAdmin):
+// router.post('/api/admin/send-admin-password', sendAdminPasswordEmailHandler);
 
 export default router;

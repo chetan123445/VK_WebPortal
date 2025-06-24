@@ -86,7 +86,7 @@ function MainHomeContent() {
         })
       });
       if (res.ok) {
-        setAddStatus("Admin added!");
+        setAddStatus("Admin added! Credentials sent to email.");
         setAdminForm({ email: "", isSuperAdmin: false });
         setTimeout(() => {
           setShowAddAdmin(false);
