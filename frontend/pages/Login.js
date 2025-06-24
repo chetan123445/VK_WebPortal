@@ -24,7 +24,8 @@ export default function Login() {
       const res = await fetch("http://localhost:8000/api/user/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, password })
+        body: JSON.stringify({ email: cleanEmail, password }),
+        credentials: "include"
       });
       if (res.status === 404) {
         setError("");
@@ -38,8 +39,6 @@ export default function Login() {
       if (res.ok) {
         setMsg("Login successful!");
         setError("");
-        // Store user email for MainHome superadmin check
-        localStorage.setItem("userEmail", cleanEmail);
         // Redirect to mainhome page
         router.push("/MainHome");
       } else {
@@ -80,12 +79,12 @@ export default function Login() {
       const res = await fetch("http://localhost:8000/api/user/verify-login-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), otp })
+        body: JSON.stringify({ email: email.trim().toLowerCase(), otp }),
+        credentials: "include"
       });
       if (res.ok) {
         setMsg("OTP login successful!");
         setError("");
-        localStorage.setItem("userEmail", email.trim().toLowerCase());
         router.push("/MainHome");
       } else {
         const data = await res.json();

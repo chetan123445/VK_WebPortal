@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt';
 import nodemailer from 'nodemailer';
 import multer from 'multer';
 import path from 'path';
+import jwt from 'jsonwebtoken';
 
 const otpStore = {}; // { email: { otp, expires } }
 const loginOtpStore = {}; // Separate store for login OTPs
@@ -35,6 +36,9 @@ const storage = multer.diskStorage({
   }
 });
 export const upload = multer({ storage });
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+const JWT_EXPIRES_IN = '7d'; // You can adjust as needed
 
 // GET /api/profile?email=...
 export const getProfile = async (req, res) => {
@@ -197,10 +201,32 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Incorrect password" });
 
+    // Create JWT payload
+    const payload = {
+      id: user._id,
+      email: user.email,
+      registeredAs: user.registeredAs
+    };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+    // Send JWT as httpOnly cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      // secure: true, // Uncomment if using HTTPS
+      // maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
     res.status(200).json({ message: "Login successful", user: { email: user.email, registeredAs: user.registeredAs } });
   } catch (err) {
     res.status(500).json({ message: "Login failed", error: err.message });
   }
+};
+
+// Logout: clear the cookie
+export const logoutUser = (req, res) => {
+  res.clearCookie('token');
+  res.json({ message: 'Logged out successfully' });
 };
 
 export const sendLoginOtp = async (req, res) => {
@@ -240,5 +266,27 @@ export const verifyLoginOtp = async (req, res) => {
     res.json({ message: 'OTP verified' });
   } catch (err) {
     res.status(500).json({ message: 'OTP verification failed', error: err.message });
+  }
+};
+
+// JWT authentication middleware
+export const authMiddleware = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: 'Not authenticated' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+};
+
+// Endpoint to check if user is authenticated
+export const checkAuth = (req, res) => {
+  if (req.user) {
+    res.json({ loggedIn: true, user: req.user });
+  } else {
+    res.status(401).json({ loggedIn: false });
   }
 };

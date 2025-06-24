@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import router from "./routes/routes.js";
 import DBconnection from './database/db.js';
 import dotenv from "dotenv";
+import cookieParser from 'cookie-parser';
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use('/', router);
 app.use('/uploads', express.static('backend/public/uploads'));

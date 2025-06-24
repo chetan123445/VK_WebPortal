@@ -21,20 +21,30 @@ export default function MainHome() {
   const [menuOpen, setMenuOpen] = useState(false); // <-- ADD THIS LINE
 
   useEffect(() => {
-    // Assume user email is stored in localStorage after login/registration
-    const email = localStorage.getItem("userEmail") || "";
-    setUserEmail(email);
-
-    // Fetch admin info for this user to check isSuperAdmin
-    if (email) {
-      fetch(`http://localhost:8000/api/getadmins`)
-        .then(res => res.json())
-        .then(data => {
-          const found = (data.admins || []).find(a => a.email === email);
-          setIsSuperAdmin(found?.isSuperAdmin === true);
-        })
-        .catch(() => setIsSuperAdmin(false));
-    }
+    // Check persistent login
+    fetch('http://localhost:8000/api/user/check-auth', {
+      method: 'GET',
+      credentials: 'include'
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Not logged in');
+        return res.json();
+      })
+      .then(data => {
+        setUserEmail(data.user.email);
+        // Fetch admin info for this user to check isSuperAdmin
+        fetch(`http://localhost:8000/api/getadmins`)
+          .then(res => res.json())
+          .then(data => {
+            const found = (data.admins || []).find(a => a.email === data.user.email);
+            setIsSuperAdmin(found?.isSuperAdmin === true);
+          })
+          .catch(() => setIsSuperAdmin(false));
+      })
+      .catch(() => {
+        setUserEmail("");
+        window.location.href = "/Login";
+      });
   }, []);
 
   // Fetch admins when modal opens

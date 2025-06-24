@@ -158,9 +158,11 @@ export default function ProfileMenu({ userEmail, avatarStyle }) {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
+  const handleLogout = async () => {
+    await fetch('http://localhost:8000/api/user/logout', {
+      method: 'POST',
+      credentials: 'include'
+    });
     router.replace('/login');
   };
 
