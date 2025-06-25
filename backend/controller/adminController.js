@@ -32,7 +32,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Real email sending logic using nodemailer
-async function sendAdminPasswordEmail(email, password) {
+async function sendAdminPasswordEmail(email, password, status = "Admin") {
   if (!emailUser || !emailPass) {
     console.error('EMAIL_USER or EMAIL_PASS missing at sendAdminPasswordEmail');
     return;
@@ -40,8 +40,24 @@ async function sendAdminPasswordEmail(email, password) {
   const mailOptions = {
     from: emailUser,
     to: email,
-    subject: 'Your VK Publications Admin Account',
-    text: `You have been added as an admin.\n\nLogin Email: ${email}\nPassword: ${password}\n\nPlease login and change your password after first login.`
+    subject: `Your VK Publications ${status} Account`,
+    text: `You have been added as a ${status.toLowerCase()}.\n\nLogin Email: ${email}\nPassword: ${password}\nStatus: ${status}\n\nPlease login and change your password after first login.`
+  };
+
+  await transporter.sendMail(mailOptions);
+}
+
+// Send email to removed admin
+async function sendAdminRemovedEmail(email) {
+  if (!emailUser || !emailPass) {
+    console.error('EMAIL_USER or EMAIL_PASS missing at sendAdminRemovedEmail');
+    return;
+  }
+  const mailOptions = {
+    from: emailUser,
+    to: email,
+    subject: 'VK Publications Admin Access Removed',
+    text: `This is to inform you that your admin access (email: ${email}) has been removed from VK Publications. If you believe this is a mistake, please contact support.`
   };
 
   await transporter.sendMail(mailOptions);
@@ -76,14 +92,15 @@ export const addAdmin = async (req, res) => {
     const admin = new Admin({ email, password: randomPassword, isSuperAdmin: !!isSuperAdmin });
     await admin.save();
 
-    // Send email to the new admin with their password
+    // Send email to the new admin with their password and status
+    const status = !!isSuperAdmin ? "Superadmin" : "Admin";
     try {
-      await sendAdminPasswordEmail(email, randomPassword);
+      await sendAdminPasswordEmail(email, randomPassword, status);
     } catch (emailErr) {
-      return res.status(201).json({ message: 'Admin added, but failed to send email.', error: emailErr.message });
+      return res.status(201).json({ message: `Admin added as ${status}, but failed to send email.`, error: emailErr.message });
     }
 
-    res.status(201).json({ message: 'Admin added and credentials sent to email.' });
+    res.status(201).json({ message: `Admin added as ${status} and credentials sent to email.` });
   } catch (err) {
     res.status(500).json({ message: 'Failed to add admin', error: err.message });
   }
@@ -110,6 +127,15 @@ export const removeAdmin = async (req, res) => {
     }
 
     await Admin.deleteOne({ email });
+
+    // Send removal email
+    try {
+      await sendAdminRemovedEmail(email);
+    } catch (emailErr) {
+      // Log but don't fail the removal if email fails
+      console.error("Failed to send admin removal email:", emailErr);
+    }
+
     res.status(200).json({ message: 'Admin removed successfully.' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to remove admin', error: err.message });
