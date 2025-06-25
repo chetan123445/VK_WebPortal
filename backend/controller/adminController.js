@@ -104,6 +104,11 @@ export const removeAdmin = async (req, res) => {
     const admin = await Admin.findOne({ email });
     if (!admin) return res.status(404).json({ message: 'Admin not found.' });
 
+    // Prevent removing another superadmin
+    if (admin.isSuperAdmin) {
+      return res.status(403).json({ message: "You can't remove another superadmin." });
+    }
+
     await Admin.deleteOne({ email });
     res.status(200).json({ message: 'Admin removed successfully.' });
   } catch (err) {
