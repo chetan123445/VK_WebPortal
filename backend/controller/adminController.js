@@ -133,11 +133,19 @@ export const adminLogin = async (req, res) => {
   if (!email || !password)
     return res.status(400).json({ message: 'Email and password required' });
   try {
+    // Always trim and lowercase for lookup
     const admin = await Admin.findOne({ email: email.trim().toLowerCase() });
-    if (!admin) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!admin) {
+      // Email not found in admin table
+      return res.status(404).json({ message: 'User not registered.' });
+    }
+    // Email found, check password
     const match = await bcrypt.compare(password, admin.password);
-    if (!match) return res.status(401).json({ message: 'Invalid credentials' });
-    // You can add JWT/session logic here if needed
+    if (!match) {
+      // Password does not match
+      return res.status(401).json({ message: 'Incorrect password.' });
+    }
+    // Success
     return res.json({ success: true, isAdmin: true, redirect: '/admin/dashboard' });
   } catch (err) {
     return res.status(500).json({ message: 'Server error' });

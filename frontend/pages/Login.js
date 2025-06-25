@@ -50,6 +50,14 @@ export default function Login() {
         router.push("/admin/dashboard");
         return;
       }
+      if (adminRes.status === 404) {
+        setError("User not registered.");
+        return;
+      }
+      if (adminRes.status === 401) {
+        setError("Incorrect password.");
+        return;
+      }
       // If unauthorized, continue to user login
     } catch (err) {
       // Ignore admin check errors, fallback to user table check
