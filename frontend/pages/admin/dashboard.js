@@ -156,6 +156,47 @@ function AdminDashboard() {
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
 
+  // PhoneInputBoxes component for 10-digit phone input
+  function PhoneInputBoxes({ value, onChange }) {
+    const inputsRef = useRef([]);
+    const handleInput = (e, idx) => {
+      const val = e.target.value.replace(/\D/g, '').slice(0, 1);
+      let newValue = value.split('');
+      newValue[idx] = val;
+      newValue = newValue.join('').slice(0, 10);
+      onChange(newValue);
+      // Move to next box if input
+      if (val && idx < 9 && inputsRef.current[idx + 1]) {
+        inputsRef.current[idx + 1].focus();
+      }
+    };
+    const handleKeyDown = (e, idx) => {
+      if (e.key === "Backspace" && !value[idx] && idx > 0) {
+        if (inputsRef.current[idx - 1]) inputsRef.current[idx - 1].focus();
+      }
+    };
+    return (
+      <div style={{ display: "flex", gap: 4 }}>
+        {[...Array(10)].map((_, i) => (
+          <input
+            key={i}
+            ref={el => inputsRef.current[i] = el}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            value={value[i] || ""}
+            onChange={e => handleInput(e, i)}
+            onKeyDown={e => handleKeyDown(e, i)}
+            style={{
+              width: 32, height: 40, textAlign: "center", fontSize: 18,
+              border: "1.5px solid #e0e0e0", borderRadius: 6
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+
   // Fetch profile on mount and when userEmail changes
   const fetchProfile = useCallback(() => {
     if (userEmail) {
@@ -301,6 +342,8 @@ function AdminDashboard() {
     const { name, value, files } = e.target;
     if (name === "photo" && files && files[0]) {
       setForm(f => ({ ...f, photo: files[0] }));
+    } else if (name === "phone") {
+      setForm(f => ({ ...f, phone: value.replace(/\D/g, '').slice(0, 10) }));
     } else {
       setForm(f => ({ ...f, [name]: value }));
     }
@@ -459,18 +502,9 @@ function AdminDashboard() {
                   </div>
                   <div>
                     <label style={{ fontWeight: 600, color: "#1e3c72" }}>Phone:</label>
-                    <input
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        borderRadius: 6,
-                        border: "1.5px solid #e0e0e0",
-                        fontSize: 16,
-                        marginTop: 4
-                      }}
+                    <PhoneInputBoxes
+                      value={form.phone || ""}
+                      onChange={val => setForm(f => ({ ...f, phone: val }))}
                     />
                   </div>
                 </div>
