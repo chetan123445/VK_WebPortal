@@ -55,7 +55,7 @@ export const sendRegisterOtp = async (req, res) => {
     const { email } = req.body;
     const cleanEmail = email.trim().toLowerCase();
     const otp = generateOtp();
-    otpStore[cleanEmail] = { otp, expires: Date.now() + 10 * 60 * 1000 }; // 10 min
+    otpStore[cleanEmail] = { otp, expires: Date.now() + 3 * 60 * 1000 }; // 3 min
 
     if (!emailUser || !emailPass) {
       console.error('EMAIL_USER or EMAIL_PASS missing at sendRegisterOtp');
@@ -183,7 +183,7 @@ export const sendLoginOtp = async (req, res) => {
       isAdmin = true;
     }
     const otp = generateOtp();
-    loginOtpStore[cleanEmail] = { otp, expires: Date.now() + 10 * 60 * 1000 }; // 10 min
+    loginOtpStore[cleanEmail] = { otp, expires: Date.now() + 15 * 1000 }; // 15 sec for testing
 
     await transporter.sendMail({
       from: emailUser,
@@ -204,6 +204,7 @@ export const verifyLoginOtp = async (req, res) => {
     const { email, otp } = req.body;
     const cleanEmail = email.trim().toLowerCase();
     const record = loginOtpStore[cleanEmail];
+    console.log("[OTP DEBUG] expires:", record?.expires, "now:", Date.now(), "valid:", record && record.expires >= Date.now());
     if (!record || record.otp !== otp || record.expires < Date.now()) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }

@@ -43,7 +43,7 @@ export const sendOtp = async (req, res) => {
     }
 
     const otp = generateOtp();
-    otpStore[cleanEmail] = { otp, expires: Date.now() + 10 * 60 * 1000 };
+    otpStore[cleanEmail] = { otp, expires: Date.now() + 3 * 60 * 1000 }; // 3 min
     await transporter.sendMail({
       from: emailUser,
       to: cleanEmail,

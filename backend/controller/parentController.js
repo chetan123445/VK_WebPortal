@@ -32,7 +32,7 @@ export const verifyChildEmail = async (req, res) => {
       return res.status(404).json({ message: "No child is registered with this email." });
     }
     const otp = generateOtp();
-    childOtpStore[cleanEmail] = { otp, expires: Date.now() + 10 * 60 * 1000 }; // 10 min
+    childOtpStore[cleanEmail] = { otp, expires: Date.now() + 3 * 60 * 1000 }; // 3 min
 
     await transporter.sendMail({
       from: emailUser,
