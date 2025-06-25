@@ -19,7 +19,11 @@ export default function ProfileMenu({ userEmail, userData, avatarStyle, onProfil
   // Fetch profile on mount and when userEmail changes
   useEffect(() => {
     if (userEmail) {
-      fetch(`http://localhost:8000/api/profile?email=${encodeURIComponent(userEmail)}`)
+      fetch(`${BASE_API_URL}/profile`, {
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      })
         .then(res => res.json())
         .then(data => {
           setProfile(data.user);

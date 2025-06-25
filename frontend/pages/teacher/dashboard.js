@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser } from "react-icons/fa";
+import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaBars, FaTimes } from "react-icons/fa";
 import ProfileMenu from '../ProfileMenu'; // If you want to use the same ProfileMenu as admin
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken } from "../../utils/auth.js";
 
 // Sidebar component for Teacher with feature buttons (like StudentSidebar)
-function TeacherSidebar({ userEmail, userPhoto, onMenuSelect }) {
+function TeacherSidebar({ userEmail, userPhoto, onMenuSelect, open, setOpen, selectedMenu }) {
   const menuItems = [
     { key: "test-generator", label: "Test Generator", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
     { key: "cbse-updates", label: "CBSE Updates", icon: <FaNewspaper style={{ fontSize: 18 }} /> },
@@ -19,53 +19,116 @@ function TeacherSidebar({ userEmail, userPhoto, onMenuSelect }) {
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> } // Add Profile option at the end
   ];
   return (
-    <aside style={{
-      width: 260,
-      background: "#fff",
-      borderRight: "1px solid #e0e0e0",
-      minHeight: "100vh",
-      padding: "32px 0 0 0",
-      position: "fixed",
-      left: 0,
-      top: 0,
-      zIndex: 100,
-      boxShadow: "2px 0 8px rgba(0,0,0,0.04)"
-    }}>
-      <div style={{ padding: "0 24px", marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, alignSelf: "flex-start" }}>Teacher Panel</div>
-        <img
-          src={userPhoto || "/default-avatar.png"}
-          alt="Profile"
-          style={{ width: 64, height: 64, borderRadius: "50%", margin: "10px 0", objectFit: "cover" }}
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          position: "fixed",
+          top: 24,
+          left: 24,
+          zIndex: 2001,
+          background: "#fff",
+          border: "none",
+          borderRadius: "50%",
+          width: 44,
+          height: 44,
+          boxShadow: "0 2px 8px rgba(30,60,114,0.10)",
+          display: open ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer"
+        }}
+        aria-label="Open menu"
+      >
+        <FaBars style={{ fontSize: 22, color: "#1e3c72" }} />
+      </button>
+      <aside style={{
+        width: open ? 260 : 0,
+        background: "#fff",
+        borderRight: open ? "1px solid #e0e0e0" : "none",
+        minHeight: "100vh",
+        padding: open ? "32px 0 0 0" : 0,
+        position: "fixed",
+        left: 0,
+        top: 0,
+        zIndex: 2000,
+        boxShadow: open ? "2px 0 16px rgba(30,60,114,0.07)" : "none",
+        overflow: "hidden",
+        transition: "width 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s"
+      }}>
+        <button
+          onClick={() => setOpen(false)}
+          style={{
+            position: "absolute",
+            top: 18,
+            right: 18,
+            background: "none",
+            border: "none",
+            fontSize: 22,
+            color: "#1e3c72",
+            cursor: "pointer",
+            display: open ? "block" : "none"
+          }}
+          aria-label="Close menu"
+        >
+          <FaTimes />
+        </button>
+        {open && (
+          <>
+            <div style={{ padding: "0 24px", marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, alignSelf: "flex-start", color: "#1e3c72" }}>Teacher Panel</div>
+              <img
+                src={userPhoto || "/default-avatar.png"}
+                alt="Profile"
+                style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
+              />
+              <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
+            </div>
+            <nav>
+              {menuItems.map(item => (
+                <button
+                  key={item.key}
+                  onClick={() => { onMenuSelect(item.key); setOpen(false); }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    width: "100%",
+                    background: selectedMenu === item.key ? "linear-gradient(90deg,#e0e7ff 0%,#f7fafd 100%)" : "none",
+                    border: "none",
+                    textAlign: "left",
+                    padding: "14px 28px",
+                    fontSize: 17,
+                    color: selectedMenu === item.key ? "#1e3c72" : "#444",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    borderLeft: selectedMenu === item.key ? "4px solid #1e3c72" : "4px solid transparent",
+                    transition: "background 0.18s, color 0.18s"
+                  }}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </>
+        )}
+      </aside>
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(30,60,114,0.10)",
+            zIndex: 1000
+          }}
         />
-        <div style={{ fontSize: 13, color: "#888" }}>{userEmail}</div>
-      </div>
-      <nav>
-        {menuItems.map(item => (
-          <button
-            key={item.key}
-            onClick={() => onMenuSelect(item.key)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              background: "none",
-              border: "none",
-              textAlign: "left",
-              padding: "12px 24px",
-              fontSize: 16,
-              color: "#1e3c72",
-              cursor: "pointer",
-              fontWeight: 700
-            }}
-          >
-            {item.icon}
-            {item.label}
-          </button>
-        ))}
-      </nav>
-    </aside>
+      )}
+    </>
   );
 }
 
@@ -82,17 +145,15 @@ export default function TeacherDashboard() {
   // Add userPhoto state to track the current photo for sidebar
   const [userPhoto, setUserPhoto] = useState('');
 
-  useEffect(() => {
-    setUserEmail(localStorage.getItem("userEmail") || "");
-  }, []);
+  // State to control sidebar open/close
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Fetch profile when "profile" menu is selected
-  useEffect(() => {
-    if (selectedMenu === "profile" && userEmail) {
+  // Fetch profile on mount and when userEmail changes (not just when profile menu is selected)
+  const fetchProfile = React.useCallback(() => {
+    if (userEmail) {
       fetch(`${BASE_API_URL}/profile`, {
         headers: {
-          'Authorization': `Bearer ${getToken()}`,
-          // Do NOT set Content-Type here for GET
+          'Authorization': `Bearer ${getToken()}`
         }
       })
         .then(res => res.json())
@@ -114,7 +175,23 @@ export default function TeacherDashboard() {
           setUserPhoto('');
         });
     }
-  }, [selectedMenu, userEmail]);
+  }, [userEmail]);
+
+  useEffect(() => {
+    setUserEmail(localStorage.getItem("userEmail") || "");
+  }, []);
+
+  // Fetch profile on mount and whenever userEmail changes
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
+
+  // Fetch profile again when switching to profile tab (to ensure latest data after edit)
+  useEffect(() => {
+    if (selectedMenu === "profile" && userEmail) {
+      fetchProfile();
+    }
+  }, [selectedMenu, userEmail, fetchProfile]);
 
   // Show preview when photo changes
   useEffect(() => {
@@ -183,6 +260,7 @@ export default function TeacherDashboard() {
         setStatus('Profile updated!');
         setPreview(data.user.photo || "/default-avatar.png");
         setUserPhoto(data.user.photo && data.user.photo !== "" ? data.user.photo : "");
+        fetchProfile(); // Ensure sidebar photo updates after save
       } else {
         setStatus(data.message || 'Failed to update profile');
       }
@@ -202,25 +280,59 @@ export default function TeacherDashboard() {
           </div>
         );
       }
-      return (
-        <div style={{
-          padding: 32,
-          maxWidth: 400,
-          margin: "0 auto",
-          background: "#fff",
-          borderRadius: 16,
-          boxShadow: "0 4px 24px rgba(0,0,0,0.08)"
-        }}>
-          <h2 style={{ marginBottom: 24 }}>Profile Details</h2>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-            <div style={{ position: "relative" }}>
-              <img
-                src={preview || "/default-avatar.png"}
-                alt="Profile"
-                style={{ width: 80, height: 80, borderRadius: "50%", objectFit: "cover", marginBottom: 12 }}
-              />
-              {editMode && (
-                <>
+      if (editMode) {
+        return (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(30,60,114,0.10)",
+            zIndex: 3000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            <div style={{
+              background: "#fff",
+              borderRadius: 24,
+              boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.13)",
+              padding: 36,
+              maxWidth: 420,
+              width: "95vw",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center"
+            }}>
+              <h2 style={{
+                marginBottom: 18,
+                fontWeight: 700,
+                fontSize: 26,
+                color: "#1e3c72",
+                letterSpacing: 0.5
+              }}>Edit Profile</h2>
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 18,
+                width: "100%"
+              }}>
+                <div style={{ position: "relative" }}>
+                  <img
+                    src={preview || "/default-avatar.png"}
+                    alt="Profile"
+                    style={{
+                      width: 96,
+                      height: 96,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      marginBottom: 8,
+                      border: "3px solid #e0e0e0",
+                      boxShadow: "0 2px 12px rgba(30,60,114,0.08)"
+                    }}
+                  />
                   <input
                     type="file"
                     name="photo"
@@ -248,74 +360,297 @@ export default function TeacherDashboard() {
                       boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
                     }}
                   >📷</button>
-                </>
-              )}
-            </div>
-            {!editMode ? (
-              <>
-                <div><strong>Name:</strong> {profile.name}</div>
-                <div><strong>Email:</strong> {profile.email}</div>
-                <div><strong>Phone:</strong> {profile.phone || "-"}</div>
-                <div><strong>School:</strong> {profile.school || "-"}</div>
-                <div><strong>Class:</strong> {profile.class || "-"}</div>
-                <button onClick={handleEdit} style={{ marginTop: 16, padding: "8px 24px", borderRadius: 6, background: "#1e3c72", color: "#fff", border: "none", cursor: "pointer" }}>Edit</button>
-              </>
-            ) : (
-              <>
-                <div>
-                  <label>Name:</label>
-                  <input name="name" value={form.name} onChange={handleChange} style={{ width: "100%" }} />
                 </div>
-                <div>
-                  <label>Phone:</label>
-                  <input name="phone" value={form.phone} onChange={handleChange} style={{ width: "100%" }} />
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>Name:</label>
+                    <input
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 6,
+                        border: "1.5px solid #e0e0e0",
+                        fontSize: 16,
+                        marginTop: 4
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>Phone:</label>
+                    <input
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 6,
+                        border: "1.5px solid #e0e0e0",
+                        fontSize: 16,
+                        marginTop: 4
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>School:</label>
+                    <input
+                      name="school"
+                      value={form.school}
+                      onChange={handleChange}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 6,
+                        border: "1.5px solid #e0e0e0",
+                        fontSize: 16,
+                        marginTop: 4
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label>School:</label>
-                  <input name="school" value={form.school} onChange={handleChange} style={{ width: "100%" }} />
-                </div>
-                <div>
-                  <label>Class:</label>
-                  <input name="class" value={form.class} onChange={handleChange} style={{ width: "100%" }} />
-                </div>
-                <div style={{ marginTop: 12 }}>
-                  <button onClick={handleSave} style={{ marginRight: 8, padding: "8px 24px", borderRadius: 6, background: "#28a745", color: "#fff", border: "none", cursor: "pointer" }}>Save</button>
-                  <button onClick={handleCancel} style={{ padding: "8px 24px", borderRadius: 6, background: "#bbb", color: "#222", border: "none", cursor: "pointer" }}>Cancel</button>
+                <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
+                  <button
+                    onClick={handleSave}
+                    style={{
+                      padding: "10px 32px",
+                      borderRadius: 8,
+                      background: "linear-gradient(90deg,#28a745 0%,#20c997 100%)",
+                      color: "#fff",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                      transition: "background 0.2s"
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    style={{
+                      padding: "10px 32px",
+                      borderRadius: 8,
+                      background: "#bbb",
+                      color: "#222",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                      transition: "background 0.2s"
+                    }}
+                  >
+                    Cancel
+                  </button>
                 </div>
                 {status && <div style={{ marginTop: 10, color: "#1e3c72" }}>{status}</div>}
-              </>
-            )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+      // Profile details view
+      return (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          background: "rgba(30,60,114,0.10)",
+          zIndex: 3000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}>
+          <div style={{
+            background: "#fff",
+            borderRadius: 24,
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.13)",
+            padding: 36,
+            maxWidth: 420,
+            width: "95vw",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
+          }}>
+            <h2 style={{
+              marginBottom: 18,
+              fontWeight: 700,
+              fontSize: 26,
+              color: "#1e3c72",
+              letterSpacing: 0.5
+            }}>Profile Details</h2>
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 18,
+              width: "100%"
+            }}>
+              <div style={{ position: "relative" }}>
+                <img
+                  src={preview || "/default-avatar.png"}
+                  alt="Profile"
+                  style={{
+                    width: 96,
+                    height: 96,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    marginBottom: 8,
+                    border: "3px solid #e0e0e0",
+                    boxShadow: "0 2px 12px rgba(30,60,114,0.08)"
+                  }}
+                />
+              </div>
+              <div style={{
+                width: "100%",
+                background: "#f7fafd",
+                borderRadius: 12,
+                padding: "18px 20px",
+                boxShadow: "0 2px 8px rgba(30,60,114,0.04)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Name:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.name}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Email:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.email}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Phone:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.phone || "-"}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>School:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.school || "-"}</span>
+                </div>
+              </div>
+              <button
+                onClick={handleEdit}
+                style={{
+                  marginTop: 18,
+                  padding: "10px 32px",
+                  borderRadius: 8,
+                  background: "linear-gradient(90deg,#1e3c72 0%,#2a5298 100%)",
+                  color: "#fff",
+                  border: "none",
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                  transition: "background 0.2s"
+                }}
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => setSelectedMenu("test-generator")}
+                style={{
+                  marginTop: 10,
+                  padding: "10px 32px",
+                  borderRadius: 8,
+                  background: "#bbb",
+                  color: "#222",
+                  border: "none",
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: "pointer",
+                  boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                  transition: "background 0.2s"
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       );
     }
+    // Main content for other menu items
     return (
-      <div style={{ padding: 32 }}>
-        <h2>{{
-            "test-generator": "Test Generator",
-            "cbse-updates": "CBSE Updates",
-            "student-performance": "Student Performance",
-            "book-solutions": "Book Solutions",
-            "announcements": "Announcements",
-            "timetable": "Timetable",
-            "messages": "Messages",
-            "resources": "Digital Resources"
-          }[selectedMenu] || "Welcome"}</h2>
-        <p>Feature coming soon.</p>
+      <div style={{
+        padding: 48,
+        minHeight: "calc(100vh - 80px)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
+        <div style={{
+          background: "#fff",
+          borderRadius: 18,
+          boxShadow: "0 4px 24px rgba(30,60,114,0.08)",
+          padding: "48px 32px",
+          maxWidth: 480,
+          width: "100%",
+          textAlign: "center"
+        }}>
+          <h2 style={{
+            fontWeight: 700,
+            fontSize: 28,
+            marginBottom: 16,
+            letterSpacing: 1,
+            color: "#1e3c72"
+          }}>
+            {{
+              "test-generator": "Test Generator",
+              "cbse-updates": "CBSE Updates",
+              "student-performance": "Student Performance",
+              "book-solutions": "Book Solutions",
+              "announcements": "Announcements",
+              "timetable": "Timetable",
+              "messages": "Messages",
+              "resources": "Digital Resources"
+            }[selectedMenu] || "Welcome"}
+          </h2>
+          <p style={{
+            fontSize: "1.1rem",
+            marginBottom: 32,
+            color: "#444"
+          }}>
+            Feature coming soon.
+          </p>
+        </div>
       </div>
     );
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa" }}>
-      <TeacherSidebar
-        userEmail={userEmail}
-        userPhoto={userPhoto}
-        onMenuSelect={setSelectedMenu}
-      />
-      <main style={{ marginLeft: 260, flex: 1, minHeight: "100vh", background: "#f4f7fa" }}>
-        {renderContent()}
-      </main>
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa", flexDirection: "column" }}>
+      <div style={{ display: "flex", flex: 1 }}>
+        <TeacherSidebar
+          userEmail={userEmail}
+          userPhoto={userPhoto}
+          onMenuSelect={setSelectedMenu}
+          open={sidebarOpen}
+          setOpen={setSidebarOpen}
+          selectedMenu={selectedMenu}
+        />
+        <main style={{ marginLeft: sidebarOpen ? 260 : 0, flex: 1, minHeight: "100vh", background: "#f4f7fa", transition: "margin-left 0.25s cubic-bezier(.4,0,.2,1)" }}>
+          {renderContent()}
+        </main>
+      </div>
+      <footer style={{
+        width: "100%",
+        background: "#1e3c72",
+        color: "#fff",
+        textAlign: "center",
+        padding: "18px 0",
+        fontSize: 15,
+        letterSpacing: 0.5,
+        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)"
+      }}>
+        © {new Date().getFullYear()} VK Teacher Portal. All rights reserved. | Demo Footer Info
+      </footer>
     </div>
   );
 }
