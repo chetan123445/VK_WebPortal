@@ -186,7 +186,9 @@ export const adminLogin = async (req, res) => {
       admin: {
         id: admin._id,
         email: admin.email,
-        isSuperAdmin: admin.isSuperAdmin
+        isSuperAdmin: admin.isSuperAdmin,
+        name: admin.name,
+        phone: admin.phone
       }
     });
   } catch (err) {

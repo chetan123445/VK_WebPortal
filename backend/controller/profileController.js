@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Admin from '../models/Admin.js';
 import multer from 'multer';
 import path from 'path';
 
@@ -36,7 +37,11 @@ export const updateProfile = async (req, res) => {
   try {
     const { name, phone, school, class: userClass, deletePhoto } = req.body;
     const userId = req.user._id;
-    const update = { name, phone, school, class: userClass };
+    // Determine if req.user is a User or Admin
+    const isAdmin = req.user.isSuperAdmin !== undefined || req.user.isAdmin;
+    const update = isAdmin
+      ? { name, phone } // Only update name and phone for admin
+      : { name, phone, school, class: userClass };
     if (deletePhoto === true || deletePhoto === 'true') {
       update.photo = { data: undefined, contentType: undefined };
     } else if (req.file) {
@@ -45,11 +50,20 @@ export const updateProfile = async (req, res) => {
         contentType: req.file.mimetype
       };
     }
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $set: update },
-      { new: true }
-    );
+    let user;
+    if (isAdmin) {
+      user = await Admin.findByIdAndUpdate(
+        userId,
+        { $set: update },
+        { new: true }
+      );
+    } else {
+      user = await User.findByIdAndUpdate(
+        userId,
+        { $set: update },
+        { new: true }
+      );
+    }
     if (!user) return res.status(404).json({ message: 'User not found' });
     let userObj = user.toObject();
     if (userObj.photo && userObj.photo.data) {

@@ -20,11 +20,8 @@ export const authenticateToken = async (req, res, next) => {
       if (!user) {
         return res.status(401).json({ message: 'User not found' });
       }
-      // Optionally, mark as admin for downstream logic
       user.isAdmin = true;
     }
-req.user = user;
-
     req.user = user;
     next();
   } catch (error) {

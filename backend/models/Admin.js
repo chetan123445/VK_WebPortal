@@ -4,7 +4,13 @@ import bcrypt from 'bcryptjs';
 const adminSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  isSuperAdmin: { type: Boolean, default: false }
+  isSuperAdmin: { type: Boolean, default: false },
+  photo: {
+    data: Buffer,
+    contentType: String
+  },
+  name: { type: String, required: true },
+  phone: { type: String },
 });
 
 // Hash password before saving

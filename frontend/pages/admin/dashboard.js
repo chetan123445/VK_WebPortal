@@ -1,78 +1,212 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars } from "react-icons/fa";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser } from "react-icons/fa";
 import ProtectedRoute from '../../components/ProtectedRoute';
-
-import ProfileMenu from '../ProfileMenu';
-import { getUserData, getToken } from "../../utils/auth.js";
 import { BASE_API_URL } from '../apiurl.js';
+import { getToken } from "../../utils/auth.js";
 
+function AdminSidebar({ userEmail, userPhoto, onMenuSelect, open, setOpen, selectedMenu, isSuperAdmin, setShowAddAdmin, setShowRemoveAdmin, setShowViewAdmins }) {
+  const menuItems = [
+    ...(isSuperAdmin ? [
+      { key: "add-admin", label: "Add Admin", icon: <FaUserShield style={{ fontSize: 18 }} />, action: () => setShowAddAdmin(true) },
+      { key: "remove-admin", label: "Remove Admin", icon: <FaUserShield style={{ fontSize: 18, color: '#c0392b' }} />, action: () => setShowRemoveAdmin(true) },
+      { key: "manage-users", label: "Manage Users", icon: <FaUsers style={{ fontSize: 18 }} /> },
+      { key: "manage-teachers", label: "Manage Teachers", icon: <FaUserTie style={{ fontSize: 18 }} /> },
+    ] : []),
+    { key: "view-admins", label: "View Admins", icon: <FaUsers style={{ fontSize: 18 }} />, action: () => setShowViewAdmins(true) },
+    { key: "manage-books", label: "Manage Books", icon: <FaBook style={{ fontSize: 18 }} /> },
+    { key: "records", label: "Records", icon: <FaRegListAlt style={{ fontSize: 18 }} /> },
+    { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
+    { key: "reports", label: "Reports", icon: <FaChartBar style={{ fontSize: 18 }} /> },
+    { key: "settings", label: "Settings", icon: <FaCog style={{ fontSize: 18 }} /> },
+    { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
+  ];
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          position: "fixed",
+          top: 24,
+          left: 24,
+          zIndex: 2001,
+          background: "#fff",
+          border: "none",
+          borderRadius: "50%",
+          width: 44,
+          height: 44,
+          boxShadow: "0 2px 8px rgba(30,60,114,0.10)",
+          display: open ? "none" : "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "pointer"
+        }}
+        aria-label="Open menu"
+      >
+        <FaBars style={{ fontSize: 22, color: "#1e3c72" }} />
+      </button>
+      <aside style={{
+        width: open ? 260 : 0,
+        background: "#fff",
+        borderRight: open ? "1px solid #e0e0e0" : "none",
+        minHeight: "100vh",
+        padding: open ? "32px 0 0 0" : 0,
+        position: "fixed",
+        left: 0,
+        top: 0,
+        zIndex: 2000,
+        boxShadow: open ? "2px 0 16px rgba(30,60,114,0.07)" : "none",
+        overflow: "hidden",
+        transition: "width 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s"
+      }}>
+        <button
+          onClick={() => setOpen(false)}
+          style={{
+            position: "absolute",
+            top: 18,
+            right: 18,
+            background: "none",
+            border: "none",
+            fontSize: 22,
+            color: "#1e3c72",
+            cursor: "pointer",
+            display: open ? "block" : "none"
+          }}
+          aria-label="Close menu"
+        >
+          <FaTimes />
+        </button>
+        {open && (
+          <>
+            <div style={{ padding: "0 24px", marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, alignSelf: "flex-start", color: "#1e3c72" }}>Admin Panel</div>
+              <img
+                src={userPhoto || "/default-avatar.png"}
+                alt="Profile"
+                style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
+              />
+              <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
+            </div>
+            <nav>
+              {menuItems.map(item => (
+                <button
+                  key={item.key}
+                  onClick={item.action ? item.action : () => { onMenuSelect(item.key); setOpen(false); }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    width: "100%",
+                    background: selectedMenu === item.key ? "linear-gradient(90deg,#e0e7ff 0%,#f7fafd 100%)" : "none",
+                    border: "none",
+                    textAlign: "left",
+                    padding: "14px 28px",
+                    fontSize: 17,
+                    color: selectedMenu === item.key ? "#1e3c72" : "#444",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                    borderLeft: selectedMenu === item.key ? "4px solid #1e3c72" : "4px solid transparent",
+                    transition: "background 0.18s, color 0.18s"
+                  }}
+                >
+                  {item.icon}
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </>
+        )}
+      </aside>
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(30,60,114,0.10)",
+            zIndex: 1000
+          }}
+        />
+      )}
+    </>
+  );
+}
 
-function MainHomeContent() {
-  // Get logged-in user data from JWT token
-  const [userData, setUserData] = useState(null);
+function AdminDashboard() {
+  const [selectedMenu, setSelectedMenu] = useState("manage-users");
   const [userEmail, setUserEmail] = useState("");
-  const [profileData, setProfileData] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [editMode, setEditMode] = useState(false);
+  const [form, setForm] = useState({ name: '', phone: '', school: '', class: '', photo: null });
+  const [status, setStatus] = useState('');
+  const [preview, setPreview] = useState('');
+  const fileInputRef = useRef();
+  const [userPhoto, setUserPhoto] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showAddAdmin, setShowAddAdmin] = useState(false);
-  const [showViewAdmins, setShowViewAdmins] = useState(false);
   const [showRemoveAdmin, setShowRemoveAdmin] = useState(false);
+  const [showViewAdmins, setShowViewAdmins] = useState(false);
   const [admins, setAdmins] = useState([]);
   const [adminForm, setAdminForm] = useState({ email: "", isSuperAdmin: false });
   const [addStatus, setAddStatus] = useState("");
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [selectedMenu, setSelectedMenu] = useState("manage-users");
 
-  // Fetch complete profile data
-  const fetchProfileData = async () => {
-    try {
-      const res = await fetch(`${BASE_API_URL}/profile`, {
+  // Fetch profile on mount and when userEmail changes
+  const fetchProfile = useCallback(() => {
+    if (userEmail) {
+      fetch(`${BASE_API_URL}/profile`, {
         headers: {
-          'Authorization': `Bearer ${getToken()}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${getToken()}`
         }
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setProfileData(data.user);
-      }
-    } catch (error) {
-      console.error('Failed to fetch profile data:', error);
+      })
+        .then(res => res.json())
+        .then(data => {
+          setProfile(data.user);
+          setForm({
+            name: data.user.name || '',
+            phone: data.user.phone || '',
+            school: data.user.school || '',
+            class: data.user.class || '',
+            photo: null
+          });
+          const photoUrl = data.user.photo && data.user.photo !== "" ? data.user.photo : "/default-avatar.png";
+          setPreview(photoUrl);
+          setUserPhoto(data.user.photo && data.user.photo !== "" ? data.user.photo : "");
+        })
+        .catch(() => {
+          setProfile(null);
+          setUserPhoto('');
+        });
     }
-  };
+  }, [userEmail]);
 
   useEffect(() => {
-    // Get user data from JWT token
-    const user = getUserData();
-    if (user) {
-      setUserData(user);
-      setUserEmail(user.email);
-    } else {
-      // Fallback to localStorage for backward compatibility
-      const email = localStorage.getItem("userEmail") || "";
-      setUserEmail(email);
-    }
-
-    // Check if user is superadmin from localStorage
-    const isSuper = typeof window !== "undefined" ? localStorage.getItem("isSuperAdmin") === "true" : false;
-    setIsSuperAdmin(isSuper);
-
-    // Fetch complete profile data immediately
-    fetchProfileData();
+    setUserEmail(localStorage.getItem("userEmail") || "");
+    setIsSuperAdmin(localStorage.getItem("isSuperAdmin") === "true");
   }, []);
 
-  // Fetch admins when modal opens
   useEffect(() => {
-    if (showViewAdmins) {
-      fetch("http://localhost:8000/api/getadmins")
-        .then(res => res.json())
-        .then(data => setAdmins(data.admins || []))
-        .catch(() => setAdmins([]));
+    fetchProfile();
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    if (selectedMenu === "profile" && userEmail) {
+      fetchProfile();
     }
-  }, [showViewAdmins]);
+  }, [selectedMenu, userEmail, fetchProfile]);
+
+  useEffect(() => {
+    if (form.photo) {
+      const url = URL.createObjectURL(form.photo);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [form.photo]);
 
   // Add admin handler
   const handleAddAdmin = async (e) => {
@@ -97,7 +231,7 @@ function MainHomeContent() {
         setTimeout(() => {
           setShowAddAdmin(false);
           setAddStatus("");
-        }, 700); // Close modal after short delay
+        }, 700);
       } else {
         const data = await res.json();
         setAddStatus(data.message || "Failed to add admin");
@@ -120,7 +254,7 @@ function MainHomeContent() {
         },
         body: JSON.stringify({
           email: removeEmail,
-          isSuperAdmin: isSuperAdmin, // Pass isSuperAdmin like in add admin
+          isSuperAdmin: isSuperAdmin,
           requesterEmail: userEmail
         })
       });
@@ -130,7 +264,7 @@ function MainHomeContent() {
         setTimeout(() => {
           setShowRemoveAdmin(false);
           setRemoveStatus("");
-        }, 700); // Close modal after short delay
+        }, 700);
       } else {
         const data = await res.json();
         setRemoveStatus(data.message || "Failed to remove admin");
@@ -140,425 +274,564 @@ function MainHomeContent() {
     }
   };
 
-  // Main content based on selected menu (placeholder for now)
-  const renderContent = () => {
-    return (
-      <div style={{ padding: 32 }}>
-        <h2>{{
-            "manage-users": "Manage Users",
-            "manage-teachers": "Manage Teachers",
-            "manage-books": "Manage Books",
-            "records": "Records",
-            "announcements": "Announcements",
-            "reports": "Reports",
-            "settings": "Settings",
-            "profile": "Profile"
-          }[selectedMenu] || "Welcome"}</h2>
-        <p>Feature coming soon.</p>
-      </div>
-    );
+  // Fetch admins when modal opens
+  useEffect(() => {
+    if (showViewAdmins) {
+      fetch(`${BASE_API_URL}/getadmins`)
+        .then(res => res.json())
+        .then(data => setAdmins(data.admins || []))
+        .catch(() => setAdmins([]));
+    }
+  }, [showViewAdmins]);
+
+  const handleEdit = () => setEditMode(true);
+  const handleCancel = () => {
+    setEditMode(false);
+    setForm({
+      name: profile?.name || '',
+      phone: profile?.phone || '',
+      school: profile?.school || '',
+      class: profile?.class || '',
+      photo: null
+    });
+    setPreview(profile?.photo || "/default-avatar.png");
+    setStatus('');
+  };
+  const handleChange = e => {
+    const { name, value, files } = e.target;
+    if (name === "photo" && files && files[0]) {
+      setForm(f => ({ ...f, photo: files[0] }));
+    } else {
+      setForm(f => ({ ...f, [name]: value }));
+    }
+  };
+  const handleSave = async () => {
+    setStatus('Saving...');
+    try {
+      let body;
+      let headers;
+      if (form.photo) {
+        body = new FormData();
+        body.append('name', form.name);
+        body.append('phone', form.phone);
+        body.append('photo', form.photo);
+        headers = { 'Authorization': `Bearer ${getToken()}` };
+      } else {
+        body = JSON.stringify({
+          name: form.name,
+          phone: form.phone
+        });
+        headers = {
+          'Authorization': `Bearer ${getToken()}`,
+          'Content-Type': 'application/json'
+        };
+      }
+      const res = await fetch(`${BASE_API_URL}/profile`, {
+        method: 'PUT',
+        headers,
+        body
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProfile(data.user);
+        setEditMode(false);
+        setStatus('Profile updated!');
+        setPreview(data.user.photo || "/default-avatar.png");
+        setUserPhoto(data.user.photo && data.user.photo !== "" ? data.user.photo : "");
+        fetchProfile();
+        setSelectedMenu('manage-users');
+        setSidebarOpen(true);
+      } else {
+        setStatus(data.message || 'Failed to update profile');
+      }
+    } catch {
+      setStatus('Failed to update profile');
+    }
   };
 
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa" }}>
-      {/* Sidebar component for Admin with feature buttons */}
-      <aside style={{
-        width: 260,
-        background: "#fff",
-        borderRight: "1px solid #e0e0e0",
-        minHeight: "100vh",
-        padding: "32px 0 0 0",
-        position: "fixed",
-        left: 0,
-        top: 0,
-        zIndex: 100,
-        boxShadow: "2px 0 8px rgba(0,0,0,0.04)"
-      }}>
-        <div style={{ padding: "0 24px", marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 6, alignSelf: "flex-start" }}>Admin Panel</div>
-          <img
-            src="/default-avatar.png"
-            alt="Profile"
-            style={{ width: 64, height: 64, borderRadius: "50%", margin: "10px 0" }}
-          />
-          <div style={{ fontSize: 13, color: "#888" }}>{userEmail}</div>
-        </div>
-        <nav>
-          {/* Add/Remove Admin, Manage Users/Teachers only for superadmin */}
-          {isSuperAdmin && (
-            <>
+  const renderContent = () => {
+    if (selectedMenu === "profile") {
+      if (!profile) {
+        return (
+          <div style={{ padding: 32 }}>
+            <h2>Profile</h2>
+            <p>Loading profile...</p>
+          </div>
+        );
+      }
+      if (editMode) {
+        return (
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(30,60,114,0.10)",
+            zIndex: 3000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            <div style={{
+              background: "#fff",
+              borderRadius: 24,
+              boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.13)",
+              padding: 36,
+              maxWidth: 420,
+              width: "95vw",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center"
+            }}>
+              <h2 style={{
+                marginBottom: 18,
+                fontWeight: 700,
+                fontSize: 26,
+                color: "#1e3c72",
+                letterSpacing: 0.5
+              }}>Edit Profile</h2>
+              <div style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 18,
+                width: "100%"
+              }}>
+                <div style={{ position: "relative" }}>
+                  <img
+                    src={preview || "/default-avatar.png"}
+                    alt="Profile"
+                    style={{
+                      width: 96,
+                      height: 96,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      marginBottom: 8,
+                      border: "3px solid #e0e0e0",
+                      boxShadow: "0 2px 12px rgba(30,60,114,0.08)"
+                    }}
+                  />
+                  <input
+                    type="file"
+                    name="photo"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    style={{ display: "none" }}
+                    onChange={handleChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                    style={{
+                      position: "absolute",
+                      bottom: 0,
+                      right: 0,
+                      background: "#fff",
+                      border: "1px solid #ccc",
+                      borderRadius: "50%",
+                      width: 28,
+                      height: 28,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.2)"
+                    }}
+                  >📷</button>
+                </div>
+                <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>Name:</label>
+                    <input
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 6,
+                        border: "1.5px solid #e0e0e0",
+                        fontSize: 16,
+                        marginTop: 4
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>Phone:</label>
+                    <input
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 6,
+                        border: "1.5px solid #e0e0e0",
+                        fontSize: 16,
+                        marginTop: 4
+                      }}
+                    />
+                  </div>
+                </div>
+                <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
+                  <button
+                    onClick={handleSave}
+                    style={{
+                      padding: "10px 32px",
+                      borderRadius: 8,
+                      background: "linear-gradient(90deg,#28a745 0%,#20c997 100%)",
+                      color: "#fff",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                      transition: "background 0.2s"
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    style={{
+                      padding: "10px 32px",
+                      borderRadius: 8,
+                      background: "#bbb",
+                      color: "#222",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                      transition: "background 0.2s"
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {status && <div style={{ marginTop: 10, color: "#1e3c72" }}>{status}</div>}
+              </div>
+            </div>
+          </div>
+        );
+      }
+      // Profile details view
+      return (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          background: "rgba(30,60,114,0.10)",
+          zIndex: 3000,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}>
+          <div style={{
+            background: "#fff",
+            borderRadius: 24,
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.13)",
+            padding: 36,
+            maxWidth: 420,
+            width: "95vw",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
+          }}>
+            <h2 style={{
+              marginBottom: 18,
+              fontWeight: 700,
+              fontSize: 26,
+              color: "#1e3c72",
+              letterSpacing: 0.5
+            }}>Profile Details</h2>
+            <div style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 18,
+              width: "100%"
+            }}>
+              <div style={{ position: "relative" }}>
+                <img
+                  src={preview || "/default-avatar.png"}
+                  alt="Profile"
+                  style={{
+                    width: 96,
+                    height: 96,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    marginBottom: 8,
+                    border: "3px solid #e0e0e0",
+                    boxShadow: "0 2px 12px rgba(30,60,114,0.08)"
+                  }}
+                />
+              </div>
+              <div style={{
+                width: "100%",
+                background: "#f7fafd",
+                borderRadius: 12,
+                padding: "18px 20px",
+                boxShadow: "0 2px 8px rgba(30,60,114,0.04)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 12
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Name:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.name}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Email:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.email}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Phone:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.phone || "-"}</span>
+                </div>
+              </div>
               <button
-                onClick={() => setShowAddAdmin(true)}
+                onClick={handleEdit}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  width: "100%",
-                  background: "none",
+                  marginTop: 18,
+                  padding: "10px 32px",
+                  borderRadius: 8,
+                  background: "linear-gradient(90deg,#1e3c72 0%,#2a5298 100%)",
+                  color: "#fff",
                   border: "none",
-                  textAlign: "left",
-                  padding: "12px 24px",
+                  fontWeight: 600,
                   fontSize: 16,
-                  color: "#1e3c72",
                   cursor: "pointer",
-                  fontWeight: 700
+                  boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                  transition: "background 0.2s"
                 }}
               >
-                <FaUserShield style={{ fontSize: 18 }} />
-                Add Admin
-              </button>
-              <button
-                onClick={() => setShowRemoveAdmin(true)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  width: "100%",
-                  background: "none",
-                  border: "none",
-                  textAlign: "left",
-                  padding: "12px 24px",
-                  fontSize: 16,
-                  color: "#c0392b",
-                  cursor: "pointer",
-                  fontWeight: 700
-                }}
-              >
-                <FaUserShield style={{ fontSize: 18 }} />
-                Remove Admin
+                Edit
               </button>
               <button
                 onClick={() => setSelectedMenu("manage-users")}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  width: "100%",
-                  background: "none",
+                  marginTop: 10,
+                  padding: "10px 32px",
+                  borderRadius: 8,
+                  background: "#bbb",
+                  color: "#222",
                   border: "none",
-                  textAlign: "left",
-                  padding: "12px 24px",
+                  fontWeight: 600,
                   fontSize: 16,
-                  color: "#1e3c72",
                   cursor: "pointer",
-                  fontWeight: 700
+                  boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                  transition: "background 0.2s"
                 }}
               >
-                <FaUsers style={{ fontSize: 18 }} />
-                Manage Users
-              </button>
-              <button
-                onClick={() => setSelectedMenu("manage-teachers")}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  width: "100%",
-                  background: "none",
-                  border: "none",
-                  textAlign: "left",
-                  padding: "12px 24px",
-                  fontSize: 16,
-                  color: "#1e3c72",
-                  cursor: "pointer",
-                  fontWeight: 700
-                }}
-              >
-                <FaUserTie style={{ fontSize: 18 }} />
-                Manage Teachers
-              </button>
-            </>
-          )}
-          {/* The following options are for all admins */}
-          <button
-            onClick={() => setShowViewAdmins(true)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              background: "none",
-              border: "none",
-              textAlign: "left",
-              padding: "12px 24px",
-              fontSize: 16,
-              color: "#1e3c72",
-              cursor: "pointer",
-              fontWeight: 700
-            }}
-          >
-            <FaUsers style={{ fontSize: 18 }} />
-            View Admins
-          </button>
-          <button
-            onClick={() => setSelectedMenu("manage-books")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              background: "none",
-              border: "none",
-              textAlign: "left",
-              padding: "12px 24px",
-              fontSize: 16,
-              color: "#1e3c72",
-              cursor: "pointer",
-              fontWeight: 700
-            }}
-          >
-            <FaBook style={{ fontSize: 18 }} />
-            Manage Books
-          </button>
-          <button
-            onClick={() => setSelectedMenu("records")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              background: "none",
-              border: "none",
-              textAlign: "left",
-              padding: "12px 24px",
-              fontSize: 16,
-              color: "#1e3c72",
-              cursor: "pointer",
-              fontWeight: 700
-            }}
-          >
-            <FaRegListAlt style={{ fontSize: 18 }} />
-            Records
-          </button>
-          <button
-            onClick={() => setSelectedMenu("announcements")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              background: "none",
-              border: "none",
-              textAlign: "left",
-              padding: "12px 24px",
-              fontSize: 16,
-              color: "#1e3c72",
-              cursor: "pointer",
-              fontWeight: 700
-            }}
-          >
-            <FaBullhorn style={{ fontSize: 18 }} />
-            Announcements
-          </button>
-          <button
-            onClick={() => setSelectedMenu("reports")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              background: "none",
-              border: "none",
-              textAlign: "left",
-              padding: "12px 24px",
-              fontSize: 16,
-              color: "#1e3c72",
-              cursor: "pointer",
-              fontWeight: 700
-            }}
-          >
-            <FaChartBar style={{ fontSize: 18 }} />
-            Reports
-          </button>
-          <button
-            onClick={() => setSelectedMenu("settings")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              width: "100%",
-              background: "none",
-              border: "none",
-              textAlign: "left",
-              padding: "12px 24px",
-              fontSize: 16,
-              color: "#1e3c72",
-              cursor: "pointer",
-              fontWeight: 700
-            }}
-          >
-            <FaCog style={{ fontSize: 18 }} />
-            Settings
-          </button>
-        </nav>
-      </aside>
-      <main style={{ marginLeft: 260, flex: 1, minHeight: "100vh", background: "#f4f7fa", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        {/* Remove the popout menu, keep only sidebar options */}
-        <ProfileMenu 
-          userEmail={userEmail} 
-          userData={profileData}
-          avatarStyle={{ width: 48, height: 48, borderRadius: '50%' }} 
-          onProfileUpdate={fetchProfileData}
-        />
-
-        {/* Add Admin Modal */}
-        {showAddAdmin && isSuperAdmin && (
-          <div style={{
-            position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-            background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-          }}>
-            <div style={{
-              background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
-            }}>
-              <h2 style={{ marginBottom: 18 }}>Add Admin</h2>
-              <form onSubmit={handleAddAdmin}>
-                <div style={{ marginBottom: 12 }}>
-                  <label>Email:</label><br />
-                  <input
-                    type="email"
-                    required
-                    value={adminForm.email}
-                    onChange={e => setAdminForm(f => ({ ...f, email: e.target.value }))}
-                    style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
-                  />
-                </div>
-                <div style={{ marginBottom: 18 }}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={adminForm.isSuperAdmin}
-                      onChange={e => setAdminForm(f => ({ ...f, isSuperAdmin: e.target.checked }))}
-                    />{" "}
-                    Is Superadmin
-                  </label>
-                </div>
-                <button type="submit" style={{
-                  background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
-                }}>
-                  Add
-                </button>
-                <button type="button" onClick={() => { setShowAddAdmin(false); setAddStatus(""); }} style={{
-                  marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
-                }}>
-                  Cancel
-                </button>
-                <div style={{ marginTop: 10, color: "#1e3c72", fontWeight: 500 }}>{addStatus}</div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Remove Admin Modal */}
-        {showRemoveAdmin && isSuperAdmin && (
-          <div style={{
-            position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-            background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-          }}>
-            <div style={{
-              background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
-            }}>
-              <h2 style={{ marginBottom: 18, color: "#c0392b" }}>Remove Admin</h2>
-              <form onSubmit={handleRemoveAdmin}>
-                <div style={{ marginBottom: 12 }}>
-                  <label>Email:</label><br />
-                  <input
-                    type="email"
-                    required
-                    value={removeEmail}
-                    onChange={e => setRemoveEmail(e.target.value)}
-                    style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
-                  />
-                </div>
-                <button type="submit" style={{
-                  background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
-                }}>
-                  Remove
-                </button>
-                <button type="button" onClick={() => { setShowRemoveAdmin(false); setRemoveStatus(""); }} style={{
-                  marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
-                }}>
-                  Cancel
-                </button>
-                <div style={{ marginTop: 10, color: "#c0392b", fontWeight: 500 }}>{removeStatus}</div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* View Admins Modal */}
-        {showViewAdmins && (
-          <div style={{
-            position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-            background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-          }}>
-            <div style={{
-              background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
-            }}>
-              <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
-              {/* Show superadmins first, then admins, with emails listed below each */}
-              <div>
-                <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
-                <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
-                  {admins.filter(a => a.isSuperAdmin).map(a => (
-                    <li key={a._id} style={{ marginBottom: 2 }}>
-                      {a.email}
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
-                <ul style={{ listStyle: "none", padding: 0 }}>
-                  {admins.filter(a => !a.isSuperAdmin).map(a => (
-                    <li key={a._id} style={{ marginBottom: 2 }}>
-                      {a.email}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <button onClick={() => setShowViewAdmins(false)} style={{
-                marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
-              }}>
-                Close
+                Cancel
               </button>
             </div>
           </div>
-        )}
-
+        </div>
+      );
+    }
+    // Main content for other menu items
+    return (
+      <div style={{
+        padding: 48,
+        minHeight: "calc(100vh - 80px)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center"
+      }}>
         <div style={{
-          background: "rgba(255,255,255,0.96)",
-          borderRadius: 20,
-          padding: "40px 32px",
-          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
-          textAlign: "center",
-          maxWidth: 400,
-          width: "95%",
-          margin: "0 auto"
+          background: "#fff",
+          borderRadius: 18,
+          boxShadow: "0 4px 24px rgba(30,60,114,0.08)",
+          padding: "48px 32px",
+          maxWidth: 480,
+          width: "100%",
+          textAlign: "center"
         }}>
-          <h1 style={{
+          <h2 style={{
             fontWeight: 700,
-            fontSize: "2.5rem",
+            fontSize: 28,
             marginBottom: 16,
             letterSpacing: 1,
             color: "#1e3c72"
           }}>
-            VK Publications Admin Panel
-          </h1>
+            {{
+              "manage-users": "Manage Users",
+              "manage-teachers": "Manage Teachers",
+              "manage-books": "Manage Books",
+              "records": "Records",
+              "announcements": "Announcements",
+              "reports": "Reports",
+              "settings": "Settings"
+            }[selectedMenu] || "Welcome"}
+          </h2>
           <p style={{
             fontSize: "1.1rem",
             marginBottom: 32,
             color: "#444"
           }}>
-            Manage admins and superadmins here.
+            Feature coming soon.
           </p>
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa", flexDirection: "column" }}>
+      <div style={{ display: "flex", flex: 1 }}>
+        <AdminSidebar
+          userEmail={userEmail}
+          userPhoto={userPhoto}
+          onMenuSelect={setSelectedMenu}
+          open={sidebarOpen}
+          setOpen={setSidebarOpen}
+          selectedMenu={selectedMenu}
+          isSuperAdmin={isSuperAdmin}
+          setShowAddAdmin={setShowAddAdmin}
+          setShowRemoveAdmin={setShowRemoveAdmin}
+          setShowViewAdmins={setShowViewAdmins}
+        />
+        <main style={{ marginLeft: sidebarOpen ? 260 : 0, flex: 1, minHeight: "100vh", background: "#f4f7fa", transition: "margin-left 0.25s cubic-bezier(.4,0,.2,1)" }}>
+          {renderContent()}
+        </main>
+      </div>
+      {/* Add Admin Modal */}
+      {showAddAdmin && isSuperAdmin && (
         <div style={{
-          marginTop: 40,
-          fontSize: "0.95rem",
-          color: "#1e3c72",
-          letterSpacing: 0.5
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
         }}>
-          © {new Date().getFullYear()} VK Publications. All rights reserved.
+          <div style={{
+            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+          }}>
+            <h2 style={{ marginBottom: 18 }}>Add Admin</h2>
+            <form onSubmit={handleAddAdmin}>
+              <div style={{ marginBottom: 12 }}>
+                <label>Email:</label><br />
+                <input
+                  type="email"
+                  required
+                  value={adminForm.email}
+                  onChange={e => setAdminForm(f => ({ ...f, email: e.target.value }))}
+                  style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+                />
+              </div>
+              <div style={{ marginBottom: 18 }}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={adminForm.isSuperAdmin}
+                    onChange={e => setAdminForm(f => ({ ...f, isSuperAdmin: e.target.checked }))}
+                  />{" "}
+                  Is Superadmin
+                </label>
+              </div>
+              <button type="submit" style={{
+                background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
+              }}>
+                Add
+              </button>
+              <button type="button" onClick={() => { setShowAddAdmin(false); setAddStatus(""); }} style={{
+                marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+              }}>
+                Cancel
+              </button>
+              <div style={{ marginTop: 10, color: "#1e3c72", fontWeight: 500 }}>{addStatus}</div>
+            </form>
+          </div>
         </div>
-      </main>
+      )}
+      {/* Remove Admin Modal */}
+      {showRemoveAdmin && isSuperAdmin && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+          }}>
+            <h2 style={{ marginBottom: 18, color: "#c0392b" }}>Remove Admin</h2>
+            <form onSubmit={handleRemoveAdmin}>
+              <div style={{ marginBottom: 12 }}>
+                <label>Email:</label><br />
+                <input
+                  type="email"
+                  required
+                  value={removeEmail}
+                  onChange={e => setRemoveEmail(e.target.value)}
+                  style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+                />
+              </div>
+              <button type="submit" style={{
+                background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
+              }}>
+                Remove
+              </button>
+              <button type="button" onClick={() => { setShowRemoveAdmin(false); setRemoveStatus(""); }} style={{
+                marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+              }}>
+                Cancel
+              </button>
+              <div style={{ marginTop: 10, color: "#c0392b", fontWeight: 500 }}>{removeStatus}</div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* View Admins Modal */}
+      {showViewAdmins && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+          }}>
+            <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
+            {/* Show superadmins first, then admins, with emails listed below each */}
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
+              <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
+                {admins.filter(a => a.isSuperAdmin).map(a => (
+                  <li key={a._id} style={{ marginBottom: 2 }}>
+                    {a.email}
+                  </li>
+                ))}
+              </ul>
+              <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {admins.filter(a => !a.isSuperAdmin).map(a => (
+                  <li key={a._id} style={{ marginBottom: 2 }}>
+                    {a.email}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button onClick={() => setShowViewAdmins(false)} style={{
+              marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+            }}>
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+      <footer style={{
+        width: "100%",
+        background: "#1e3c72",
+        color: "#fff",
+        textAlign: "center",
+        padding: "18px 0",
+        fontSize: 15,
+        letterSpacing: 0.5,
+        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)"
+      }}>
+        © {new Date().getFullYear()} VK Admin Portal. All rights reserved. | Demo Footer Info
+      </footer>
     </div>
   );
 }
@@ -566,7 +839,7 @@ function MainHomeContent() {
 export default function MainHome() {
   return (
     <ProtectedRoute>
-      <MainHomeContent />
+      <AdminDashboard />
     </ProtectedRoute>
   );
 }
