@@ -3,7 +3,7 @@ import React, { useState } from "react";
 // import Register from "./Register"; // Remove this import
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from "./apiurl";
-import { setToken, setUserData } from "../utils/auth.js";
+import { setToken, setUserData, getToken } from "../utils/auth.js";
 
 export default function Login() {
   const [mode, setMode] = useState("password"); // "password" or "otp"
@@ -16,6 +16,14 @@ export default function Login() {
   const [showRegister, setShowRegister] = useState(false);
   const [showNotFoundPopup, setShowNotFoundPopup] = useState(false);
   const router = useRouter();
+
+  // Redirect to dashboard if already logged in (student only)
+  React.useEffect(() => {
+    if (getToken()) {
+      // You can add logic to check user type if needed
+      router.replace('/student/dashboard');
+    }
+  }, [router]);
 
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
