@@ -9,8 +9,6 @@
 2. **Install dependencies:**
    ```bash
    npm install
-   npm install multer
-   npm install jsonwebtoken
    ```
 3. **Start the backend server:**
    ```bash
@@ -22,7 +20,6 @@
 1. **Install dependencies:**
    ```bash
    npm install
-   npm install react-icons browser-image-compression
    ```
 2. **Start the frontend development server:**
    ```bash

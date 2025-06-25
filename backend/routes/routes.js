@@ -7,6 +7,7 @@ import multer from 'multer';
 import studentController from '../controller/studentController.js';
 import teacherController from '../controller/teacherController.js';
 import * as parentController from '../controller/parentController.js';
+import { getChildProfile } from '../controller/parentChildController.js';
 
 const router = express.Router();
 
@@ -35,6 +36,7 @@ router.post('/api/teacher/find', teacherController.find);
 
 // Parent routes
 router.post('/api/parent/verify-child-email', parentController.verifyChildEmail);
+router.get('/api/parent/child-profile', authenticateToken, getChildProfile);
 
 // Protected routes (require JWT authentication)
 router.get('/api/verify-token', authenticateToken, verifyToken);
