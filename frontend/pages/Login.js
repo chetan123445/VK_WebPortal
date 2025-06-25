@@ -15,6 +15,9 @@ export default function Login() {
   const [msg, setMsg] = useState("");
   const [showRegister, setShowRegister] = useState(false);
   const [showNotFoundPopup, setShowNotFoundPopup] = useState(false);
+  const [isAdminOtp, setIsAdminOtp] = useState(false);
+  const [adminOtpSent, setAdminOtpSent] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false); // <-- new state
   const router = useRouter();
 
   const handlePasswordLogin = async (e) => {
@@ -24,6 +27,7 @@ export default function Login() {
     const cleanEmail = email.trim().toLowerCase();
 
     // --- SECURE ADMIN LOGIN CHECK FIRST ---
+    let adminNotFound = false;
     try {
       const adminRes = await fetch(`${BASE_API_URL}/admin/login`, {
         method: "POST",
@@ -42,7 +46,6 @@ export default function Login() {
           const superData = await superRes.json();
           isSuperAdmin = !!superData.isSuperAdmin;
         }
-        // Store both email and isSuperAdmin in localStorage
         localStorage.setItem("userEmail", cleanEmail);
         localStorage.setItem("isSuperAdmin", isSuperAdmin ? "true" : "false");
         setMsg("Admin login successful!");
@@ -51,8 +54,8 @@ export default function Login() {
         return;
       }
       if (adminRes.status === 404) {
-        setError("User not registered.");
-        return;
+        adminNotFound = true;
+        // Do not return here, check user table next
       }
       if (adminRes.status === 401) {
         setError("Incorrect password.");
@@ -72,8 +75,11 @@ export default function Login() {
         body: JSON.stringify({ email: cleanEmail, password })
       });
       if (res.status === 404) {
-        setError("");
-        setShowNotFoundPopup(true);
+        // Only show not found if admin was also not found
+        if (adminNotFound) {
+          setError("");
+          setShowNotFoundPopup(true);
+        }
         return;
       }
       if (res.status === 401) {
@@ -115,20 +121,76 @@ export default function Login() {
   const handleSendOtp = async () => {
     setError("");
     setMsg("");
+    setIsAdminOtp(false);
+    setOtpSent(false);
+    setAdminOtpSent(false);
+    setSendingOtp(true); // <-- show loading
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // 1. Check in Admin table
     try {
-      const res = await fetch(`${BASE_API_URL}/user/send-login-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase() })
-      });
-      if (res.ok) {
-        setOtpSent(true);
-        setMsg("OTP sent to your email.");
-      } else {
-        const data = await res.json();
-        setError(data.message || "Failed to send OTP.");
+      const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
+      if (adminRes.ok) {
+        const adminData = await adminRes.json();
+        const foundAdmin = (adminData.admins || []).find(a => a.email === cleanEmail);
+        if (foundAdmin) {
+          // Send OTP to admin email (reuse user OTP endpoint for now)
+          const sendOtpRes = await fetch(`${BASE_API_URL}/user/send-login-otp`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: cleanEmail })
+          });
+          setSendingOtp(false); // <-- stop loading
+          if (sendOtpRes.ok) {
+            setIsAdminOtp(true);
+            setOtpSent(true);
+            setAdminOtpSent(true);
+            setMsg("OTP sent to your email.");
+          } else {
+            const data = await sendOtpRes.json();
+            setError(data.message || "Failed to send OTP.");
+          }
+          return;
+        }
       }
     } catch (err) {
+      // Ignore admin check errors, fallback to user table check
+    }
+
+    // 2. Check in User table
+    try {
+      const userRes = await fetch(`${BASE_API_URL}/user/find-by-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail })
+      });
+      if (userRes.ok) {
+        // User exists, send OTP
+        const sendOtpRes = await fetch(`${BASE_API_URL}/user/send-login-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail })
+        });
+        setSendingOtp(false); // <-- stop loading
+        if (sendOtpRes.ok) {
+          setOtpSent(true);
+          setMsg("OTP sent to your email.");
+        } else {
+          const data = await sendOtpRes.json();
+          setError(data.message || "Failed to send OTP.");
+        }
+      } else if (userRes.status === 404) {
+        setSendingOtp(false); // <-- stop loading
+        setError("");
+        setShowNotFoundPopup(true);
+      } else {
+        setSendingOtp(false); // <-- stop loading
+        const data = await userRes.json();
+        setError(data.message || "Failed to check user.");
+      }
+    } catch (err) {
+      setSendingOtp(false); // <-- stop loading
       setError("Failed to send OTP. Please try again.");
     }
   };
@@ -139,25 +201,45 @@ export default function Login() {
     setMsg("");
     const cleanEmail = email.trim().toLowerCase();
 
-    // --- ADMIN TABLE CHECK FIRST ---
-    try {
-      const adminRes = await fetch(`${BASE_API_URL}/getadmins`);
-      if (adminRes.ok) {
-        const adminData = await adminRes.json();
-        const foundAdmin = (adminData.admins || []).find(a => a.email === cleanEmail);
-        if (foundAdmin) {
-          // Directly redirect to admin dashboard (skip user authentication)
+    if (!otpSent) {
+      setError("Please click on Send OTP first.");
+      return;
+    }
+
+    if (isAdminOtp && adminOtpSent) {
+      // Verify OTP for admin (reuse user OTP endpoint for now)
+      try {
+        const res = await fetch(`${BASE_API_URL}/user/verify-login-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail, otp })
+        });
+        if (res.ok) {
+          // Fetch isSuperAdmin info
+          const superRes = await fetch(`${BASE_API_URL}/check-superadmin`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: cleanEmail })
+          });
+          let isSuperAdmin = false;
+          if (superRes.ok) {
+            const superData = await superRes.json();
+            isSuperAdmin = !!superData.isSuperAdmin;
+          }
           localStorage.setItem("userEmail", cleanEmail);
+          localStorage.setItem("isSuperAdmin", isSuperAdmin ? "true" : "false");
           setMsg("Admin login successful!");
           setError("");
           router.push("/admin/dashboard");
-          return;
+        } else {
+          const data = await res.json();
+          setError(data.message || "Invalid OTP.");
         }
+      } catch (err) {
+        setError("Admin OTP login failed.");
       }
-    } catch (err) {
-      // Ignore admin check errors, fallback to user table check
+      return;
     }
-    // --- END ADMIN TABLE CHECK ---
 
     // --- USER TABLE CHECK ---
     try {
@@ -458,7 +540,13 @@ export default function Login() {
                     border: "1px solid #ccc",
                     fontSize: "1rem"
                   }}
-                  disabled={otpSent}
+                  disabled={otpSent || sendingOtp}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && !otpSent && !sendingOtp) {
+                      e.preventDefault();
+                      setError("Please click on Send OTP first.");
+                    }
+                  }}
                 /><br />
               </div>
               {!otpSent ? (
@@ -480,11 +568,12 @@ export default function Login() {
                       borderRadius: 8,
                       padding: "8px 24px",
                       fontWeight: 600,
-                      cursor: "pointer",
+                      cursor: sendingOtp ? "not-allowed" : "pointer",
                       width: "85%"
                     }}
+                    disabled={sendingOtp}
                   >
-                    Send OTP
+                    {sendingOtp ? "Sending OTP..." : "Send OTP"}
                   </button>
                 </div>
               ) : (
@@ -534,6 +623,7 @@ export default function Login() {
                         cursor: "pointer",
                         width: "85%"
                       }}
+                      disabled={!otpSent}
                     >
                       Login with OTP
                     </button>

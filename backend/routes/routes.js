@@ -19,6 +19,7 @@ router.post('/api/user/send-login-otp', sendLoginOtp);
 router.post('/api/user/verify-login-otp', verifyLoginOtp);
 router.post('/api/user/register', registerUser);
 router.post('/api/user/find', findUserByEmail);
+router.post('/api/user/find-by-email', findUserByEmail); // <-- Add this line
 router.post('/api/user/login', loginUser);
 
 // Student routes

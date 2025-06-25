@@ -185,9 +185,13 @@ export const findUserByEmail = async (req, res) => {
   try {
     const { email } = req.body;
     const cleanEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: cleanEmail });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json({ user });
+    // Check User collection
+    let user = await User.findOne({ email: cleanEmail });
+    if (user) return res.json({ user, type: 'user' });
+    // Check Admin collection
+    let admin = await Admin.findOne({ email: cleanEmail });
+    if (admin) return res.json({ admin, type: 'admin' });
+    return res.status(404).json({ message: 'User not found' });
   } catch (err) {
     res.status(500).json({ message: 'Error finding user', error: err.message });
   }
@@ -225,9 +229,15 @@ export const sendLoginOtp = async (req, res) => {
   try {
     const { email } = req.body;
     const cleanEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: cleanEmail });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
+    // Check User collection
+    let user = await User.findOne({ email: cleanEmail });
+    let isAdmin = false;
+    if (!user) {
+      // Check Admin collection
+      let admin = await Admin.findOne({ email: cleanEmail });
+      if (!admin) return res.status(404).json({ message: 'User not found' });
+      isAdmin = true;
+    }
     const otp = generateOtp();
     loginOtpStore[cleanEmail] = { otp, expires: Date.now() + 10 * 60 * 1000 }; // 10 min
 
@@ -253,27 +263,38 @@ export const verifyLoginOtp = async (req, res) => {
     if (!record || record.otp !== otp || record.expires < Date.now()) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
-    
-    // Get user details and generate token
-    const user = await User.findOne({ email: cleanEmail });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    // Generate JWT token
-    const token = generateToken(user._id);
-    
-    // Delete the OTP after successful verification
-    delete loginOtpStore[cleanEmail];
-    
-    res.json({ 
-      message: 'OTP verified',
-      token,
-      user: { 
-        id: user._id,
-        email: user.email, 
-        registeredAs: user.registeredAs,
-        name: user.name
-      }
-    });
+    // Check User collection
+    let user = await User.findOne({ email: cleanEmail });
+    if (user) {
+      // Generate JWT token
+      const token = generateToken(user._id);
+      delete loginOtpStore[cleanEmail];
+      return res.json({
+        message: 'OTP verified',
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          registeredAs: user.registeredAs,
+          name: user.name
+        }
+      });
+    }
+    // Check Admin collection
+    let admin = await Admin.findOne({ email: cleanEmail });
+    if (admin) {
+      // Generate JWT token (or just return success, as admin login is handled separately)
+      delete loginOtpStore[cleanEmail];
+      return res.json({
+        message: 'OTP verified',
+        admin: {
+          id: admin._id,
+          email: admin.email,
+          isSuperAdmin: admin.isSuperAdmin
+        }
+      });
+    }
+    return res.status(404).json({ message: 'User not found' });
   } catch (err) {
     res.status(500).json({ message: 'OTP verification failed', error: err.message });
   }
