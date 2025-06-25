@@ -37,62 +37,6 @@ const storage = multer.diskStorage({
 });
 export const upload = multer({ storage });
 
-// GET /api/profile - Get user profile (JWT authenticated)
-export const getProfile = async (req, res) => {
-  try {
-    // User is already attached to req by authenticateToken middleware
-    const user = req.user;
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    // Convert photo buffer to base64 string for frontend
-    let userObj = user.toObject();
-    if (userObj.photo && userObj.photo.data) {
-      userObj.photo = `data:${userObj.photo.contentType};base64,${userObj.photo.data.toString('base64')}`;
-    } else {
-      userObj.photo = null;
-    }
-    res.json({ user: userObj });
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching profile', error: err.message });
-  }
-};
-
-// PUT /api/profile - Update user profile (JWT authenticated)
-export const updateProfile = async (req, res) => {
-  try {
-    const { name, phone, school, class: userClass, deletePhoto } = req.body;
-    const userId = req.user._id;
-    
-    const update = { name, phone, school, class: userClass };
-    if (deletePhoto === true || deletePhoto === 'true') {
-      update.photo = { data: undefined, contentType: undefined };
-    } else if (req.file) {
-      update.photo = {
-        data: req.file.buffer,
-        contentType: req.file.mimetype
-      };
-    }
-    
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $set: update },
-      { new: true }
-    );
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    
-    // Convert photo buffer to base64 string for frontend
-    let userObj = user.toObject();
-    if (userObj.photo && userObj.photo.data) {
-      userObj.photo = `data:${userObj.photo.contentType};base64,${userObj.photo.data.toString('base64')}`;
-    } else {
-      userObj.photo = null;
-    }
-    res.json({ message: 'Profile updated', user: userObj });
-  } catch (err) {
-    res.status(500).json({ message: 'Error updating profile', error: err.message });
-  }
-};
-
 // Verify transporter at startup
 transporter.verify(function(error, success) {
   if (error) {
@@ -300,25 +244,3 @@ export const verifyLoginOtp = async (req, res) => {
   }
 };
 
-// GET /api/verify-token - Verify JWT token and return user profile
-export const verifyToken = async (req, res) => {
-  try {
-    // User is already attached to req by authenticateToken middleware
-    const user = req.user;
-    
-    // Convert photo buffer to base64 string for frontend
-    let userObj = user.toObject();
-    if (userObj.photo && userObj.photo.data) {
-      userObj.photo = `data:${userObj.photo.contentType};base64,${userObj.photo.data.toString('base64')}`;
-    } else {
-      userObj.photo = null;
-    }
-    
-    res.json({ 
-      message: 'Token verified',
-      user: userObj
-    });
-  } catch (err) {
-    res.status(500).json({ message: 'Token verification failed', error: err.message });
-  }
-};

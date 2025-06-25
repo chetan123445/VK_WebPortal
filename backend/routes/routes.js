@@ -1,5 +1,6 @@
 import express from 'express';
-import { registerUser, findUserByEmail, loginUser, sendRegisterOtp, verifyRegisterOtp, sendLoginOtp, verifyLoginOtp, getProfile, updateProfile, upload, verifyToken } from '../controller/userController.js';
+import { registerUser, findUserByEmail, loginUser, sendRegisterOtp, verifyRegisterOtp, sendLoginOtp, verifyLoginOtp } from '../controller/userController.js';
+import { getProfile, updateProfile, upload, verifyToken } from '../controller/profileController.js';
 import { getAdmins, addAdmin, removeAdmin, isAdmin, adminLogin, checkSuperAdmin } from '../controller/adminController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import multer from 'multer';
