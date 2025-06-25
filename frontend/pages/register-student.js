@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { BASE_API_URL } from "./apiurl";
 import { useRouter } from "next/navigation";
 
@@ -13,15 +13,51 @@ const inputStyle = {
   width: "100%", padding: 8, margin: "8px 0", borderRadius: 6, border: "1px solid #ccc"
 };
 
+// Add password validation helpers
+function getPasswordRequirements(password) {
+  return {
+    length: password.length >= 8 && password.length <= 30,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /[0-9]/.test(password)
+  };
+}
+function getPasswordSuggestions(password) {
+  const req = getPasswordRequirements(password);
+  const suggestions = [];
+  if (!req.length) suggestions.push('8-30 characters');
+  if (!req.uppercase) suggestions.push('an uppercase letter');
+  if (!req.lowercase) suggestions.push('a lowercase letter');
+  if (!req.number) suggestions.push('a number');
+  return suggestions;
+}
+
 export default function RegisterStudent() {
   const [form, setForm] = useState({
     name: '', email: '', school: '', class: '', otp: '', password: ''
   });
   const [otpSent, setOtpSent] = useState(false);
   const [msg, setMsg] = useState(""); const [error, setError] = useState(""); const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const [otpBlocks, setOtpBlocks] = useState(["", "", "", "", "", ""]);
+  const otpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleOtpBlockChange = (idx, val) => {
+    if (!/^[0-9]?$/.test(val)) return;
+    const newBlocks = [...otpBlocks];
+    newBlocks[idx] = val;
+    setOtpBlocks(newBlocks);
+    if (val && idx < 5) otpRefs[idx + 1].current.focus();
+  };
+
+  const handleOtpBlockKeyDown = (idx, e) => {
+    if (e.key === "Backspace" && !otpBlocks[idx] && idx > 0) {
+      otpRefs[idx - 1].current.focus();
+    }
+  };
 
   const handleSendOtp = async e => {
     e.preventDefault();
@@ -55,9 +91,14 @@ export default function RegisterStudent() {
     e.preventDefault();
     setMsg(""); setError(""); setLoading(true);
     try {
+      if (getPasswordSuggestions(form.password).length > 0) {
+        setError('Password is not strong enough.');
+        setLoading(false);
+        return;
+      }
       const res = await fetch(`${BASE_API_URL}/student/register`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, email: form.email.trim().toLowerCase() })
+        body: JSON.stringify({ ...form, email: form.email.trim().toLowerCase(), otp: otpBlocks.join("") })
       });
       if (res.ok) {
         setMsg("Registration successful! Redirecting...");
@@ -91,8 +132,32 @@ export default function RegisterStudent() {
             <button type="submit" disabled={loading} style={btnStyle}>{loading ? "Sending OTP..." : "Send OTP"}</button>
           ) : (
             <>
-              <input type="text" name="otp" placeholder="Enter OTP" value={form.otp} onChange={handleChange} required style={inputStyle} />
-              <input type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} required style={inputStyle} />
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 8 }}>
+                {otpBlocks.map((v, i) => (
+                  <input
+                    key={i}
+                    ref={otpRefs[i]}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={v}
+                    onChange={e => handleOtpBlockChange(i, e.target.value)}
+                    onKeyDown={e => handleOtpBlockKeyDown(i, e)}
+                    style={{ width: 36, height: 36, textAlign: 'center', fontSize: 20, borderRadius: 6, border: '1px solid #ccc' }}
+                  />
+                ))}
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input type={showPassword ? "text" : "password"} name="password" placeholder="Password" value={form.password} onChange={handleChange} required style={inputStyle} maxLength={30} />
+                <span onClick={() => setShowPassword(v => !v)} style={{ position: 'absolute', right: 12, top: 14, cursor: 'pointer', userSelect: 'none', color: '#888', fontSize: 18 }} title={showPassword ? 'Hide password' : 'Show password'}>
+                  {showPassword ? '🙈' : '👁️'}
+                </span>
+              </div>
+              {form.password && getPasswordSuggestions(form.password).length > 0 && (
+                <div style={{ color: '#c00', fontSize: 13, marginTop: 4 }}>
+                  Password must contain: {getPasswordSuggestions(form.password).join(', ')}
+                </div>
+              )}
               <button type="submit" disabled={loading} style={btnStyle}>{loading ? "Registering..." : "Register"}</button>
             </>
           )}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { BASE_API_URL } from "./apiurl";
 import { useRouter } from "next/navigation";
 
@@ -24,7 +24,8 @@ const inputStyle = {
 export default function RegisterParent() {
   const [step, setStep] = useState(1);
   const [childEmail, setChildEmail] = useState("");
-  const [childOtp, setChildOtp] = useState("");
+  const [childOtpBlocks, setChildOtpBlocks] = useState(["", "", "", "", "", ""]);
+  const childOtpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
   const [childOtpSent, setChildOtpSent] = useState(false);
   const [childOtpVerified, setChildOtpVerified] = useState(false);
 
@@ -32,7 +33,8 @@ export default function RegisterParent() {
   const [parentName, setParentName] = useState("");
   const [parentEmail, setParentEmail] = useState("");
   const [parentPassword, setParentPassword] = useState("");
-  const [parentOtp, setParentOtp] = useState("");
+  const [parentOtpBlocks, setParentOtpBlocks] = useState(["", "", "", "", "", ""]);
+  const parentOtpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
   const [parentOtpSent, setParentOtpSent] = useState(false);
   const [parentOtpVerified, setParentOtpVerified] = useState(false);
 
@@ -42,6 +44,7 @@ export default function RegisterParent() {
   const router = useRouter();
 
   const [showStudentRegister, setShowStudentRegister] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Step 1: Verify child email and send OTP
   const handleChildEmailSubmit = async (e) => {
@@ -81,7 +84,7 @@ export default function RegisterParent() {
     setError("");
     setLoading(true);
     // In production, verify OTP with backend
-    if (!childOtp || childOtp.length !== 6) {
+    if (!childOtpBlocks.join("").length === 6) {
       setError("Please enter the 6-digit OTP sent to child email.");
       setLoading(false);
       return;
@@ -132,6 +135,39 @@ export default function RegisterParent() {
     setLoading(false);
   };
 
+  function getPasswordRequirements(password) {
+    return {
+      length: password.length >= 8 && password.length <= 30,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password)
+    };
+  }
+
+  function getPasswordSuggestions(password) {
+    const req = getPasswordRequirements(password);
+    const suggestions = [];
+    if (!req.length) suggestions.push('8-30 characters');
+    if (!req.uppercase) suggestions.push('an uppercase letter');
+    if (!req.lowercase) suggestions.push('a lowercase letter');
+    if (!req.number) suggestions.push('a number');
+    return suggestions;
+  }
+
+  const handleOtpBlockChange = (blocks, setBlocks, refs, idx, val) => {
+    if (!/^[0-9]?$/.test(val)) return;
+    const newBlocks = [...blocks];
+    newBlocks[idx] = val;
+    setBlocks(newBlocks);
+    if (val && idx < 5) refs[idx + 1].current.focus();
+  };
+
+  const handleOtpBlockKeyDown = (blocks, refs, idx, e) => {
+    if (e.key === "Backspace" && !blocks[idx] && idx > 0) {
+      refs[idx - 1].current.focus();
+    }
+  };
+
   const handleParentOtpVerifyAndRegister = async (e) => {
     e.preventDefault();
     setMsg("");
@@ -144,7 +180,7 @@ export default function RegisterParent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: parentEmail.trim().toLowerCase(),
-          otp: parentOtp,
+          otp: parentOtpBlocks.join(""),
         }),
       });
       const data = await res.json();
@@ -158,6 +194,12 @@ export default function RegisterParent() {
       setLoading(false);
       return;
     }
+    // Check password strength
+    if (getPasswordSuggestions(parentPassword).length > 0) {
+      setError('Password is not strong enough.');
+      setLoading(false);
+      return;
+    }
     // Register parent
     try {
       const res = await fetch(`${BASE_API_URL}/user/register`, {
@@ -167,7 +209,7 @@ export default function RegisterParent() {
           name: parentName,
           email: parentEmail.trim().toLowerCase(),
           password: parentPassword,
-          otp: parentOtp,
+          otp: parentOtpBlocks.join(""),
           registeredAs: "Parent",
           childEmail: childEmail.trim().toLowerCase(),
         }),
@@ -264,14 +306,22 @@ export default function RegisterParent() {
               </>
             ) : (
               <>
-                <input
-                  type="text"
-                  placeholder="Enter OTP sent to child email"
-                  value={childOtp}
-                  onChange={(e) => setChildOtp(e.target.value)}
-                  required
-                  style={inputStyle}
-                />
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 8 }}>
+                  {childOtpBlocks.map((v, i) => (
+                    <input
+                      key={i}
+                      ref={childOtpRefs[i]}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={v}
+                      onChange={e => handleOtpBlockChange(childOtpBlocks, setChildOtpBlocks, childOtpRefs, i, e.target.value)}
+                      onKeyDown={e => handleOtpBlockKeyDown(childOtpBlocks, childOtpRefs, i, e)}
+                      style={{ width: 36, height: 36, textAlign: 'center', fontSize: 20, borderRadius: 6, border: '1px solid #ccc' }}
+                    />
+                  ))}
+                </div>
+                <input type="hidden" name="childOtp" value={childOtpBlocks.join("")} />
                 <button
                   type="submit"
                   disabled={loading}
@@ -303,29 +353,52 @@ export default function RegisterParent() {
               disabled={parentOtpSent}
               style={inputStyle}
             />
-            <input
-              type="password"
-              placeholder="Password"
-              value={parentPassword}
-              onChange={e => setParentPassword(e.target.value)}
-              required
-              disabled={parentOtpSent}
-              style={inputStyle}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={parentPassword}
+                onChange={e => setParentPassword(e.target.value)}
+                required
+                style={inputStyle}
+                disabled={parentOtpSent}
+                maxLength={30}
+              />
+              <span
+                onClick={() => setShowPassword(v => !v)}
+                style={{ position: 'absolute', right: 12, top: 14, cursor: 'pointer', userSelect: 'none', color: '#888', fontSize: 18 }}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </span>
+            </div>
+            {parentPassword && getPasswordSuggestions(parentPassword).length > 0 && (
+              <div style={{ color: '#c00', fontSize: 13, marginTop: 4 }}>
+                Password must contain: {getPasswordSuggestions(parentPassword).join(', ')}
+              </div>
+            )}
             {!parentOtpSent ? (
               <button type="submit" disabled={loading} style={btnStyle}>
                 {loading ? "Sending OTP..." : "Send OTP to Parent Email"}
               </button>
             ) : (
               <>
-                <input
-                  type="text"
-                  placeholder="Enter OTP sent to your email"
-                  value={parentOtp}
-                  onChange={e => setParentOtp(e.target.value)}
-                  required
-                  style={inputStyle}
-                />
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 8 }}>
+                  {parentOtpBlocks.map((v, i) => (
+                    <input
+                      key={i}
+                      ref={parentOtpRefs[i]}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={v}
+                      onChange={e => handleOtpBlockChange(parentOtpBlocks, setParentOtpBlocks, parentOtpRefs, i, e.target.value)}
+                      onKeyDown={e => handleOtpBlockKeyDown(parentOtpBlocks, parentOtpRefs, i, e)}
+                      style={{ width: 36, height: 36, textAlign: 'center', fontSize: 20, borderRadius: 6, border: '1px solid #ccc' }}
+                    />
+                  ))}
+                </div>
+                <input type="hidden" name="parentOtp" value={parentOtpBlocks.join("")} />
                 <button type="submit" disabled={loading} style={btnStyle}>
                   {loading ? "Verifying & Registering..." : "Verify OTP & Register"}
                 </button>

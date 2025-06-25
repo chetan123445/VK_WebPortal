@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 // import Register from "./Register"; // Remove this import
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from "./apiurl";
@@ -18,6 +18,9 @@ export default function Login() {
   const [isAdminOtp, setIsAdminOtp] = useState(false);
   const [adminOtpSent, setAdminOtpSent] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false); // <-- new state
+  const [showPassword, setShowPassword] = useState(false);
+  const [otpBlocks, setOtpBlocks] = useState(["", "", "", "", "", ""]);
+  const otpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
   const router = useRouter();
 
   const handlePasswordLogin = async (e) => {
@@ -53,7 +56,7 @@ export default function Login() {
         localStorage.setItem("isSuperAdmin", isSuperAdmin ? "true" : "false");
         setMsg("Admin login successful!");
         setError("");
-        router.push("/admin/dashboard");
+        router.replace("/admin/dashboard");
         return;
       }
       if (adminRes.status === 404) {
@@ -100,16 +103,16 @@ export default function Login() {
         // Redirect to dashboard based on user type
         if (data.user && data.user.registeredAs) {
           if (data.user.registeredAs === "Student") {
-            router.push("/student/dashboard");
+            router.replace("/student/dashboard");
           } else if (data.user.registeredAs === "Teacher") {
-            router.push("/teacher/dashboard");
+            router.replace("/teacher/dashboard");
           } else if (data.user.registeredAs === "Parent") {
-            router.push("/parent/dashboard");
+            router.replace("/parent/dashboard");
           } else {
-            router.push("/MainHome");
+            router.replace("/MainHome");
           }
         } else {
-          router.push("/MainHome");
+          router.replace("/MainHome");
         }
       } else {
         const data = await res.json();
@@ -198,6 +201,20 @@ export default function Login() {
     }
   };
 
+  const handleOtpBlockChange = (idx, val) => {
+    if (!/^[0-9]?$/.test(val)) return;
+    const newBlocks = [...otpBlocks];
+    newBlocks[idx] = val;
+    setOtpBlocks(newBlocks);
+    if (val && idx < 5) otpRefs[idx + 1].current.focus();
+  };
+
+  const handleOtpBlockKeyDown = (idx, e) => {
+    if (e.key === "Backspace" && !otpBlocks[idx] && idx > 0) {
+      otpRefs[idx - 1].current.focus();
+    }
+  };
+
   const handleOtpLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -215,7 +232,7 @@ export default function Login() {
         const res = await fetch(`${BASE_API_URL}/user/verify-login-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: cleanEmail, otp })
+          body: JSON.stringify({ email: cleanEmail, otp: otpBlocks.join("") })
         });
         if (res.ok) {
           // Fetch isSuperAdmin info
@@ -233,7 +250,7 @@ export default function Login() {
           localStorage.setItem("isSuperAdmin", isSuperAdmin ? "true" : "false");
           setMsg("Admin login successful!");
           setError("");
-          router.push("/admin/dashboard");
+          router.replace("/admin/dashboard");
         } else {
           const data = await res.json();
           setError(data.message || "Invalid OTP.");
@@ -249,7 +266,7 @@ export default function Login() {
       const res = await fetch(`${BASE_API_URL}/user/verify-login-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, otp })
+        body: JSON.stringify({ email: cleanEmail, otp: otpBlocks.join("") })
       });
       if (res.ok) {
         const data = await res.json();
@@ -262,16 +279,16 @@ export default function Login() {
         // Redirect to dashboard based on user type
         if (data.user && data.user.registeredAs) {
           if (data.user.registeredAs === "Student") {
-            router.push("/student/dashboard");
+            router.replace("/student/dashboard");
           } else if (data.user.registeredAs === "Teacher") {
-            router.push("/teacher/dashboard");
+            router.replace("/teacher/dashboard");
           } else if (data.user.registeredAs === "Parent") {
-            router.push("/parent/dashboard");
+            router.replace("/parent/dashboard");
           } else {
-            router.push("/MainHome");
+            router.replace("/MainHome");
           }
         } else {
-          router.push("/MainHome");
+          router.replace("/MainHome");
         }
       } else {
         const data = await res.json();
@@ -466,16 +483,9 @@ export default function Login() {
                   }}
                 /><br />
               </div>
-              <div style={{
-                background: "#f7f7f7",
-                borderRadius: 10,
-                margin: "0 auto 16px auto",
-                padding: "16px 0",
-                width: 260,
-                boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
-              }}>
+              <div style={{ position: 'relative' }}>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -488,7 +498,14 @@ export default function Login() {
                     border: "1px solid #ccc",
                     fontSize: "1rem"
                   }}
-                /><br />
+                />
+                <span
+                  onClick={() => setShowPassword(v => !v)}
+                  style={{ position: 'absolute', right: 18, top: 18, cursor: 'pointer', userSelect: 'none', color: '#888', fontSize: 18 }}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </span>
               </div>
               <div style={{
                 background: "#f7f7f7",
@@ -581,30 +598,22 @@ export default function Login() {
                 </div>
               ) : (
                 <>
-                  <div style={{
-                    background: "#f7f7f7",
-                    borderRadius: 10,
-                    margin: "0 auto 16px auto",
-                    padding: "16px 0",
-                    width: 260,
-                    boxShadow: "0 1px 4px rgba(30,60,114,0.06)"
-                  }}>
-                    <input
-                      type="text"
-                      placeholder="Enter OTP"
-                      value={otp}
-                      onChange={e => setOtp(e.target.value)}
-                      required
-                      style={{
-                        width: "85%",
-                        padding: "10px",
-                        margin: "8px 0",
-                        borderRadius: 6,
-                        border: "1px solid #ccc",
-                        fontSize: "1rem"
-                      }}
-                    /><br />
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 8 }}>
+                    {otpBlocks.map((v, i) => (
+                      <input
+                        key={i}
+                        ref={otpRefs[i]}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={v}
+                        onChange={e => handleOtpBlockChange(i, e.target.value)}
+                        onKeyDown={e => handleOtpBlockKeyDown(i, e)}
+                        style={{ width: 36, height: 36, textAlign: 'center', fontSize: 20, borderRadius: 6, border: '1px solid #ccc' }}
+                      />
+                    ))}
                   </div>
+                  <input type="hidden" name="otp" value={otpBlocks.join("")} />
                   <div style={{
                     background: "#f7f7f7",
                     borderRadius: 10,
