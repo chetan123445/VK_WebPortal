@@ -119,6 +119,7 @@ function MainHomeContent() {
         },
         body: JSON.stringify({
           email: removeEmail,
+          isSuperAdmin: isSuperAdmin, // Pass isSuperAdmin like in add admin
           requesterEmail: userEmail
         })
       });

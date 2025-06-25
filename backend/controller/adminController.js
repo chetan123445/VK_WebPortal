@@ -92,14 +92,8 @@ export const addAdmin = async (req, res) => {
 // Remove an admin (only superadmin can remove)
 export const removeAdmin = async (req, res) => {
   try {
-    const { email, requesterEmail } = req.body;
+    const { email, isSuperAdmin, requesterEmail } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
-
-    // Check if requester is a superadmin
-    const requester = await Admin.findOne({ email: requesterEmail });
-    if (!requester || !requester.isSuperAdmin) {
-      return res.status(403).json({ message: 'Only superadmins can remove admins.' });
-    }
 
     // Don't allow removing yourself
     if (email === requesterEmail) {
@@ -109,14 +103,6 @@ export const removeAdmin = async (req, res) => {
     // Check if admin exists
     const admin = await Admin.findOne({ email });
     if (!admin) return res.status(404).json({ message: 'Admin not found.' });
-
-    // Prevent removing last superadmin
-    if (admin.isSuperAdmin) {
-      const superAdminCount = await Admin.countDocuments({ isSuperAdmin: true });
-      if (superAdminCount <= 1) {
-        return res.status(400).json({ message: "At least one superadmin must remain." });
-      }
-    }
 
     await Admin.deleteOne({ email });
     res.status(200).json({ message: 'Admin removed successfully.' });
