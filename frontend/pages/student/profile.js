@@ -239,6 +239,34 @@ export default function StudentProfile() {
           textAlign: 'center',
           position: 'relative'
         }}>
+          {/* Cross button to go back to dashboard */}
+          <button
+            onClick={() => router.push('/student/dashboard')}
+            aria-label="Close and go to dashboard"
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              background: 'rgba(255,255,255,0.15)',
+              border: 'none',
+              borderRadius: '50%',
+              width: 36,
+              height: 36,
+              color: '#fff',
+              fontSize: 24,
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.2s',
+              zIndex: 2
+            }}
+            onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.3)'}
+            onMouseLeave={e => e.target.style.background = 'rgba(255,255,255,0.15)'}
+          >
+            ×
+          </button>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
             <div style={{ position: 'relative' }}>
               <img
