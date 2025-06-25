@@ -3,33 +3,25 @@ import imageCompression from 'browser-image-compression';
 import { useRouter } from 'next/navigation';
 import { BASE_API_URL } from '../apiurl';
 import { logout, getToken } from '../../utils/auth';
+import useAuthRedirect from '../../utils/useAuthRedirect';
 
 const DEFAULT_AVATAR = '/default-avatar.png';
 
 export default function StudentProfile() {
+  useAuthRedirect();
   const router = useRouter();
-  // Block all rendering until we know if the user is authenticated
-  const [checkedAuth, setCheckedAuth] = useState(false);
+  // Remove all manual checkedAuth logic
   const [userEmail, setUserEmail] = useState('');
+
   useEffect(() => {
-    if (!getToken()) {
-      if (typeof window !== 'undefined') {
-        localStorage.clear();
-        sessionStorage.clear();
-        document.body.innerHTML = '';
-        window.location.href = '/login';
-      }
-    } else {
-      // Try both localStorage and sessionStorage for userEmail
-      const email = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail') || '';
-      setUserEmail(email);
-      setCheckedAuth(true);
-    }
-  }, [router]);
-  if (!checkedAuth) return null;
+    // Always get userEmail from storage on mount
+    const email =
+      (typeof window !== 'undefined' && (localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail'))) || '';
+    setUserEmail(email);
+  }, []);
 
   const [editMode, setEditMode] = useState(false);
-  const [profile, setProfile] = useState(null);
+  const [studentProfile, setStudentProfile] = useState(null);
   const [form, setForm] = useState({ name: '', phone: '', school: '', class: '', photo: null });
   const [preview, setPreview] = useState('');
   const [status, setStatus] = useState('');
@@ -38,49 +30,53 @@ export default function StudentProfile() {
 
   // Fetch profile on mount and when userEmail changes
   useEffect(() => {
-    if (userEmail) {
-      setIsLoading(true);
-      fetch(`${BASE_API_URL}/profile?email=${encodeURIComponent(userEmail)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.user) {
-            setProfile(data.user);
-            setForm({
-              name: data.user.name || '',
-              phone: data.user.phone || '',
-              school: data.user.school || '',
-              class: data.user.class || '',
-              photo: null
-            });
-            setPreview(data.user.photo ? data.user.photo : DEFAULT_AVATAR);
-          } else {
-            setProfile(null);
-            setForm({ name: '', phone: '', school: '', class: '', photo: null });
-            setPreview(DEFAULT_AVATAR);
-          }
-        })
-        .catch(() => {
-          setProfile(null);
+    if (!userEmail) return;
+    setIsLoading(true);
+    fetch(`${BASE_API_URL}/profile?email=${encodeURIComponent(userEmail)}`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+      .then(async res => {
+        if (!res.ok) throw new Error('Profile fetch failed');
+        const data = await res.json();
+        if (data && data.user) {
+          setStudentProfile(data.user);
+          setForm({
+            name: data.user.name || '',
+            phone: data.user.phone || '',
+            school: data.user.school || '',
+            class: data.user.class || '',
+            photo: null
+          });
+          setPreview(data.user.photo ? data.user.photo : DEFAULT_AVATAR);
+        } else {
+          setStudentProfile(null);
           setForm({ name: '', phone: '', school: '', class: '', photo: null });
           setPreview(DEFAULT_AVATAR);
-        })
-        .finally(() => setIsLoading(false));
-    }
+        }
+      })
+      .catch(() => {
+        setStudentProfile(null);
+        setForm({ name: '', phone: '', school: '', class: '', photo: null });
+        setPreview(DEFAULT_AVATAR);
+      })
+      .finally(() => setIsLoading(false));
   }, [userEmail]);
 
   // When modal opens, update form and preview from latest profile
   useEffect(() => {
-    if (profile) {
+    if (studentProfile) {
       setForm({
-        name: profile.name || '',
-        phone: profile.phone || '',
-        school: profile.school || '',
-        class: profile.class || '',
+        name: studentProfile.name || '',
+        phone: studentProfile.phone || '',
+        school: studentProfile.school || '',
+        class: studentProfile.class || '',
         photo: null
       });
-      setPreview(profile.photo ? profile.photo : DEFAULT_AVATAR);
+      setPreview(studentProfile.photo ? studentProfile.photo : DEFAULT_AVATAR);
     }
-  }, [profile]);
+  }, [studentProfile]);
 
   // Handle photo preview
   useEffect(() => {
@@ -88,23 +84,23 @@ export default function StudentProfile() {
       const url = URL.createObjectURL(form.photo);
       setPreview(url);
       return () => URL.revokeObjectURL(url);
-    } else if (profile) {
-      setPreview(profile.photo ? profile.photo : DEFAULT_AVATAR);
+    } else if (studentProfile) {
+      setPreview(studentProfile.photo ? studentProfile.photo : DEFAULT_AVATAR);
     }
-  }, [form.photo, profile]);
+  }, [form.photo, studentProfile]);
 
   const handleEdit = () => setEditMode(true);
   
   const handleCancel = () => {
     setEditMode(false);
     setForm({
-      name: profile?.name || '',
-      phone: profile?.phone || '',
-      school: profile?.school || '',
-      class: profile?.class || '',
+      name: studentProfile?.name || '',
+      phone: studentProfile?.phone || '',
+      school: studentProfile?.school || '',
+      class: studentProfile?.class || '',
       photo: null
     });
-    setPreview(profile?.photo || DEFAULT_AVATAR);
+    setPreview(studentProfile?.photo || DEFAULT_AVATAR);
     setStatus('');
   };
 
@@ -146,7 +142,7 @@ export default function StudentProfile() {
       });
       const data = await res.json();
       if (res.ok) {
-        setProfile({ ...profile, photo: '' });
+        setStudentProfile({ ...studentProfile, photo: '' });
         setPreview(DEFAULT_AVATAR);
         setStatus('Photo deleted successfully');
         setTimeout(() => setStatus(''), 2000);
@@ -188,7 +184,7 @@ export default function StudentProfile() {
       });
       const data = await res.json();
       if (res.ok) {
-        setProfile(data.user);
+        setStudentProfile(data.user);
         setEditMode(false);
         setStatus('Profile updated successfully!');
         setTimeout(() => setStatus(''), 2000);
@@ -208,7 +204,12 @@ export default function StudentProfile() {
 
   const handleLogout = () => {
     logout();
-    router.replace('/login');
+    if (typeof window !== 'undefined') {
+      localStorage.clear();
+      sessionStorage.clear();
+      document.body.innerHTML = '';
+      window.location.replace('/login'); // Use replace to prevent back navigation
+    }
   };
 
   const triggerFileInput = () => {
@@ -277,10 +278,10 @@ export default function StudentProfile() {
             </div>
             <div>
               <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 4 }}>
-                {profile?.name || 'User Profile'}
+                {studentProfile?.name || 'User Profile'}
               </div>
               <div style={{ opacity: 0.9, fontSize: 14 }}>
-                {profile?.email || userEmail}
+                {studentProfile?.email || userEmail}
               </div>
             </div>
           </div>
@@ -328,7 +329,7 @@ export default function StudentProfile() {
                   </label>
                   <input
                     type="email"
-                    value={profile?.email || userEmail}
+                    value={studentProfile?.email || userEmail}
                     disabled
                     style={{ width: '100%', padding: '12px 16px', borderRadius: 8, border: '2px solid #f0f0f0', fontSize: 16, backgroundColor: '#f8f9fa', color: '#666' }}
                   />
@@ -435,7 +436,7 @@ export default function StudentProfile() {
                 )}
               </div>
               {/* Photo Actions (only in edit mode) */}
-              {editMode && profile?.photo && (
+              {editMode && studentProfile?.photo && (
                 <div style={{ textAlign: 'center', marginTop: 16 }}>
                   <button
                     type="button"
