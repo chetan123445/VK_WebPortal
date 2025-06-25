@@ -392,7 +392,7 @@ function MainHomeContent() {
           </button>
         </nav>
       </aside>
-      <main style={{ marginLeft: 260, flex: 1, minHeight: "100vh", background: "#f4f7fa" }}>
+      <main style={{ marginLeft: 260, flex: 1, minHeight: "100vh", background: "#f4f7fa", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
         {/* Remove the popout menu, keep only sidebar options */}
         <ProfileMenu 
           userEmail={userEmail} 
@@ -530,7 +530,8 @@ function MainHomeContent() {
           boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)",
           textAlign: "center",
           maxWidth: 400,
-          width: "95%"
+          width: "95%",
+          margin: "0 auto"
         }}>
           <h1 style={{
             fontWeight: 700,
