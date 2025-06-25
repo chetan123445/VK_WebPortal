@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import imageCompression from 'browser-image-compression';
 import { useRouter } from 'next/navigation';
+import { BASE_API_URL } from './apiurl';
+import { getToken } from '../utils/auth.js';
 
 const DEFAULT_AVATAR = '/default-avatar.png'; // Correct path for default avatar in uploads folder
 // Place a default avatar in public if needed

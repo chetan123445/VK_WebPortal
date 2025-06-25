@@ -35,6 +35,7 @@ export default function Login() {
         body: JSON.stringify({ email: cleanEmail, password })
       });
       if (adminRes.ok) {
+        const data = await adminRes.json();
         // Fetch isSuperAdmin info
         const superRes = await fetch(`${BASE_API_URL}/check-superadmin`, {
           method: "POST",
@@ -46,6 +47,8 @@ export default function Login() {
           const superData = await superRes.json();
           isSuperAdmin = !!superData.isSuperAdmin;
         }
+        setToken(data.token); // <-- Store admin JWT
+        setUserData(data.admin); // <-- Store admin data
         localStorage.setItem("userEmail", cleanEmail);
         localStorage.setItem("isSuperAdmin", isSuperAdmin ? "true" : "false");
         setMsg("Admin login successful!");

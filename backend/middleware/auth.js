@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Admin from '../models/Admin.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
@@ -13,11 +14,16 @@ export const authenticateToken = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.userId);
-    
+    let user = await User.findById(decoded.userId);
     if (!user) {
-      return res.status(401).json({ message: 'User not found' });
+      user = await Admin.findById(decoded.userId);
+      if (!user) {
+        return res.status(401).json({ message: 'User not found' });
+      }
+      // Optionally, mark as admin for downstream logic
+      user.isAdmin = true;
     }
+req.user = user;
 
     req.user = user;
     next();

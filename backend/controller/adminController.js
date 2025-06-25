@@ -176,8 +176,19 @@ export const adminLogin = async (req, res) => {
       // Password does not match
       return res.status(401).json({ message: 'Incorrect password.' });
     }
-    // Success
-    return res.json({ success: true, isAdmin: true, redirect: '/admin/dashboard' });
+    // Success: Generate JWT token and return admin data
+    // Import generateToken if not already
+    const { generateToken } = await import('../middleware/auth.js');
+    const token = generateToken(admin._id);
+    return res.json({
+      message: 'Login successful',
+      token,
+      admin: {
+        id: admin._id,
+        email: admin.email,
+        isSuperAdmin: admin.isSuperAdmin
+      }
+    });
   } catch (err) {
     return res.status(500).json({ message: 'Server error' });
   }
