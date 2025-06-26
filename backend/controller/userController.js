@@ -151,8 +151,8 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Incorrect password" });
 
-    // Generate JWT token
-    const token = generateToken(user._id);
+    // Generate JWT token with role
+    const token = generateToken(user._id, user.registeredAs);
 
     res.status(200).json({ 
       message: "Login successful", 
@@ -204,15 +204,14 @@ export const verifyLoginOtp = async (req, res) => {
     const { email, otp } = req.body;
     const cleanEmail = email.trim().toLowerCase();
     const record = loginOtpStore[cleanEmail];
-    console.log("[OTP DEBUG] expires:", record?.expires, "now:", Date.now(), "valid:", record && record.expires >= Date.now());
     if (!record || record.otp !== otp || record.expires < Date.now()) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
     // Check User collection
     let user = await User.findOne({ email: cleanEmail });
     if (user) {
-      // Generate JWT token
-      const token = generateToken(user._id);
+      // Generate JWT token with role
+      const token = generateToken(user._id, user.registeredAs);
       delete loginOtpStore[cleanEmail];
       return res.json({
         message: 'OTP verified',
@@ -228,10 +227,12 @@ export const verifyLoginOtp = async (req, res) => {
     // Check Admin collection
     let admin = await Admin.findOne({ email: cleanEmail });
     if (admin) {
-      // Generate JWT token (or just return success, as admin login is handled separately)
+      // Generate JWT token for admin
+      const token = generateToken(admin._id, 'admin');
       delete loginOtpStore[cleanEmail];
       return res.json({
         message: 'OTP verified',
+        token,
         admin: {
           id: admin._id,
           email: admin.email,

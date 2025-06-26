@@ -23,6 +23,7 @@ export const authenticateToken = async (req, res, next) => {
       user.isAdmin = true;
     }
     req.user = user;
+    req.user.role = decoded.role; // Attach role from token
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
@@ -35,8 +36,8 @@ export const authenticateToken = async (req, res, next) => {
   }
 };
 
-export const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: '7d' });
+export const generateToken = (userId, role) => {
+  return jwt.sign({ userId, role }, JWT_SECRET, { expiresIn: '7d' });
 };
 
 export const verifyToken = (token) => {
@@ -45,4 +46,4 @@ export const verifyToken = (token) => {
   } catch (error) {
     return null;
   }
-}; 
+};

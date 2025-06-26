@@ -182,7 +182,7 @@ export const adminLogin = async (req, res) => {
     // Success: Generate JWT token and return admin data
     // Import generateToken if not already
     const { generateToken } = await import('../middleware/auth.js');
-    const token = generateToken(admin._id);
+    const token = generateToken(admin._id, 'admin');
     return res.json({
       message: 'Login successful',
       token,
