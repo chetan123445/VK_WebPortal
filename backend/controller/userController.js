@@ -183,7 +183,7 @@ export const sendLoginOtp = async (req, res) => {
       isAdmin = true;
     }
     const otp = generateOtp();
-    loginOtpStore[cleanEmail] = { otp, expires: Date.now() + 15 * 1000 }; // 15 sec for testing
+    loginOtpStore[cleanEmail] = { otp, expires: Date.now() + 120 * 1000 }; // 2 min
 
     await transporter.sendMail({
       from: emailUser,

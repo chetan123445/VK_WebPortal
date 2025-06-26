@@ -49,7 +49,7 @@ export default function RegisterParent() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
-    if (childOtpSent) setChildOtpTimer(180);
+    if (childOtpSent) setChildOtpTimer(120); // 2 minutes
   }, [childOtpSent]);
   useEffect(() => {
     if (!childOtpSent || childOtpTimer <= 0) return;
@@ -57,7 +57,7 @@ export default function RegisterParent() {
     return () => clearInterval(interval);
   }, [childOtpSent, childOtpTimer]);
   useEffect(() => {
-    if (parentOtpSent) setParentOtpTimer(180);
+    if (parentOtpSent) setParentOtpTimer(120); // 2 minutes
   }, [parentOtpSent]);
   useEffect(() => {
     if (!parentOtpSent || parentOtpTimer <= 0) return;
