@@ -96,22 +96,39 @@ export default function RegisterParent() {
     setLoading(false);
   };
 
-  // Step 2: Verify OTP sent to child email (simulate for now)
+  // Step 2: Verify OTP sent to child email
   const handleChildOtpVerify = async (e) => {
     e.preventDefault();
     setMsg("");
     setError("");
     setLoading(true);
-    // In production, verify OTP with backend
-    if (!childOtpBlocks.join("").length === 6) {
+    const otp = childOtpBlocks.join("");
+    if (otp.length !== 6) {
       setError("Please enter the 6-digit OTP sent to child email.");
       setLoading(false);
       return;
     }
-    // Simulate success for now
-    setChildOtpVerified(true);
-    setStep(2);
-    setMsg("Child email verified. Please complete your registration.");
+    // Verify OTP with backend
+    try {
+      const res = await fetch(`${BASE_API_URL}/parent/verify-child-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          childEmail: childEmail.trim().toLowerCase(),
+          otp
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setChildOtpVerified(true);
+        setStep(2);
+        setMsg("Child email verified. Please complete your registration.");
+      } else {
+        setError(data.message || "Invalid or expired OTP.");
+      }
+    } catch {
+      setError("OTP verification failed. Please try again.");
+    }
     setLoading(false);
   };
 
