@@ -8,7 +8,7 @@ import { getToken, logout } from "../../utils/auth.js";
 import ProtectedRoute from '../../components/ProtectedRoute';
 
 // Sidebar component for Teacher with feature buttons (always visible, no hamburger)
-function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedMenu }) {
+function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedMenu, onLogout }) {
   const menuItems = [
     { key: "test-generator", label: "Test Generator", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
     { key: "cbse-updates", label: "CBSE Updates", icon: <FaNewspaper style={{ fontSize: 18 }} /> },
@@ -73,7 +73,7 @@ function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
         ))}
       </nav>
       <button
-        onClick={() => { logout(); window.location.href = "/login"; }}
+        onClick={onLogout}
         style={{
           margin: "32px 0 0 0",
           width: "80%",
@@ -148,6 +148,12 @@ function TeacherDashboard() {
   const [userName, setUserName] = useState("");
 
   const router = useRouter();
+
+  // Logout handler using router.push for consistency
+  const handleLogout = useCallback(() => {
+    logout();
+    router.push("/Login");
+  }, [router]);
 
   // Fetch profile on mount and when userEmail changes (not just when profile menu is selected)
   const fetchProfile = useCallback(() => {
@@ -812,6 +818,7 @@ function TeacherDashboard() {
           userName={userName}
           onMenuSelect={setSelectedMenu}
           selectedMenu={selectedMenu}
+          onLogout={handleLogout}
         />
         <main style={{ marginLeft: 260, flex: 1, minHeight: "100vh", background: "#f4f7fa", transition: "margin-left 0.25s cubic-bezier(.4,0,.2,1)" }}>
           {renderContent()}

@@ -4,6 +4,7 @@ import { FaClipboardList, FaBookOpen, FaChartBar, FaBullhorn, FaCalendarAlt, FaE
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken, logout } from "../../utils/auth.js";
 import ProtectedRoute from '../../components/ProtectedRoute';
+import { useRouter } from 'next/navigation';
 
 // Sidebar component for Student (always visible, no hamburger)
 function StudentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedMenu }) {
