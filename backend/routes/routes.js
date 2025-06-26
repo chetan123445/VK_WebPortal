@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, findUserByEmail, loginUser, sendRegisterOtp, verifyRegisterOtp, sendLoginOtp, verifyLoginOtp } from '../controller/userController.js';
+import { registerUser, findUserByEmail, loginUser, sendRegisterOtp, verifyRegisterOtp, sendLoginOtp, verifyLoginOtp, deleteUser } from '../controller/userController.js';
 import { getProfile, updateProfile, upload, verifyToken } from '../controller/profileController.js';
 import { getAdmins, addAdmin, removeAdmin, isAdmin, adminLogin, checkSuperAdmin } from '../controller/adminController.js';
 import { authenticateToken } from '../middleware/auth.js';
@@ -52,6 +52,7 @@ router.post('/api/addadmins', addAdmin);
 router.delete('/api/removeadmin', removeAdmin);
 router.post('/api/admin/login', adminLogin); // Secure admin login route
 router.post('/api/check-superadmin', checkSuperAdmin);
+router.post('/api/user/delete', deleteUser);
 router.post('/api/admin/find-user', manageFindUserByEmail); // Superadmin only
 router.delete('/api/admin/delete-user', manageDeleteUserByEmail); // Superadmin only
 

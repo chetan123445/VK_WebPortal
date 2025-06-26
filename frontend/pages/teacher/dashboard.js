@@ -1,6 +1,7 @@
 "use client";
+import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from "react";
-import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser } from "react-icons/fa";
+import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt } from "react-icons/fa";
 import ProfileMenu from '../ProfileMenu'; // If you want to use the same ProfileMenu as admin
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken, logout } from "../../utils/auth.js";
@@ -17,7 +18,8 @@ function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
     { key: "timetable", label: "Timetable", icon: <FaCalendarAlt style={{ fontSize: 18 }} /> },
     { key: "messages", label: "Messages", icon: <FaEnvelope style={{ fontSize: 18 }} /> },
     { key: "resources", label: "Digital Resources", icon: <FaLaptop style={{ fontSize: 18 }} /> },
-    { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> } // Add Profile option at the end
+    { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
+    { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> }
   ];
   return (
     <aside style={{
@@ -138,11 +140,14 @@ function TeacherDashboard() {
   const [form, setForm] = useState({ name: '', phone: '', school: '', class: '', photo: null });
   const [status, setStatus] = useState('');
   const [preview, setPreview] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const fileInputRef = React.useRef();
 
   // Add userPhoto state to track the current photo for sidebar
   const [userPhoto, setUserPhoto] = useState('');
   const [userName, setUserName] = useState("");
+
+  const router = useRouter();
 
   // Fetch profile on mount and when userEmail changes (not just when profile menu is selected)
   const fetchProfile = useCallback(() => {
@@ -268,6 +273,28 @@ function TeacherDashboard() {
       setStatus('Failed to update profile');
     }
   };
+
+  // On mount, verify token
+  useEffect(() => {
+    const token = getToken();
+    if (!token) {
+      router.replace("/Login");
+      return;
+    }
+    fetch(`${BASE_API_URL}/verify-token`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) {
+          localStorage.clear();
+          router.replace("/Login");
+        }
+      })
+      .catch(() => {
+        localStorage.clear();
+        router.replace("/Login");
+      });
+  }, []);
 
   // Main content based on selected menu
   const renderContent = () => {
@@ -564,6 +591,167 @@ function TeacherDashboard() {
             </div>
           </div>
         </div>
+      );
+    }
+    if (selectedMenu === "delete-account") {
+      return (
+        <>
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(30,60,114,0.10)",
+            zIndex: 3000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            <div style={{
+              background: "#fff",
+              borderRadius: 24,
+              boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.13)",
+              padding: 36,
+              maxWidth: 420,
+              width: "95vw",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center"
+            }}>
+              <FaTrashAlt style={{ fontSize: 48, color: "#c00", marginBottom: 18 }} />
+              <h2 style={{
+                marginBottom: 12,
+                fontWeight: 700,
+                fontSize: 26,
+                color: "#c00",
+                letterSpacing: 0.5
+              }}>Delete Account</h2>
+              <div style={{ color: "#c00", fontWeight: 600, marginBottom: 18, textAlign: "center" }}>
+                Are you sure you want to delete your account?<br />This action cannot be undone.
+              </div>
+              <div style={{ display: "flex", gap: 16 }}>
+                <button
+                  style={{
+                    padding: "10px 32px",
+                    borderRadius: 8,
+                    background: "#c00",
+                    color: "#fff",
+                    border: "none",
+                    fontWeight: 600,
+                    fontSize: 16,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8
+                  }}
+                  onClick={() => setShowDeleteModal(true)}
+                >
+                  <FaTrashAlt style={{ fontSize: 18, marginBottom: -2 }} />
+                  Delete Account
+                </button>
+                <button
+                  style={{
+                    padding: "10px 32px",
+                    borderRadius: 8,
+                    background: "#bbb",
+                    color: "#222",
+                    border: "none",
+                    fontWeight: 600,
+                    fontSize: 16,
+                    cursor: "pointer"
+                  }}
+                  onClick={() => setSelectedMenu("profile")}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+          {showDeleteModal && (
+            <div style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0,0,0,0.25)",
+              zIndex: 4000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <div style={{
+                background: "#fff",
+                borderRadius: 20,
+                padding: 36,
+                minWidth: 340,
+                boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center"
+              }}>
+                <FaTrashAlt style={{ fontSize: 54, color: "#c00", marginBottom: 18 }} />
+                <div style={{ fontWeight: 700, fontSize: 22, color: "#c00", marginBottom: 12 }}>
+                  Confirm Account Deletion
+                </div>
+                <div style={{ color: "#333", marginBottom: 28, fontSize: 16 }}>
+                  This action is <b>permanent</b>.<br />Do you really want to delete your account?
+                </div>
+                <div style={{ display: "flex", gap: 18, justifyContent: "center" }}>
+                  <button
+                    style={{
+                      padding: "10px 32px",
+                      borderRadius: 8,
+                      background: "#c00",
+                      color: "#fff",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8
+                    }}
+                    onClick={async () => {
+                      const res = await fetch(`${BASE_API_URL}/user/delete`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: userEmail })
+                      });
+                      if (res.ok) {
+                        localStorage.clear();
+                        window.location.href = "/Login";
+                      } else {
+                        alert("Failed to delete account.");
+                        setShowDeleteModal(false);
+                      }
+                    }}
+                  >
+                    <FaTrashAlt style={{ fontSize: 18, marginBottom: -2 }} />
+                    Yes, Delete
+                  </button>
+                  <button
+                    style={{
+                      padding: "10px 32px",
+                      borderRadius: 8,
+                      background: "#bbb",
+                      color: "#222",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer"
+                    }}
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       );
     }
     // Main content for other menu items

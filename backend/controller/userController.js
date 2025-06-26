@@ -246,3 +246,18 @@ export const verifyLoginOtp = async (req, res) => {
   }
 };
 
+export const deleteUser = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+    const cleanEmail = email.trim().toLowerCase();
+    const deleted = await User.deleteOne({ email: cleanEmail });
+    if (deleted.deletedCount === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ message: "Account deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to delete account", error: err.message });
+  }
+};
+
