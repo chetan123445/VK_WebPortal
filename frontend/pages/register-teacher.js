@@ -105,7 +105,7 @@ export default function RegisterTeacher() {
   }
 
   useEffect(() => {
-    if (otpSent) setOtpTimer(180); // 3 minutes
+    if (otpSent) setOtpTimer(120); // 2 minutes
   }, [otpSent]);
   useEffect(() => {
     if (!otpSent || otpTimer <= 0) return;

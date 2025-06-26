@@ -48,6 +48,24 @@ export const verifyChildEmail = async (req, res) => {
   }
 };
 
+// POST /api/parent/verify-child-otp
+export const verifyChildOtp = async (req, res) => {
+  try {
+    const { childEmail, otp } = req.body;
+    if (!childEmail || !otp) return res.status(400).json({ message: "Child email and OTP are required" });
+    const cleanEmail = childEmail.trim().toLowerCase();
+    const record = childOtpStore[cleanEmail];
+    if (!record || record.otp !== otp || record.expires < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+    // Optionally, delete OTP after successful verification
+    delete childOtpStore[cleanEmail];
+    res.json({ message: "OTP verified" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to verify OTP", error: err.message });
+  }
+};
+
 // Optionally, export childOtpStore for use in parent registration if needed
 export { childOtpStore };
 

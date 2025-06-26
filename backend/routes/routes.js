@@ -37,6 +37,7 @@ router.post('/api/teacher/find', teacherController.find);
 
 // Parent routes
 router.post('/api/parent/verify-child-email', parentController.verifyChildEmail);
+router.post('/api/parent/verify-child-otp', parentController.verifyChildOtp); // <-- Add this line
 router.get('/api/parent/child-profile', authenticateToken, getChildProfile);
 
 // Protected routes (require JWT authentication)
