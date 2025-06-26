@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 // import Register from "./Register"; // Remove this import
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from "./apiurl";
@@ -22,6 +22,27 @@ export default function Login() {
   const [otpBlocks, setOtpBlocks] = useState(["", "", "", "", "", ""]);
   const otpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
   const router = useRouter();
+  const [otpTimer, setOtpTimer] = useState(0);
+
+  // When OTP is sent, start timer
+  useEffect(() => {
+    if (otpSent) setOtpTimer(180); // 3 minutes
+  }, [otpSent]);
+  useEffect(() => {
+    if (!otpSent || otpTimer <= 0) return;
+    const interval = setInterval(() => setOtpTimer(t => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [otpSent, otpTimer]);
+
+  // Focus first OTP input when OTP is sent
+  useEffect(() => {
+    if (otpSent && otpRefs[0].current) {
+      // Small delay to ensure the input is rendered
+      setTimeout(() => {
+        otpRefs[0].current.focus();
+      }, 100);
+    }
+  }, [otpSent]);
 
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
@@ -131,6 +152,8 @@ export default function Login() {
     setOtpSent(false);
     setAdminOtpSent(false);
     setSendingOtp(true); // <-- show loading
+    // Clear the OTP blocks when sending new OTP
+    setOtpBlocks(["", "", "", "", "", ""]);
 
     const cleanEmail = email.trim().toLowerCase();
 
@@ -614,6 +637,9 @@ export default function Login() {
                     ))}
                   </div>
                   <input type="hidden" name="otp" value={otpBlocks.join("")} />
+                  <div style={{ marginBottom: 8, color: otpTimer > 0 ? '#1e3c72' : '#c00', fontWeight: 600 }}>
+                    {otpTimer > 0 ? `OTP expires in ${Math.floor(otpTimer/60)}:${(otpTimer%60).toString().padStart(2,'0')}` : 'OTP expired'}
+                  </div>
                   <div style={{
                     background: "#f7f7f7",
                     borderRadius: 10,
@@ -635,11 +661,14 @@ export default function Login() {
                         cursor: "pointer",
                         width: "85%"
                       }}
-                      disabled={!otpSent}
+                      disabled={!otpSent || otpTimer <= 0}
                     >
                       Login with OTP
                     </button>
                   </div>
+                  {otpSent && otpTimer <= 0 && (
+                    <button type="button" onClick={handleSendOtp} style={{ marginTop: 8, color: '#1e3c72', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Resend OTP</button>
+                  )}
                 </>
               )}
               {msg && <div style={{ color: "#0f0", marginTop: 12 }}>{msg}</div>}
