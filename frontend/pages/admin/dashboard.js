@@ -94,6 +94,11 @@ function AdminDashboard() {
   const [addStatus, setAddStatus] = useState("");
   const [removeEmail, setRemoveEmail] = useState("");
   const [removeStatus, setRemoveStatus] = useState("");
+  const [searchEmail, setSearchEmail] = useState("");
+  const [searchedUser, setSearchedUser] = useState(null);
+  const [searchStatus, setSearchStatus] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState("");
 
   // PhoneInputBoxes component for 10-digit phone input
   function PhoneInputBoxes({ value, onChange }) {
@@ -327,6 +332,63 @@ function AdminDashboard() {
       }
     } catch {
       setStatus('Failed to update profile');
+    }
+  };
+
+  const handleUserSearch = async (e) => {
+    e.preventDefault();
+    setSearchStatus("Searching...");
+    setSearchedUser(null);
+    setDeleteStatus("");
+    try {
+      const res = await fetch(`${BASE_API_URL}/admin/find-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ email: searchEmail, requesterEmail: userEmail })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSearchedUser(data.user);
+        setSearchStatus("");
+      } else {
+        const data = await res.json();
+        setSearchedUser(null);
+        setSearchStatus(data.message || "User not found");
+      }
+    } catch {
+      setSearchedUser(null);
+      setSearchStatus("Error searching user");
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    setDeleteStatus("Deleting...");
+    try {
+      const res = await fetch(`${BASE_API_URL}/admin/delete-user`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ email: searchedUser.email, requesterEmail: userEmail })
+      });
+      if (res.ok) {
+        setDeleteStatus("User deleted successfully.");
+        setSearchedUser(null);
+        setSearchEmail("");
+        setTimeout(() => {
+          setShowDeleteModal(false);
+          setDeleteStatus("");
+        }, 1200);
+      } else {
+        const data = await res.json();
+        setDeleteStatus(data.message || "Failed to delete user");
+      }
+    } catch {
+      setDeleteStatus("Failed to delete user");
     }
   };
 
@@ -603,6 +665,71 @@ function AdminDashboard() {
               </button>
             </div>
           </div>
+        </div>
+      );
+    }
+    if (selectedMenu === "manage-users" && isSuperAdmin) {
+      return (
+        <div style={{ padding: 48, maxWidth: 600, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Manage Users</h2>
+          <form onSubmit={handleUserSearch} style={{ display: "flex", gap: 12, marginBottom: 24 }}>
+            <input
+              type="email"
+              placeholder="Enter user email (exact match)"
+              value={searchEmail}
+              onChange={e => setSearchEmail(e.target.value)}
+              required
+              style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }}
+            />
+            <button type="submit" style={{ padding: "10px 24px", borderRadius: 6, background: "#1e3c72", color: "#fff", border: "none", fontWeight: 600, fontSize: 16, cursor: "pointer" }}>Search</button>
+          </form>
+          {searchStatus && <div style={{ color: "#c00", marginBottom: 16 }}>{searchStatus}</div>}
+          {searchedUser && (
+            <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 18 }}>
+              <h3 style={{ fontWeight: 600, fontSize: 20, marginBottom: 12, color: "#1e3c72" }}>User Details</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {Object.entries(searchedUser).map(([key, value]) => (
+                  key !== "password" && key !== "__v" && key !== "_id" && (
+                    <div key={key} style={{ display: "flex", gap: 10 }}>
+                      <span style={{ fontWeight: 600, minWidth: 120, color: "#444" }}>{key.charAt(0).toUpperCase() + key.slice(1)}:</span>
+                      <span style={{ color: "#222" }}>{String(value) || "-"}</span>
+                    </div>
+                  )
+                ))}
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                style={{ marginTop: 18, background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "10px 28px", fontWeight: 600, fontSize: 16, cursor: "pointer" }}
+              >
+                Delete User
+              </button>
+            </div>
+          )}
+          {/* Delete Confirmation Modal */}
+          {showDeleteModal && (
+            <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 3000 }}>
+              <div style={{ background: "#fff", borderRadius: 16, padding: 32, minWidth: 320, boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.37)", textAlign: "center" }}>
+                <div style={{ marginBottom: 18, fontWeight: 600, fontSize: "1.2rem", color: "#c0392b" }}>
+                  Are you sure you want to delete this user?
+                </div>
+                <button
+                  onClick={handleDeleteUser}
+                  style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 8, padding: "10px 28px", fontWeight: 600, cursor: "pointer", marginRight: 12 }}
+                  disabled={deleteStatus === "Deleting..."}
+                >
+                  {deleteStatus === "Deleting..." ? "Deleting..." : "Yes, Delete"}
+                </button>
+                <button
+                  onClick={() => { setShowDeleteModal(false); setDeleteStatus(""); }}
+                  style={{ background: "#eee", color: "#1e3c72", border: "none", borderRadius: 8, padding: "10px 28px", fontWeight: 600, cursor: "pointer" }}
+                  disabled={deleteStatus === "Deleting..."}
+                >
+                  Cancel
+                </button>
+                {deleteStatus && deleteStatus !== "Deleting..." && <div style={{ marginTop: 12, color: deleteStatus.includes("success") ? "#28a745" : "#c0392b" }}>{deleteStatus}</div>}
+              </div>
+            </div>
+          )}
         </div>
       );
     }
