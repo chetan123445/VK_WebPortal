@@ -8,6 +8,7 @@ import studentController from '../controller/studentController.js';
 import teacherController from '../controller/teacherController.js';
 import * as parentController from '../controller/parentController.js';
 import { getChildProfile } from '../controller/parentChildController.js';
+import { findUserByEmail as manageFindUserByEmail, deleteUserByEmail as manageDeleteUserByEmail } from '../controller/manageUserController.js';
 
 const router = express.Router();
 
@@ -50,5 +51,7 @@ router.post('/api/addadmins', addAdmin);
 router.delete('/api/removeadmin', removeAdmin);
 router.post('/api/admin/login', adminLogin); // Secure admin login route
 router.post('/api/check-superadmin', checkSuperAdmin);
+router.post('/api/admin/find-user', manageFindUserByEmail); // Superadmin only
+router.delete('/api/admin/delete-user', manageDeleteUserByEmail); // Superadmin only
 
 export default router;
