@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaUser, FaBars, FaTimes, FaChild, FaClipboardList, FaEnvelope, FaBookOpen, FaBullhorn, FaCalendarAlt, FaLaptop } from "react-icons/fa";
+import { FaUser, FaBars, FaTimes, FaChild, FaClipboardList, FaEnvelope, FaBookOpen, FaBullhorn, FaCalendarAlt, FaLaptop, FaTrashAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken } from "../../utils/auth.js";
@@ -15,7 +15,8 @@ function ParentSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
     { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
     { key: "timetable", label: "Timetable", icon: <FaCalendarAlt style={{ fontSize: 18 }} /> },
     { key: "resources", label: "Digital Resources", icon: <FaLaptop style={{ fontSize: 18 }} /> },
-    { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> }
+    { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
+    { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> }
   ];
   return (
     <aside style={{
@@ -122,6 +123,10 @@ export default function ParentDashboard() {
   const [userPhoto, setUserPhoto] = useState('');
   const [studentEmail, setStudentEmail] = useState("");
   const [parentEmail, setParentEmail] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [childLoading, setChildLoading] = useState(false);
+  const [childError, setChildError] = useState("");
+  const [showChildErrorPopup, setShowChildErrorPopup] = useState(false);
   const router = useRouter();
 
   // Fetch parent profile on mount and when userEmail changes
@@ -251,8 +256,10 @@ export default function ParentDashboard() {
 
   // Child Profile button handler
   const handleStudentProfile = async () => {
+    setChildLoading(true);
+    setChildError("");
+    setShowChildErrorPopup(false);
     try {
-      // Save parent email before switching to child
       localStorage.setItem("parentEmail", parentEmail || userEmail);
       const res = await fetch(`${BASE_API_URL}/parent/child-profile`, {
         headers: {
@@ -260,15 +267,18 @@ export default function ParentDashboard() {
         }
       });
       const data = await res.json();
+      setChildLoading(false);
       if (res.ok && data.user && data.user.email) {
-        // Set userEmail to child, then redirect immediately
         localStorage.setItem("userEmail", data.user.email);
-        window.location.href = "/student/dashboard"; // Use window.location for immediate redirect
+        window.location.href = "/student/dashboard";
       } else {
-        alert(data.message || "No child linked to this parent account.");
+        setChildError(data.message || "No child linked to this parent account.");
+        setShowChildErrorPopup(true);
       }
     } catch {
-      alert("Failed to fetch child profile.");
+      setChildLoading(false);
+      setChildError("Failed to fetch child profile.");
+      setShowChildErrorPopup(true);
     }
   };
 
@@ -617,11 +627,230 @@ export default function ParentDashboard() {
                 boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
                 transition: "background 0.2s"
               }}
+              disabled={childLoading}
             >
-              Go to Child Dashboard
+              {childLoading ? (
+                <span style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="spinner" style={{
+                    width: 20, height: 20, border: "3px solid #eee", borderTop: "3px solid #1e3c72",
+                    borderRadius: "50%", marginRight: 10, animation: "spin 1s linear infinite"
+                  }} />
+                  Loading...
+                </span>
+              ) : "Go to Child Dashboard"}
             </button>
           </div>
+          {/* Spinner CSS */}
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg);}
+              100% { transform: rotate(360deg);}
+            }
+          `}</style>
+          {/* Child error popup */}
+          {showChildErrorPopup && (
+            <div style={{
+              position: "fixed",
+              top: 0, left: 0, width: "100vw", height: "100vh",
+              background: "rgba(0,0,0,0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              zIndex: 4001
+            }}>
+              <div style={{
+                background: "#fff",
+                borderRadius: 16,
+                padding: 32,
+                minWidth: 320,
+                boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
+                textAlign: "center"
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 20, color: "#c00", marginBottom: 16 }}>
+                  Child Not Found
+                </div>
+                <div style={{ color: "#333", marginBottom: 24 }}>
+                  {childError}
+                </div>
+                <button
+                  style={{
+                    padding: "10px 32px",
+                    borderRadius: 8,
+                    background: "#1e3c72",
+                    color: "#fff",
+                    border: "none",
+                    fontWeight: 600,
+                    fontSize: 16,
+                    cursor: "pointer"
+                  }}
+                  onClick={() => setShowChildErrorPopup(false)}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          )}
         </div>
+      );
+    }
+    // Delete Account confirmation
+    if (selectedMenu === "delete-account") {
+      return (
+        <>
+          <div style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(30,60,114,0.10)",
+            zIndex: 3000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center"
+          }}>
+            <div style={{
+              background: "#fff",
+              borderRadius: 24,
+              boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.13)",
+              padding: 36,
+              maxWidth: 420,
+              width: "95vw",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center"
+            }}>
+              <FaTrashAlt style={{ fontSize: 48, color: "#c00", marginBottom: 18 }} />
+              <h2 style={{
+                marginBottom: 12,
+                fontWeight: 700,
+                fontSize: 26,
+                color: "#c00",
+                letterSpacing: 0.5
+              }}>Delete Account</h2>
+              <div style={{ color: "#c00", fontWeight: 600, marginBottom: 18, textAlign: "center" }}>
+                Are you sure you want to delete your account?<br />This action cannot be undone.
+              </div>
+              <div style={{ display: "flex", gap: 16 }}>
+                <button
+                  style={{
+                    padding: "10px 32px",
+                    borderRadius: 8,
+                    background: "#c00",
+                    color: "#fff",
+                    border: "none",
+                    fontWeight: 600,
+                    fontSize: 16,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8
+                  }}
+                  onClick={() => setShowDeleteModal(true)}
+                >
+                  <FaTrashAlt style={{ fontSize: 18, marginBottom: -2 }} />
+                  Delete Account
+                </button>
+                <button
+                  style={{
+                    padding: "10px 32px",
+                    borderRadius: 8,
+                    background: "#bbb",
+                    color: "#222",
+                    border: "none",
+                    fontWeight: 600,
+                    fontSize: 16,
+                    cursor: "pointer"
+                  }}
+                  onClick={() => setSelectedMenu("profile")}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+          {showDeleteModal && (
+            <div style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100vw",
+              height: "100vh",
+              background: "rgba(0,0,0,0.25)",
+              zIndex: 4000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <div style={{
+                background: "#fff",
+                borderRadius: 20,
+                padding: 36,
+                minWidth: 340,
+                boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.18)",
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center"
+              }}>
+                <FaTrashAlt style={{ fontSize: 54, color: "#c00", marginBottom: 18 }} />
+                <div style={{ fontWeight: 700, fontSize: 22, color: "#c00", marginBottom: 12 }}>
+                  Confirm Account Deletion
+                </div>
+                <div style={{ color: "#333", marginBottom: 28, fontSize: 16 }}>
+                  This action is <b>permanent</b>.<br />Do you really want to delete your account?
+                </div>
+                <div style={{ display: "flex", gap: 18, justifyContent: "center" }}>
+                  <button
+                    style={{
+                      padding: "10px 32px",
+                      borderRadius: 8,
+                      background: "#c00",
+                      color: "#fff",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8
+                    }}
+                    onClick={async () => {
+                      const res = await fetch(`${BASE_API_URL}/user/delete`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ email: userEmail })
+                      });
+                      if (res.ok) {
+                        localStorage.clear();
+                        window.location.href = "/Login";
+                      } else {
+                        alert("Failed to delete account.");
+                        setShowDeleteModal(false);
+                      }
+                    }}
+                  >
+                    <FaTrashAlt style={{ fontSize: 18, marginBottom: -2 }} />
+                    Yes, Delete
+                  </button>
+                  <button
+                    style={{
+                      padding: "10px 32px",
+                      borderRadius: 8,
+                      background: "#bbb",
+                      color: "#222",
+                      border: "none",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "pointer"
+                    }}
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       );
     }
     // Main content for other menu items
@@ -670,6 +899,28 @@ export default function ParentDashboard() {
       </div>
     );
   };
+
+  useEffect(() => {
+    // On mount, verify token
+    const token = getToken();
+    if (!token) {
+      router.replace("/Login");
+      return;
+    }
+    fetch(`${BASE_API_URL}/verify-token`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (!res.ok) {
+          localStorage.clear();
+          router.replace("/Login");
+        }
+      })
+      .catch(() => {
+        localStorage.clear();
+        router.replace("/Login");
+      });
+  }, []);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa", flexDirection: "column" }}>
