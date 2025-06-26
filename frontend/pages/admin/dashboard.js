@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser } from "react-icons/fa";
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { BASE_API_URL } from '../apiurl.js';
-import { getToken } from "../../utils/auth.js";
+import { getUserData, getToken, isAuthenticated, isTokenExpired, logout } from "../../utils/auth.js";
 
 function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSuperAdmin, setShowAddAdmin, setShowRemoveAdmin, setShowViewAdmins }) {
   const menuItems = [
@@ -71,6 +71,23 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
           </button>
         ))}
       </nav>
+      <button
+        onClick={() => { logout(); window.location.href = "/login"; }}
+        style={{
+          margin: "32px 0 0 0",
+          width: "80%",
+          background: "#ff0080",
+          color: "#fff",
+          border: "none",
+          borderRadius: 8,
+          padding: "10px 0",
+          fontWeight: 600,
+          cursor: "pointer",
+          alignSelf: "center"
+        }}
+      >
+        Logout
+      </button>
     </aside>
   );
 }
@@ -85,7 +102,6 @@ function AdminDashboard() {
   const [preview, setPreview] = useState('');
   const fileInputRef = useRef();
   const [userPhoto, setUserPhoto] = useState('');
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [showAddAdmin, setShowAddAdmin] = useState(false);
   const [showRemoveAdmin, setShowRemoveAdmin] = useState(false);
   const [showViewAdmins, setShowViewAdmins] = useState(false);
@@ -99,6 +115,7 @@ function AdminDashboard() {
   const [searchStatus, setSearchStatus] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteStatus, setDeleteStatus] = useState("");
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   // PhoneInputBoxes component for 10-digit phone input
   function PhoneInputBoxes({ value, onChange }) {
@@ -193,6 +210,32 @@ function AdminDashboard() {
     }
   }, [form.photo]);
 
+  // Admin management logic
+  // Fetch admin info for this user to check isSuperAdmin
+  useEffect(() => {
+    const user = getUserData();
+    if (user && user.email) {
+      setUserEmail(user.email);
+      fetch(`http://localhost:8000/api/getadmins`)
+        .then(res => res.json())
+        .then(data => {
+          const found = (data.admins || []).find(a => a.email === user.email);
+          setIsSuperAdmin(found?.isSuperAdmin === true);
+        })
+        .catch(() => setIsSuperAdmin(false));
+    }
+  }, []);
+
+  // Fetch admins when modal opens
+  useEffect(() => {
+    if (showViewAdmins) {
+      fetch("http://localhost:8000/api/getadmins")
+        .then(res => res.json())
+        .then(data => setAdmins(data.admins || []))
+        .catch(() => setAdmins([]));
+    }
+  }, [showViewAdmins]);
+
   // Add admin handler
   const handleAddAdmin = async (e) => {
     e.preventDefault();
@@ -211,12 +254,8 @@ function AdminDashboard() {
         })
       });
       if (res.ok) {
-        setAddStatus("Admin added! Credentials sent to email.");
+        setAddStatus("Admin added!");
         setAdminForm({ email: "", isSuperAdmin: false });
-        setTimeout(() => {
-          setShowAddAdmin(false);
-          setAddStatus("");
-        }, 700);
       } else {
         const data = await res.json();
         setAddStatus(data.message || "Failed to add admin");
@@ -239,17 +278,12 @@ function AdminDashboard() {
         },
         body: JSON.stringify({
           email: removeEmail,
-          isSuperAdmin: isSuperAdmin,
           requesterEmail: userEmail
         })
       });
       if (res.ok) {
         setRemoveStatus("Admin removed!");
         setRemoveEmail("");
-        setTimeout(() => {
-          setShowRemoveAdmin(false);
-          setRemoveStatus("");
-        }, 700);
       } else {
         const data = await res.json();
         setRemoveStatus(data.message || "Failed to remove admin");
@@ -258,16 +292,6 @@ function AdminDashboard() {
       setRemoveStatus("Failed to remove admin");
     }
   };
-
-  // Fetch admins when modal opens
-  useEffect(() => {
-    if (showViewAdmins) {
-      fetch(`${BASE_API_URL}/getadmins`)
-        .then(res => res.json())
-        .then(data => setAdmins(data.admins || []))
-        .catch(() => setAdmins([]));
-    }
-  }, [showViewAdmins]);
 
   const handleEdit = () => setEditMode(true);
   const handleCancel = () => {
@@ -798,124 +822,129 @@ function AdminDashboard() {
           {renderContent()}
         </main>
       </div>
-      {/* Add Admin Modal */}
-      {showAddAdmin && isSuperAdmin && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-        }}>
-          <div style={{
-            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
-          }}>
-            <h2 style={{ marginBottom: 18 }}>Add Admin</h2>
-            <form onSubmit={handleAddAdmin}>
-              <div style={{ marginBottom: 12 }}>
-                <label>Email:</label><br />
-                <input
-                  type="email"
-                  required
-                  value={adminForm.email}
-                  onChange={e => setAdminForm(f => ({ ...f, email: e.target.value }))}
-                  style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
-                />
-              </div>
-              <div style={{ marginBottom: 18 }}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={adminForm.isSuperAdmin}
-                    onChange={e => setAdminForm(f => ({ ...f, isSuperAdmin: e.target.checked }))}
-                  />{" "}
-                  Is Superadmin
-                </label>
-              </div>
-              <button type="submit" style={{
-                background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
-              }}>
-                Add
-              </button>
-              <button type="button" onClick={() => { setShowAddAdmin(false); setAddStatus(""); }} style={{
-                marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
-              }}>
-                Cancel
-              </button>
-              <div style={{ marginTop: 10, color: "#1e3c72", fontWeight: 500 }}>{addStatus}</div>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* Remove Admin Modal */}
-      {showRemoveAdmin && isSuperAdmin && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-        }}>
-          <div style={{
-            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
-          }}>
-            <h2 style={{ marginBottom: 18, color: "#c0392b" }}>Remove Admin</h2>
-            <form onSubmit={handleRemoveAdmin}>
-              <div style={{ marginBottom: 12 }}>
-                <label>Email:</label><br />
-                <input
-                  type="email"
-                  required
-                  value={removeEmail}
-                  onChange={e => setRemoveEmail(e.target.value)}
-                  style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
-                />
-              </div>
-              <button type="submit" style={{
-                background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
-              }}>
-                Remove
-              </button>
-              <button type="button" onClick={() => { setShowRemoveAdmin(false); setRemoveStatus(""); }} style={{
-                marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
-              }}>
-                Cancel
-              </button>
-              <div style={{ marginTop: 10, color: "#c0392b", fontWeight: 500 }}>{removeStatus}</div>
-            </form>
-          </div>
-        </div>
-      )}
-      {/* View Admins Modal */}
-      {showViewAdmins && (
-        <div style={{
-          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-        }}>
-          <div style={{
-            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
-          }}>
-            <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
-            {/* Show superadmins first, then admins, with emails listed below each */}
-            <div>
-              <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
-              <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
-                {admins.filter(a => a.isSuperAdmin).map(a => (
-                  <li key={a._id} style={{ marginBottom: 2 }}>
-                    {a.email}
-                  </li>
-                ))}
-              </ul>
-              <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                {admins.filter(a => !a.isSuperAdmin).map(a => (
-                  <li key={a._id} style={{ marginBottom: 2 }}>
-                    {a.email}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <button onClick={() => setShowViewAdmins(false)} style={{
-              marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+      {/* Admin management UI for superadmins */}
+      {isSuperAdmin && (
+        <>
+          {/* Add Admin Modal */}
+          {showAddAdmin && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+              background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
             }}>
-              Close
-            </button>
-          </div>
-        </div>
+              <div style={{
+                background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+              }}>
+                <h2 style={{ marginBottom: 18 }}>Add Admin</h2>
+                <form onSubmit={handleAddAdmin}>
+                  <div style={{ marginBottom: 12 }}>
+                    <label>Email:</label><br />
+                    <input
+                      type="email"
+                      required
+                      value={adminForm.email}
+                      onChange={e => setAdminForm(f => ({ ...f, email: e.target.value }))}
+                      style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: 18 }}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={adminForm.isSuperAdmin}
+                        onChange={e => setAdminForm(f => ({ ...f, isSuperAdmin: e.target.checked }))}
+                      />{" "}
+                      Is Superadmin
+                    </label>
+                  </div>
+                  <button type="submit" style={{
+                    background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
+                  }}>
+                    Add
+                  </button>
+                  <button type="button" onClick={() => { setShowAddAdmin(false); setAddStatus(""); }} style={{
+                    marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+                  }}>
+                    Cancel
+                  </button>
+                  <div style={{ marginTop: 10, color: "#1e3c72", fontWeight: 500 }}>{addStatus}</div>
+                </form>
+              </div>
+            </div>
+          )}
+          {/* Remove Admin Modal */}
+          {showRemoveAdmin && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+              background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+            }}>
+              <div style={{
+                background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+              }}>
+                <h2 style={{ marginBottom: 18, color: "#c0392b" }}>Remove Admin</h2>
+                <form onSubmit={handleRemoveAdmin}>
+                  <div style={{ marginBottom: 12 }}>
+                    <label>Email:</label><br />
+                    <input
+                      type="email"
+                      required
+                      value={removeEmail}
+                      onChange={e => setRemoveEmail(e.target.value)}
+                      style={{ width: "100%", padding: 8, borderRadius: 4, border: "1px solid #bbb" }}
+                    />
+                  </div>
+                  <button type="submit" style={{
+                    background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "8px 24px", fontWeight: 600, cursor: "pointer"
+                  }}>
+                    Remove
+                  </button>
+                  <button type="button" onClick={() => { setShowRemoveAdmin(false); setRemoveStatus(""); }} style={{
+                    marginLeft: 12, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+                  }}>
+                    Cancel
+                  </button>
+                  <div style={{ marginTop: 10, color: "#c0392b", fontWeight: 500 }}>{removeStatus}</div>
+                </form>
+              </div>
+            </div>
+          )}
+          {/* View Admins Modal */}
+          {showViewAdmins && (
+            <div style={{
+              position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+              background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+            }}>
+              <div style={{
+                background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+              }}>
+                <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
+                {/* Show superadmins first, then admins, with emails listed below each */}
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
+                  <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
+                    {admins.filter(a => a.isSuperAdmin).map(a => (
+                      <li key={a._id} style={{ marginBottom: 2 }}>
+                        {a.email}
+                      </li>
+                    ))}
+                  </ul>
+                  <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
+                  <ul style={{ listStyle: "none", padding: 0 }}>
+                    {admins.filter(a => !a.isSuperAdmin).map(a => (
+                      <li key={a._id} style={{ marginBottom: 2 }}>
+                        {a.email}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <button onClick={() => setShowViewAdmins(false)} style={{
+                  marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+                }}>
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
       <footer style={{
         width: "100%",
@@ -925,7 +954,8 @@ function AdminDashboard() {
         padding: "18px 0",
         fontSize: 15,
         letterSpacing: 0.5,
-        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)"
+        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)",
+        position: "relative"
       }}>
         © {new Date().getFullYear()} VK Admin Portal. All rights reserved. | Demo Footer Info
       </footer>
@@ -933,7 +963,7 @@ function AdminDashboard() {
   );
 }
 
-export default function MainHome() {
+export default function AdminDashboardProtected() {
   return (
     <ProtectedRoute>
       <AdminDashboard />

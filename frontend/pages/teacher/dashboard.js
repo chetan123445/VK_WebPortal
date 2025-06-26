@@ -1,12 +1,13 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser } from "react-icons/fa";
 import ProfileMenu from '../ProfileMenu'; // If you want to use the same ProfileMenu as admin
 import { BASE_API_URL } from '../apiurl.js';
-import { getToken } from "../../utils/auth.js";
+import { getToken, logout } from "../../utils/auth.js";
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 // Sidebar component for Teacher with feature buttons (always visible, no hamburger)
-function TeacherSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
+function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedMenu }) {
   const menuItems = [
     { key: "test-generator", label: "Test Generator", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
     { key: "cbse-updates", label: "CBSE Updates", icon: <FaNewspaper style={{ fontSize: 18 }} /> },
@@ -39,6 +40,7 @@ function TeacherSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
           alt="Profile"
           style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
         />
+        {userName && <div style={{ fontWeight: 600, fontSize: 16, color: "#1e3c72", marginBottom: 2 }}>{userName}</div>}
         <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
       </div>
       <nav>
@@ -68,6 +70,23 @@ function TeacherSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
           </button>
         ))}
       </nav>
+      <button
+        onClick={() => { logout(); window.location.href = "/login"; }}
+        style={{
+          margin: "32px 0 0 0",
+          width: "80%",
+          background: "#ff0080",
+          color: "#fff",
+          border: "none",
+          borderRadius: 8,
+          padding: "10px 0",
+          fontWeight: 600,
+          cursor: "pointer",
+          alignSelf: "center"
+        }}
+      >
+        Logout
+      </button>
     </aside>
   );
 }
@@ -111,7 +130,7 @@ function PhoneInputBoxes({ value, onChange }) {
   );
 }
 
-export default function TeacherDashboard() {
+function TeacherDashboard() {
   const [selectedMenu, setSelectedMenu] = useState("test-generator");
   const [userEmail, setUserEmail] = useState("");
   const [profile, setProfile] = useState(null);
@@ -123,9 +142,10 @@ export default function TeacherDashboard() {
 
   // Add userPhoto state to track the current photo for sidebar
   const [userPhoto, setUserPhoto] = useState('');
+  const [userName, setUserName] = useState("");
 
   // Fetch profile on mount and when userEmail changes (not just when profile menu is selected)
-  const fetchProfile = React.useCallback(() => {
+  const fetchProfile = useCallback(() => {
     if (userEmail) {
       fetch(`${BASE_API_URL}/profile`, {
         headers: {
@@ -135,6 +155,7 @@ export default function TeacherDashboard() {
         .then(res => res.json())
         .then(data => {
           setProfile(data.user);
+          setUserName(data.user.name || "");
           setForm({
             name: data.user.name || '',
             phone: data.user.phone || '',
@@ -148,6 +169,7 @@ export default function TeacherDashboard() {
         })
         .catch(() => {
           setProfile(null);
+          setUserName("");
           setUserPhoto('');
         });
     }
@@ -599,6 +621,7 @@ export default function TeacherDashboard() {
         <TeacherSidebar
           userEmail={userEmail}
           userPhoto={userPhoto}
+          userName={userName}
           onMenuSelect={setSelectedMenu}
           selectedMenu={selectedMenu}
         />
@@ -614,10 +637,19 @@ export default function TeacherDashboard() {
         padding: "18px 0",
         fontSize: 15,
         letterSpacing: 0.5,
-        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)"
+        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)",
+        position: "relative"
       }}>
         © {new Date().getFullYear()} VK Teacher Portal. All rights reserved. | Demo Footer Info
       </footer>
     </div>
+  );
+}
+
+export default function TeacherDashboardPage(props) {
+  return (
+    <ProtectedRoute>
+      <TeacherDashboard {...props} />
+    </ProtectedRoute>
   );
 }

@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { BASE_API_URL } from "./apiurl";
 import { useRouter } from "next/navigation";
+import { getToken, isAuthenticated, isTokenExpired } from "../utils/auth.js";
 
 const btnStyle = {
   background: "linear-gradient(90deg, #ff8c00 0%, #ff0080 100%)",
@@ -48,6 +49,22 @@ export default function RegisterParent() {
   const [showStudentRegister, setShowStudentRegister] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    // If already authenticated, redirect to dashboard
+    const token = getToken();
+    if (isAuthenticated() && !isTokenExpired(token)) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const role = payload.role;
+        if (role === 'admin') router.replace('/admin/dashboard');
+        else if (role === 'student') router.replace('/student/dashboard');
+        else if (role === 'teacher') router.replace('/teacher/dashboard');
+        else if (role === 'parent') router.replace('/parent/dashboard');
+        else router.replace('/login');
+      } catch {}
+    }
+  }, [router]);
+  
   useEffect(() => {
     if (childOtpSent) setChildOtpTimer(120); // 2 minutes
   }, [childOtpSent]);
@@ -253,6 +270,13 @@ export default function RegisterParent() {
       const data = await res.json();
       if (res.ok) {
         setMsg("Registration successful! Redirecting...");
+        // Store JWT and user data if provided
+        if (data.token) {
+          localStorage.setItem('jwt_token', data.token);
+        }
+        if (data.user) {
+          localStorage.setItem('user_data', JSON.stringify(data.user));
+        }
         localStorage.setItem("userEmail", parentEmail.trim().toLowerCase());
         setTimeout(() => {
           router.replace("/parent/dashboard");

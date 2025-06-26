@@ -2,10 +2,11 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FaClipboardList, FaBookOpen, FaChartBar, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser } from "react-icons/fa";
 import { BASE_API_URL } from '../apiurl.js';
-import { getToken } from "../../utils/auth.js";
+import { getToken, logout } from "../../utils/auth.js";
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 // Sidebar component for Student (always visible, no hamburger)
-function StudentSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
+function StudentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedMenu }) {
   const menuItems = [
     { key: "assignments", label: "Assignments", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
     { key: "books", label: "Books", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
@@ -37,6 +38,7 @@ function StudentSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
           alt="Profile"
           style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
         />
+        {userName && <div style={{ fontWeight: 600, fontSize: 16, color: "#1e3c72", marginBottom: 2 }}>{userName}</div>}
         <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
       </div>
       <nav>
@@ -66,6 +68,23 @@ function StudentSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
           </button>
         ))}
       </nav>
+      <button
+        onClick={() => { logout(); window.location.href = "/login"; }}
+        style={{
+          margin: "32px 0 0 0",
+          width: "80%",
+          background: "#ff0080",
+          color: "#fff",
+          border: "none",
+          borderRadius: 8,
+          padding: "10px 0",
+          fontWeight: 600,
+          cursor: "pointer",
+          alignSelf: "center"
+        }}
+      >
+        Logout
+      </button>
     </aside>
   );
 }
@@ -109,7 +128,7 @@ function PhoneInputBoxes({ value, onChange }) {
   );
 }
 
-export default function StudentDashboard() {
+function StudentDashboard() {
   const [selectedMenu, setSelectedMenu] = useState("assignments");
   const [userEmail, setUserEmail] = useState("");
   const [profile, setProfile] = useState(null);
@@ -119,6 +138,7 @@ export default function StudentDashboard() {
   const [preview, setPreview] = useState('');
   const fileInputRef = useRef();
   const [userPhoto, setUserPhoto] = useState('');
+  const [userName, setUserName] = useState("");
 
   // Fetch profile on mount and when userEmail changes
   const fetchProfile = useCallback(() => {
@@ -131,6 +151,7 @@ export default function StudentDashboard() {
         .then(res => res.json())
         .then(data => {
           setProfile(data.user);
+          setUserName(data.user.name || "");
           setForm({
             name: data.user.name || '',
             phone: data.user.phone || '',
@@ -144,6 +165,7 @@ export default function StudentDashboard() {
         })
         .catch(() => {
           setProfile(null);
+          setUserName("");
           setUserPhoto('');
         });
     }
@@ -610,6 +632,7 @@ export default function StudentDashboard() {
         <StudentSidebar
           userEmail={userEmail}
           userPhoto={userPhoto}
+          userName={userName}
           onMenuSelect={setSelectedMenu}
           selectedMenu={selectedMenu}
         />
@@ -625,10 +648,19 @@ export default function StudentDashboard() {
         padding: "18px 0",
         fontSize: 15,
         letterSpacing: 0.5,
-        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)"
+        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)",
+        position: "relative"
       }}>
         © {new Date().getFullYear()} VK Student Portal. All rights reserved. | Demo Footer Info
       </footer>
     </div>
+  );
+}
+
+export default function StudentDashboardPage(props) {
+  return (
+    <ProtectedRoute>
+      <StudentDashboard {...props} />
+    </ProtectedRoute>
   );
 }

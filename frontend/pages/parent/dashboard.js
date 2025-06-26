@@ -3,10 +3,11 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FaUser, FaBars, FaTimes, FaChild, FaClipboardList, FaEnvelope, FaBookOpen, FaBullhorn, FaCalendarAlt, FaLaptop } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from '../apiurl.js';
-import { getToken } from "../../utils/auth.js";
+import { getToken, logout } from "../../utils/auth.js";
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 // Sidebar component for Parent (always visible, no hamburger)
-function ParentSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
+function ParentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedMenu }) {
   const menuItems = [
     { key: "student-profile", label: "Child Profile", icon: <FaChild style={{ fontSize: 18 }} /> },
     { key: "assignments", label: "Assignments", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
@@ -38,6 +39,7 @@ function ParentSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
           alt="Profile"
           style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
         />
+        {userName && <div style={{ fontWeight: 600, fontSize: 16, color: "#1e3c72", marginBottom: 2 }}>{userName}</div>}
         <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
       </div>
       <nav>
@@ -67,6 +69,23 @@ function ParentSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
           </button>
         ))}
       </nav>
+      <button
+        onClick={() => { logout(); window.location.href = "/login"; }}
+        style={{
+          margin: "32px 0 0 0",
+          width: "80%",
+          background: "#ff0080",
+          color: "#fff",
+          border: "none",
+          borderRadius: 8,
+          padding: "10px 0",
+          fontWeight: 600,
+          cursor: "pointer",
+          alignSelf: "center"
+        }}
+      >
+        Logout
+      </button>
     </aside>
   );
 }
@@ -110,7 +129,7 @@ function PhoneInputBoxes({ value, onChange }) {
   );
 }
 
-export default function ParentDashboard() {
+function ParentDashboard() {
   const [selectedMenu, setSelectedMenu] = useState("student-profile");
   const [userEmail, setUserEmail] = useState("");
   const [profile, setProfile] = useState(null);
@@ -122,6 +141,7 @@ export default function ParentDashboard() {
   const [userPhoto, setUserPhoto] = useState('');
   const [studentEmail, setStudentEmail] = useState("");
   const [parentEmail, setParentEmail] = useState("");
+  const [userName, setUserName] = useState("");
   const router = useRouter();
 
   // Fetch parent profile on mount and when userEmail changes
@@ -135,20 +155,21 @@ export default function ParentDashboard() {
         .then(res => res.json())
         .then(data => {
           setProfile(data.user);
+          setUserName(data.user.name || "");
           setForm({
             name: data.user.name || '',
             phone: data.user.phone || '',
             school: data.user.school || '',
+            class: data.user.class || '',
             photo: null
           });
           const photoUrl = data.user.photo && data.user.photo !== "" ? data.user.photo : "/default-avatar.png";
           setPreview(photoUrl);
           setUserPhoto(data.user.photo && data.user.photo !== "" ? data.user.photo : "");
-          // If parent has childEmail, set it for student profile redirection
-          if (data.user.childEmail) setStudentEmail(data.user.childEmail);
         })
         .catch(() => {
           setProfile(null);
+          setUserName("");
           setUserPhoto('');
         });
     }
@@ -677,6 +698,7 @@ export default function ParentDashboard() {
         <ParentSidebar
           userEmail={userEmail}
           userPhoto={userPhoto}
+          userName={userName}
           onMenuSelect={setSelectedMenu}
           selectedMenu={selectedMenu}
         />
@@ -692,10 +714,19 @@ export default function ParentDashboard() {
         padding: "18px 0",
         fontSize: 15,
         letterSpacing: 0.5,
-        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)"
+        boxShadow: "0 -2px 12px rgba(30,60,114,0.08)",
+        position: "relative"
       }}>
         © {new Date().getFullYear()} VK Parent Portal. All rights reserved. | Demo Footer Info
       </footer>
     </div>
+  );
+}
+
+export default function ParentDashboardPage(props) {
+  return (
+    <ProtectedRoute>
+      <ParentDashboard {...props} />
+    </ProtectedRoute>
   );
 }

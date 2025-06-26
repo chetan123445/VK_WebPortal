@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 // import Register from "./Register"; // Remove this import
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from "./apiurl";
-import { setToken, setUserData } from "../utils/auth.js";
+import { setToken, setUserData, getToken, isAuthenticated, isTokenExpired } from "../utils/auth.js";
 
 export default function Login() {
   const [mode, setMode] = useState("password"); // "password" or "otp"
@@ -44,6 +44,22 @@ export default function Login() {
     }
   }, [otpSent]);
 
+  // If already authenticated, redirect to dashboard
+  useEffect(() => {
+    const token = getToken();
+    if (isAuthenticated() && !isTokenExpired(token)) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const role = payload.role && payload.role.toLowerCase();
+        if (role === 'admin') router.replace('/admin/dashboard');
+        else if (role === 'student') router.replace('/student/dashboard');
+        else if (role === 'teacher') router.replace('/teacher/dashboard');
+        else if (role === 'parent') router.replace('/parent/dashboard');
+        else router.replace('/login');
+      } catch {}
+    }
+  }, [router]);
+
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -62,24 +78,13 @@ export default function Login() {
       });
       if (adminRes.ok) {
         const data = await adminRes.json();
-        // Fetch isSuperAdmin info
-        const superRes = await fetch(`${BASE_API_URL}/check-superadmin`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: cleanEmail })
-        });
-        let isSuperAdmin = false;
-        if (superRes.ok) {
-          const superData = await superRes.json();
-          isSuperAdmin = !!superData.isSuperAdmin;
-        }
         setToken(data.token); // <-- Store admin JWT
         setUserData(data.admin); // <-- Store admin data
         localStorage.setItem("userEmail", cleanEmail);
-        localStorage.setItem("isSuperAdmin", isSuperAdmin ? "true" : "false");
         setMsg("Admin login successful!");
         setError("");
-        router.replace("/admin/dashboard");
+        // Use push for navigation and ensure it happens after state updates
+        router.push("/admin/dashboard");
         return;
       }
       if (adminRes.status === 404) {
@@ -117,25 +122,31 @@ export default function Login() {
       }
       if (res.ok) {
         const data = await res.json();
+        console.log('LOGIN RESPONSE:', data); // Debug log
         setMsg("Login successful!");
         setError("");
-        setToken(data.token);
-        setUserData(data.user);
+        setToken(data.token); // <-- Store user JWT
+        setUserData(data.user); // <-- Store user data
         localStorage.setItem("userEmail", cleanEmail);
-
-        // Redirect to dashboard based on user type
-        if (data.user && data.user.registeredAs) {
-          if (data.user.registeredAs === "Student") {
-            router.replace("/student/dashboard");
-          } else if (data.user.registeredAs === "Teacher") {
-            router.replace("/teacher/dashboard");
-          } else if (data.user.registeredAs === "Parent") {
-            router.replace("/parent/dashboard");
-          } else {
-            router.replace("/MainHome");
-          }
+        // Debug: log token and user
+        console.log('STORED TOKEN:', getToken());
+        console.log('STORED USER:', localStorage.getItem('user_data'));
+        // Redirect to dashboard based on user type, after a short delay to ensure storage is flushed
+        if (data.user && data.user.registeredAs && data.token) {
+          const role = data.user.registeredAs.toLowerCase();
+          setTimeout(() => {
+            if (role === "student") {
+              router.replace("/student/dashboard");
+            } else if (role === "teacher") {
+              router.replace("/teacher/dashboard");
+            } else if (role === "parent") {
+              router.replace("/parent/dashboard");
+            } else {
+              router.replace("/login");
+            }
+          }, 100);
         } else {
-          router.replace("/MainHome");
+          router.replace("/login");
         }
       } else {
         const data = await res.json();
@@ -297,23 +308,25 @@ export default function Login() {
         const data = await res.json();
         setMsg("OTP login successful!");
         setError("");
-        setToken(data.token);
-        setUserData(data.user);
+        setToken(data.token); // <-- Store user JWT
+        setUserData(data.user); // <-- Store user data
         localStorage.setItem("userEmail", cleanEmail);
-
+        // Debug: log token and user
+        // console.log('OTP login:', data.token, data.user);
         // Redirect to dashboard based on user type
         if (data.user && data.user.registeredAs) {
-          if (data.user.registeredAs === "Student") {
+          const role = data.user.registeredAs.toLowerCase();
+          if (role === "student") {
             router.replace("/student/dashboard");
-          } else if (data.user.registeredAs === "Teacher") {
+          } else if (role === "teacher") {
             router.replace("/teacher/dashboard");
-          } else if (data.user.registeredAs === "Parent") {
+          } else if (role === "parent") {
             router.replace("/parent/dashboard");
           } else {
-            router.replace("/MainHome");
+            router.replace("/login");
           }
         } else {
-          router.replace("/MainHome");
+          router.replace("/login");
         }
       } else {
         const data = await res.json();

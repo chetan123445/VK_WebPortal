@@ -46,7 +46,10 @@ export const removeUserData = () => {
 export const logout = () => {
   removeToken();
   removeUserData();
-  localStorage.removeItem('userEmail'); // Remove old email storage
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('isSuperAdmin');
+  localStorage.removeItem('parentEmail');
+  // Add any other user-specific or role-specific keys here
 };
 
 // Check if token is expired
@@ -59,4 +62,4 @@ export const isTokenExpired = (token) => {
   } catch (error) {
     return true;
   }
-}; 
+};
