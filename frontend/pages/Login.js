@@ -28,6 +28,8 @@ export default function Login() {
     setError("");
     setMsg("");
     const cleanEmail = email.trim().toLowerCase();
+    // DO NOT lowercase or trim the password!
+    const cleanPassword = password; // <-- use as-is
 
     // --- SECURE ADMIN LOGIN CHECK FIRST ---
     let adminNotFound = false;
@@ -35,7 +37,7 @@ export default function Login() {
       const adminRes = await fetch(`${BASE_API_URL}/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, password })
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword }) // <-- use cleanPassword
       });
       if (adminRes.ok) {
         const data = await adminRes.json();
@@ -78,7 +80,7 @@ export default function Login() {
       const res = await fetch(`${BASE_API_URL}/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, password })
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword }) // <-- use cleanPassword
       });
       if (res.status === 404) {
         // Only show not found if admin was also not found

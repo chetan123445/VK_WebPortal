@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaBars, FaTimes } from "react-icons/fa";
+import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser } from "react-icons/fa";
 import ProfileMenu from '../ProfileMenu'; // If you want to use the same ProfileMenu as admin
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken } from "../../utils/auth.js";
 
-// Sidebar component for Teacher with feature buttons (like StudentSidebar)
-function TeacherSidebar({ userEmail, userPhoto, onMenuSelect, open, setOpen, selectedMenu }) {
+// Sidebar component for Teacher with feature buttons (always visible, no hamburger)
+function TeacherSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu }) {
   const menuItems = [
     { key: "test-generator", label: "Test Generator", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
     { key: "cbse-updates", label: "CBSE Updates", icon: <FaNewspaper style={{ fontSize: 18 }} /> },
@@ -19,116 +19,56 @@ function TeacherSidebar({ userEmail, userPhoto, onMenuSelect, open, setOpen, sel
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> } // Add Profile option at the end
   ];
   return (
-    <>
-      <button
-        onClick={() => setOpen(true)}
-        style={{
-          position: "fixed",
-          top: 24,
-          left: 24,
-          zIndex: 2001,
-          background: "#fff",
-          border: "none",
-          borderRadius: "50%",
-          width: 44,
-          height: 44,
-          boxShadow: "0 2px 8px rgba(30,60,114,0.10)",
-          display: open ? "none" : "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer"
-        }}
-        aria-label="Open menu"
-      >
-        <FaBars style={{ fontSize: 22, color: "#1e3c72" }} />
-      </button>
-      <aside style={{
-        width: open ? 260 : 0,
-        background: "#fff",
-        borderRight: open ? "1px solid #e0e0e0" : "none",
-        minHeight: "100vh",
-        padding: open ? "32px 0 0 0" : 0,
-        position: "fixed",
-        left: 0,
-        top: 0,
-        zIndex: 2000,
-        boxShadow: open ? "2px 0 16px rgba(30,60,114,0.07)" : "none",
-        overflow: "hidden",
-        transition: "width 0.25s cubic-bezier(.4,0,.2,1), box-shadow 0.25s"
-      }}>
-        <button
-          onClick={() => setOpen(false)}
-          style={{
-            position: "absolute",
-            top: 18,
-            right: 18,
-            background: "none",
-            border: "none",
-            fontSize: 22,
-            color: "#1e3c72",
-            cursor: "pointer",
-            display: open ? "block" : "none"
-          }}
-          aria-label="Close menu"
-        >
-          <FaTimes />
-        </button>
-        {open && (
-          <>
-            <div style={{ padding: "0 24px", marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, alignSelf: "flex-start", color: "#1e3c72" }}>Teacher Panel</div>
-              <img
-                src={userPhoto || "/default-avatar.png"}
-                alt="Profile"
-                style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
-              />
-              <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
-            </div>
-            <nav>
-              {menuItems.map(item => (
-                <button
-                  key={item.key}
-                  onClick={() => { onMenuSelect(item.key); setOpen(false); }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    width: "100%",
-                    background: selectedMenu === item.key ? "linear-gradient(90deg,#e0e7ff 0%,#f7fafd 100%)" : "none",
-                    border: "none",
-                    textAlign: "left",
-                    padding: "14px 28px",
-                    fontSize: 17,
-                    color: selectedMenu === item.key ? "#1e3c72" : "#444",
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    borderLeft: selectedMenu === item.key ? "4px solid #1e3c72" : "4px solid transparent",
-                    transition: "background 0.18s, color 0.18s"
-                  }}
-                >
-                  {item.icon}
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </>
-        )}
-      </aside>
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(30,60,114,0.10)",
-            zIndex: 1000
-          }}
+    <aside style={{
+      width: 260,
+      background: "#fff",
+      borderRight: "1px solid #e0e0e0",
+      minHeight: "100vh",
+      padding: "32px 0 0 0",
+      position: "fixed",
+      left: 0,
+      top: 0,
+      zIndex: 2000,
+      boxShadow: "2px 0 16px rgba(30,60,114,0.07)",
+      overflow: "hidden"
+    }}>
+      <div style={{ padding: "0 24px", marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center" }}>
+        <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, alignSelf: "flex-start", color: "#1e3c72" }}>Teacher Panel</div>
+        <img
+          src={userPhoto || "/default-avatar.png"}
+          alt="Profile"
+          style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
         />
-      )}
-    </>
+        <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
+      </div>
+      <nav>
+        {menuItems.map(item => (
+          <button
+            key={item.key}
+            onClick={() => { onMenuSelect(item.key); }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+              width: "100%",
+              background: selectedMenu === item.key ? "linear-gradient(90deg,#e0e7ff 0%,#f7fafd 100%)" : "none",
+              border: "none",
+              textAlign: "left",
+              padding: "14px 28px",
+              fontSize: 17,
+              color: selectedMenu === item.key ? "#1e3c72" : "#444",
+              cursor: "pointer",
+              fontWeight: 600,
+              borderLeft: selectedMenu === item.key ? "4px solid #1e3c72" : "4px solid transparent",
+              transition: "background 0.18s, color 0.18s"
+            }}
+          >
+            {item.icon}
+            {item.label}
+          </button>
+        ))}
+      </nav>
+    </aside>
   );
 }
 
@@ -183,9 +123,6 @@ export default function TeacherDashboard() {
 
   // Add userPhoto state to track the current photo for sidebar
   const [userPhoto, setUserPhoto] = useState('');
-
-  // State to control sidebar open/close
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Fetch profile on mount and when userEmail changes (not just when profile menu is selected)
   const fetchProfile = React.useCallback(() => {
@@ -663,11 +600,9 @@ export default function TeacherDashboard() {
           userEmail={userEmail}
           userPhoto={userPhoto}
           onMenuSelect={setSelectedMenu}
-          open={sidebarOpen}
-          setOpen={setSidebarOpen}
           selectedMenu={selectedMenu}
         />
-        <main style={{ marginLeft: sidebarOpen ? 260 : 0, flex: 1, minHeight: "100vh", background: "#f4f7fa", transition: "margin-left 0.25s cubic-bezier(.4,0,.2,1)" }}>
+        <main style={{ marginLeft: 260, flex: 1, minHeight: "100vh", background: "#f4f7fa", transition: "margin-left 0.25s cubic-bezier(.4,0,.2,1)" }}>
           {renderContent()}
         </main>
       </div>

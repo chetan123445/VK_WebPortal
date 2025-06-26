@@ -9,7 +9,7 @@ const adminSchema = new mongoose.Schema({
     data: Buffer,
     contentType: String
   },
-  name: { type: String, required: true },
+  name: { type: String, required: false },
   phone: { type: String },
 });
 
@@ -25,11 +25,15 @@ const Admin = mongoose.model('Admin', adminSchema);
 // Ensure superadmin always exists in the database
 (async () => {
   const superAdminEmail = "chetandudi791@gmail.com";
-  const defaultPassword = "vkgp_123";
+  const defaultPassword = "Vkgp_123";
   const exists = await Admin.findOne({ email: superAdminEmail });
   if (!exists) {
-    const hashedPassword = await bcrypt.hash(defaultPassword, 10);
-    await Admin.create({ email: superAdminEmail, password: hashedPassword, isSuperAdmin: true });
+    await Admin.create({
+      email: superAdminEmail,
+      password: defaultPassword, // <-- plain password, let pre-save hook hash it
+      isSuperAdmin: true,
+      name: "Super Admin" // <-- Add a default name here
+    });
     console.log("Default superadmin created in Admin table.");
   }
 })();

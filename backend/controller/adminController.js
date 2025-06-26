@@ -76,7 +76,7 @@ export const getAdmins = async (req, res) => {
 // Add a new admin (only superadmin can add)
 export const addAdmin = async (req, res) => {
   try {
-    const { email, isSuperAdmin, requesterEmail } = req.body;
+    const { email, isSuperAdmin, requesterEmail, name } = req.body;
     if (!email) return res.status(400).json({ message: 'Email is required' });
 
     // Check if already an admin
@@ -89,7 +89,7 @@ export const addAdmin = async (req, res) => {
 
     // Generate random password
     const randomPassword = generateRandomPassword();
-    const admin = new Admin({ email, password: randomPassword, isSuperAdmin: !!isSuperAdmin });
+    const admin = new Admin({ email, password: randomPassword, isSuperAdmin: !!isSuperAdmin, name }); // name is optional
     await admin.save();
 
     // Send email to the new admin with their password and status
@@ -171,7 +171,10 @@ export const adminLogin = async (req, res) => {
       return res.status(404).json({ message: 'User not registered.' });
     }
     // Email found, check password
+    // DEBUG LOGGING
+    // console.log("Admin login attempt:", email, password, admin.password);
     const match = await bcrypt.compare(password, admin.password);
+    // console.log("Password match result:", match);
     if (!match) {
       // Password does not match
       return res.status(401).json({ message: 'Incorrect password.' });
