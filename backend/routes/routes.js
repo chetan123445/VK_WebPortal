@@ -9,6 +9,7 @@ import teacherController from '../controller/teacherController.js';
 import * as parentController from '../controller/parentController.js';
 import { getChildProfile } from '../controller/parentChildController.js';
 import { findUserByEmail as manageFindUserByEmail, deleteUserByEmail as manageDeleteUserByEmail } from '../controller/manageUserController.js';
+import { createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnouncement, announcementUpload, removeAnnouncementImage } from '../controller/announcementController.js';
 
 const router = express.Router();
 
@@ -55,5 +56,15 @@ router.post('/api/check-superadmin', checkSuperAdmin);
 router.post('/api/user/delete', deleteUser);
 router.post('/api/admin/find-user', manageFindUserByEmail); // Superadmin only
 router.delete('/api/admin/delete-user', manageDeleteUserByEmail); // Superadmin only
+
+// Announcement routes (RESTful, explicit)
+router.post('/api/addannouncement', authenticateToken, announcementUpload.array('images', 5), createAnnouncement);
+router.get('/api/getannouncements', getAnnouncements);
+router.put('/api/updateannouncement/:id', authenticateToken, announcementUpload.array('images', 5), updateAnnouncement);
+router.delete('/api/removeannouncement/:id', authenticateToken, deleteAnnouncement);
+router.put('/api/announcement/:id/remove-image', authenticateToken, removeAnnouncementImage);
+
+// Serve announcement images
+router.use('/uploads/announcements', express.static('backend/public/uploads/announcements'));
 
 export default router;

@@ -99,6 +99,19 @@ function AdminDashboard() {
   const [searchStatus, setSearchStatus] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteStatus, setDeleteStatus] = useState("");
+  const [showRemoveImages, setShowRemoveImages] = useState(false);
+  const [removeImagesAnnouncement, setRemoveImagesAnnouncement] = useState(null);
+  const [removeImagesPreview, setRemoveImagesPreview] = useState([]);
+  const [removeImagesToDelete, setRemoveImagesToDelete] = useState([]);
+  const [removeImagesStatus, setRemoveImagesStatus] = useState('');
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editAnnouncement, setEditAnnouncement] = useState(null);
+  const [removedImages, setRemovedImages] = useState([]);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [removingImage, setRemovingImage] = useState({ announcementId: null, imageIndex: null, loading: false });
 
   // PhoneInputBoxes component for 10-digit phone input
   function PhoneInputBoxes({ value, onChange }) {
@@ -269,7 +282,15 @@ function AdminDashboard() {
     }
   }, [showViewAdmins]);
 
-  const handleEdit = () => setEditMode(true);
+  const handleEdit = (announcement) => {
+    setEditAnnouncement(announcement);
+    setForm({ text: announcement.text, images: [] });
+    setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
+    setRemovedImages([]);
+    setShowEdit(true);
+    setStatus('');
+  };
+
   const handleCancel = () => {
     setEditMode(false);
     setForm({
@@ -282,6 +303,7 @@ function AdminDashboard() {
     setPreview(profile?.photo || "/default-avatar.png");
     setStatus('');
   };
+
   const handleChange = e => {
     const { name, value, files } = e.target;
     if (name === "photo" && files && files[0]) {
@@ -292,6 +314,7 @@ function AdminDashboard() {
       setForm(f => ({ ...f, [name]: value }));
     }
   };
+
   const handleSave = async () => {
     setStatus('Saving...');
     try {
@@ -389,6 +412,124 @@ function AdminDashboard() {
       }
     } catch {
       setDeleteStatus("Failed to delete user");
+    }
+  };
+
+  const handleFormChange = e => {
+    const { name, value, files } = e.target;
+    if (name === 'images' && files) {
+      setForm(f => ({ ...f, images: Array.from(files) }));
+      // Show previews for new images
+      const filePreviews = Array.from(files).map(file => URL.createObjectURL(file));
+      setPreview(prev => Array.isArray(prev) ? [...prev, ...filePreviews] : filePreviews);
+    } else if (name === 'text') {
+      setForm(f => ({ ...f, text: value }));
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setStatus('Updating...');
+    try {
+      const formData = new FormData();
+      formData.append('text', form.text);
+      if (form.images && form.images.length > 0) {
+        for (let i = 0; i < form.images.length; i++) {
+          formData.append('images', form.images[i]);
+        }
+      }
+      if (removedImages.length > 0) {
+        removedImages.forEach(idx => formData.append('removeImages', idx));
+      }
+      const res = await fetch(`${BASE_API_URL}/updateannouncement/${editAnnouncement._id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus('Announcement updated!');
+        setShowEdit(false);
+        setEditAnnouncement(null);
+        setForm({ text: '', images: [] });
+        // Update the announcement in the state
+        setAnnouncements(prev => prev.map(a => a._id === data.announcement._id ? data.announcement : a));
+      } else {
+        setStatus(data.message || 'Failed to update');
+      }
+    } catch {
+      setStatus('Failed to update');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    setStatus('Deleting...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/removeannouncement/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus('Deleted!');
+        setDeleteConfirmId(null);
+        // Remove the deleted announcement from the state
+        setAnnouncements(prev => prev.filter(a => a._id !== data.id));
+      } else {
+        setStatus('Failed to delete');
+      }
+    } catch {
+      setStatus('Failed to delete');
+    }
+  };
+
+  const handleRemoveImage = (idx) => {
+    setPreview(prev => Array.isArray(prev) ? prev.filter((_, i) => i !== idx) : []);
+    setRemovedImages(prev => [...prev, idx]);
+  };
+
+  // Open remove images modal
+  const handleOpenRemoveImages = (announcement) => {
+    console.log("open modal", announcement); // DEBUG: Check if handler is called
+    setRemoveImagesAnnouncement(announcement);
+    setRemoveImagesPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
+    setRemoveImagesToDelete([]);
+    setShowRemoveImages(true);
+    setRemoveImagesStatus('');
+  };
+
+  // Remove image in remove images modal
+  const handleRemoveImageInModal = (idx) => {
+    setRemoveImagesPreview(prev => prev.filter((_, i) => i !== idx));
+    setRemoveImagesToDelete(prev => [...prev, idx]);
+  };
+
+  // Save changes in remove images modal
+  const handleSaveRemoveImages = async () => {
+    setRemoveImagesStatus('Saving...');
+    try {
+      const formData = new FormData();
+      if (removeImagesToDelete.length > 0) {
+        removeImagesToDelete.forEach(idx => formData.append('removeImages', idx));
+      }
+      const res = await fetch(`${BASE_API_URL}/updateannouncement/${removeImagesAnnouncement._id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRemoveImagesStatus('Images removed!');
+        setShowRemoveImages(false);
+        setRemoveImagesAnnouncement(null);
+        setRemoveImagesPreview([]);
+        setRemoveImagesToDelete([]);
+        fetchAnnouncements();
+      } else {
+        setRemoveImagesStatus(data.message || 'Failed to remove images');
+      }
+    } catch {
+      setRemoveImagesStatus('Failed to remove images');
     }
   };
 
@@ -733,6 +874,12 @@ function AdminDashboard() {
         </div>
       );
     }
+    if (selectedMenu === "announcements") {
+      // Announcements Section
+      return (
+        <AnnouncementsSection isSuperAdmin={isSuperAdmin} userEmail={userEmail} />
+      );
+    }
     // Main content for other menu items
     return (
       <div style={{
@@ -917,6 +1064,31 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+      {/* Remove Images Modal */}
+      {showRemoveImages && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)', textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 18 }}>Remove Images</h3>
+            {Array.isArray(removeImagesPreview) && removeImagesPreview.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 18 }}>
+                {removeImagesPreview.map((img, idx) => (
+                  <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                    <img src={img} alt="Preview" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
+                    <button type="button" onClick={() => handleRemoveImageInModal(idx)} style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}>×</button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ marginBottom: 18 }}>No images to remove.</div>
+            )}
+            <div style={{ marginTop: 10, color: '#1e3c72', fontWeight: 500 }}>{removeImagesStatus}</div>
+            <div style={{ marginTop: 18, display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button type="button" onClick={handleSaveRemoveImages} style={{ background: '#e67e22', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Save Changes</button>
+              <button type="button" onClick={() => setShowRemoveImages(false)} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
       <footer style={{
         width: "100%",
         background: "#1e3c72",
@@ -938,5 +1110,336 @@ export default function MainHome() {
     <ProtectedRoute>
       <AdminDashboard />
     </ProtectedRoute>
+  );
+}
+
+function AnnouncementsSection({ isSuperAdmin, userEmail }) {
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [editAnnouncement, setEditAnnouncement] = useState(null);
+  const [form, setForm] = useState({ text: '', images: [] });
+  const [status, setStatus] = useState('');
+  const [preview, setPreview] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [removedImages, setRemovedImages] = useState([]);
+  const [removingImage, setRemovingImage] = useState({ announcementId: null, imageIndex: null, loading: false });
+
+  // Fetch announcements
+  const fetchAnnouncements = useCallback(() => {
+    setLoading(true);
+    fetch(`${BASE_API_URL}/getannouncements`)
+      .then(res => res.json())
+      .then(data => {
+        setAnnouncements(data.announcements || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
+
+  // Handle image preview
+  useEffect(() => {
+    if (form.images && form.images.length > 0) {
+      const url = URL.createObjectURL(form.images[0]);
+      setPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setPreview('');
+    }
+  }, [form.images]);
+
+  // Create announcement
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setStatus('Creating...');
+    try {
+      const formData = new FormData();
+      formData.append('text', form.text);
+      if (form.images && form.images.length > 0) {
+        for (let i = 0; i < form.images.length; i++) {
+          formData.append('images', form.images[i]);
+        }
+      }
+      formData.append('createdBy', userEmail);
+      const res = await fetch(`${BASE_API_URL}/addannouncement`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus('Announcement created!');
+        setForm({ text: '', images: [] });
+        setShowCreate(false);
+        // Add the new announcement to the state
+        setAnnouncements(prev => [data.announcement, ...prev]);
+      } else {
+        setStatus(data.message || 'Failed to create');
+      }
+    } catch {
+      setStatus('Failed to create');
+    }
+  };
+
+  // Edit announcement
+  const handleEdit = (announcement) => {
+    setEditAnnouncement(announcement);
+    setForm({ text: announcement.text, images: [] });
+    setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
+    setRemovedImages([]);
+    setShowEdit(true);
+    setStatus('');
+  };
+
+  // Update announcement
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    setStatus('Updating...');
+    try {
+      const formData = new FormData();
+      formData.append('text', form.text);
+      if (form.images && form.images.length > 0) {
+        for (let i = 0; i < form.images.length; i++) {
+          formData.append('images', form.images[i]);
+        }
+      }
+      if (removedImages.length > 0) {
+        removedImages.forEach(idx => formData.append('removeImages', idx));
+      }
+      const res = await fetch(`${BASE_API_URL}/updateannouncement/${editAnnouncement._id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus('Announcement updated!');
+        setShowEdit(false);
+        setEditAnnouncement(null);
+        setForm({ text: '', images: [] });
+        // Update the announcement in the state
+        setAnnouncements(prev => prev.map(a => a._id === data.announcement._id ? data.announcement : a));
+      } else {
+        setStatus(data.message || 'Failed to update');
+      }
+    } catch {
+      setStatus('Failed to update');
+    }
+  };
+
+  // Delete announcement
+  const handleDelete = async (id) => {
+    setStatus('Deleting...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/removeannouncement/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStatus('Deleted!');
+        setDeleteConfirmId(null);
+        // Remove the deleted announcement from the state
+        setAnnouncements(prev => prev.filter(a => a._id !== data.id));
+      } else {
+        setStatus('Failed to delete');
+      }
+    } catch {
+      setStatus('Failed to delete');
+    }
+  };
+
+  // Form change handler
+  const handleFormChange = e => {
+    const { name, value, files } = e.target;
+    if (name === 'images' && files) {
+      setForm(f => ({ ...f, images: Array.from(files) }));
+      // Show previews for new images
+      const filePreviews = Array.from(files).map(file => URL.createObjectURL(file));
+      setPreview(prev => Array.isArray(prev) ? [...prev, ...filePreviews] : filePreviews);
+    } else if (name === 'text') {
+      setForm(f => ({ ...f, text: value }));
+    }
+  };
+
+  // Remove image in edit (by index)
+  const handleRemoveImage = (idx) => {
+    setPreview(prev => Array.isArray(prev) ? prev.filter((_, i) => i !== idx) : []);
+    setRemovedImages(prev => [...prev, idx]);
+  };
+
+  // Add this function inside AnnouncementsSection:
+  const handleRemoveImageClick = (announcementId, imageIndex) => {
+    setRemovingImage({ announcementId, imageIndex, loading: false });
+  };
+  const handleConfirmRemoveImage = async (announcementId, imageIndex) => {
+    setRemovingImage({ announcementId, imageIndex, loading: true });
+    try {
+      const res = await fetch(`${BASE_API_URL}/announcement/${announcementId}/remove-image`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ imageIndex })
+      });
+      setRemovingImage({ announcementId: null, imageIndex: null, loading: false });
+      const data = await res.json();
+      if (res.ok) {
+        // Update the announcement in the state with the returned announcement
+        setAnnouncements(prev => prev.map(a => a._id === announcementId ? data.announcement : a));
+      } else {
+        alert(data.message || 'Failed to remove image');
+      }
+    } catch {
+      setRemovingImage({ announcementId: null, imageIndex: null, loading: false });
+      alert('Failed to remove image');
+    }
+  };
+  const handleCancelRemoveImage = () => {
+    setRemovingImage({ announcementId: null, imageIndex: null, loading: false });
+  };
+
+  return (
+    <div style={{ padding: 48, maxWidth: 700, margin: '0 auto' }}>
+      <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: '#1e3c72' }}>Announcements</h2>
+      {isSuperAdmin && (
+        <button onClick={() => { setShowCreate(true); setForm({ text: '', images: [] }); setPreview(''); setStatus(''); }}
+          style={{ marginBottom: 24, background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 28px', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>
+          + Create Announcement
+        </button>
+      )}
+      {loading ? <div>Loading...</div> : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          {announcements.length === 0 && <div>No announcements yet.</div>}
+          {announcements.map(a => (
+            <div key={a._id} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(30,60,114,0.08)', padding: 24, position: 'relative', marginBottom: 8 }}>
+              {isSuperAdmin && (
+                <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
+                  <button onClick={() => handleEdit(a)} style={{ background: '#f7ca18', color: '#222', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+                  <button onClick={() => setDeleteConfirmId(a._id)} style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+                </div>
+              )}
+              <div style={{ fontSize: 17, color: '#222', marginBottom: 12, whiteSpace: 'pre-line' }}>{a.text}</div>
+              {/* Show all images in the announcement */}
+              {a.images && a.images.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+                  {a.images.map((img, idx) => (
+                    <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                      <img src={img} alt="Announcement" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: '0 2px 8px rgba(30,60,114,0.10)' }} />
+                      {isSuperAdmin && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImageClick(a._id, idx)}
+                            style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}
+                            title="Remove image"
+                            disabled={removingImage.loading && removingImage.announcementId === a._id && removingImage.imageIndex === idx}
+                          >×</button>
+                          {removingImage.announcementId === a._id && removingImage.imageIndex === idx && (
+                            <div style={{ position: 'absolute', top: 30, right: 0, background: '#fff', border: '1px solid #c0392b', borderRadius: 6, padding: '8px 12px', zIndex: 10, boxShadow: '0 2px 8px rgba(192,57,43,0.10)', minWidth: 160 }}>
+                              <div style={{ color: '#c0392b', fontWeight: 600, marginBottom: 8 }}>Remove this image?</div>
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmRemoveImage(a._id, idx)}
+                                style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 600, marginRight: 8, cursor: 'pointer' }}
+                                disabled={removingImage.loading}
+                              >{removingImage.loading ? 'Removing...' : 'Yes'}</button>
+                              <button
+                                type="button"
+                                onClick={handleCancelRemoveImage}
+                                style={{ background: '#eee', color: '#1e3c72', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }}
+                                disabled={removingImage.loading}
+                              >Cancel</button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ fontSize: 13, color: '#888', marginTop: 8 }}>By: {a.createdBy} | {new Date(a.createdAt).toLocaleString()}</div>
+              {/* Delete confirmation popup below the announcement */}
+              {deleteConfirmId === a._id && (
+                <div style={{
+                  position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 8,
+                  background: '#fff', border: '1.5px solid #c0392b', borderRadius: 10, boxShadow: '0 4px 24px rgba(192,57,43,0.10)',
+                  padding: 24, zIndex: 10, textAlign: 'center',
+                }}>
+                  <div style={{ fontWeight: 600, fontSize: 16, color: '#c0392b', marginBottom: 12 }}>
+                    Are you sure you want to delete this announcement?
+                  </div>
+                  <button
+                    onClick={() => handleDelete(a._id)}
+                    style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer', marginRight: 12 }}
+                  >
+                    Yes, Delete
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirmId(null)}
+                    style={{ background: '#eee', color: '#1e3c72', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  {status && <div style={{ marginTop: 10, color: status.includes('Deleted') ? '#28a745' : '#c0392b' }}>{status}</div>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Create Announcement Modal */}
+      {showCreate && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)', textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 18 }}>Create Announcement</h3>
+            <form onSubmit={handleCreate}>
+              <textarea name="text" value={form.text} onChange={handleFormChange} required rows={4} placeholder="Announcement text..." style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
+              <input type="file" name="images" accept="image/*" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
+              {preview && <img src={preview} alt="Preview" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 6, marginBottom: 8 }} />}
+              <div style={{ marginTop: 10, color: '#1e3c72', fontWeight: 500 }}>{status}</div>
+              <div style={{ marginTop: 18, display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button type="submit" style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Create</button>
+                <button type="button" onClick={() => { setShowCreate(false); setStatus(''); }} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Edit Announcement Modal */}
+      {showEdit && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)', textAlign: 'center' }}>
+            <h3 style={{ marginBottom: 18 }}>Edit Announcement</h3>
+            <form onSubmit={handleUpdate}>
+              <textarea name="text" value={form.text} onChange={handleFormChange} required rows={4} placeholder="Announcement text..." style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
+              <input type="file" name="images" accept="image/jpeg,image/png,image/jpg" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
+              {/* Show all preview images with remove buttons */}
+              {Array.isArray(preview) && preview.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+                  {preview.map((img, idx) => (
+                    <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                      <img src={img} alt="Preview" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
+                      <button type="button" onClick={() => handleRemoveImage(idx)} style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}>×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop: 10, color: '#1e3c72', fontWeight: 500 }}>{status}</div>
+              <div style={{ marginTop: 18, display: 'flex', gap: 12, justifyContent: 'center' }}>
+                <button type="submit" style={{ background: '#f7ca18', color: '#222', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Update</button>
+                <button type="button" onClick={() => { setShowEdit(false); setEditAnnouncement(null); setStatus(''); }} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
