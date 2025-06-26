@@ -285,7 +285,7 @@ frontend/
 ### Current Security Features
 - Password hashing with bcrypt
 - JWT token expiration (7 days)
-- OTP expiration (3 minutes registration, 15 seconds login)
+- OTP expiration (2 minutes)
 - Protected API routes
 - Input sanitization and validation
 - Secure file upload handling
