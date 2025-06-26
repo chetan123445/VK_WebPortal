@@ -11,7 +11,6 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
       { key: "add-admin", label: "Add Admin", icon: <FaUserShield style={{ fontSize: 18 }} />, action: () => setShowAddAdmin(true) },
       { key: "remove-admin", label: "Remove Admin", icon: <FaUserShield style={{ fontSize: 18, color: '#c0392b' }} />, action: () => setShowRemoveAdmin(true) },
       { key: "manage-users", label: "Manage Users", icon: <FaUsers style={{ fontSize: 18 }} /> },
-      { key: "manage-teachers", label: "Manage Teachers", icon: <FaUserTie style={{ fontSize: 18 }} /> },
     ] : []),
     { key: "view-admins", label: "View Admins", icon: <FaUsers style={{ fontSize: 18 }} />, action: () => setShowViewAdmins(true) },
     { key: "manage-books", label: "Manage Books", icon: <FaBook style={{ fontSize: 18 }} /> },
@@ -229,7 +228,7 @@ function AdminDashboard() {
     const user = getUserData();
     if (user && user.email) {
       setUserEmail(user.email);
-      fetch(`http://localhost:8000/api/getadmins`)
+      fetch(`${BASE_API_URL}/getadmins`)
         .then(res => res.json())
         .then(data => {
           const found = (data.admins || []).find(a => a.email === user.email);
@@ -242,7 +241,7 @@ function AdminDashboard() {
   // Fetch admins when modal opens
   useEffect(() => {
     if (showViewAdmins) {
-      fetch("http://localhost:8000/api/getadmins")
+      fetch(`${BASE_API_URL}/getadmins`)
         .then(res => res.json())
         .then(data => setAdmins(data.admins || []))
         .catch(() => setAdmins([]));
@@ -1054,44 +1053,44 @@ function AdminDashboard() {
               </div>
             </div>
           )}
-          {/* View Admins Modal */}
-          {showViewAdmins && (
-            <div style={{
-              position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-              background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
-            }}>
-              <div style={{
-                background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
-              }}>
-                <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
-                {/* Show superadmins first, then admins, with emails listed below each */}
-                <div>
-                  <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
-                  <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
-                    {admins.filter(a => a.isSuperAdmin).map(a => (
-                      <li key={a._id} style={{ marginBottom: 2 }}>
-                        {a.email}
-                      </li>
-                    ))}
-                  </ul>
-                  <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
-                  <ul style={{ listStyle: "none", padding: 0 }}>
-                    {admins.filter(a => !a.isSuperAdmin).map(a => (
-                      <li key={a._id} style={{ marginBottom: 2 }}>
-                        {a.email}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <button onClick={() => setShowViewAdmins(false)} style={{
-                  marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
-                }}>
-                  Close
-                </button>
-              </div>
-            </div>
-          )}
         </>
+      )}
+      {/* View Admins Modal - moved outside isSuperAdmin check */}
+      {showViewAdmins && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000
+        }}>
+          <div style={{
+            background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
+          }}>
+            <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
+            {/* Show superadmins first, then admins, with emails listed below each */}
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
+              <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
+                {admins.filter(a => a.isSuperAdmin).map(a => (
+                  <li key={a._id} style={{ marginBottom: 2 }}>
+                    {a.email}
+                  </li>
+                ))}
+              </ul>
+              <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
+              <ul style={{ listStyle: "none", padding: 0 }}>
+                {admins.filter(a => !a.isSuperAdmin).map(a => (
+                  <li key={a._id} style={{ marginBottom: 2 }}>
+                    {a.email}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button onClick={() => setShowViewAdmins(false)} style={{
+              marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
+            }}>
+              Close
+            </button>
+          </div>
+        </div>
       )}
       {/* Remove Images Modal */}
       {showRemoveImages && (
