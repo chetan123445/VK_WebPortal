@@ -3,6 +3,8 @@
 A comprehensive web portal for VK Publications with multi-user authentication, role-based access control, and secure communication features.
 
 ## 🏗️ Architecture Overview
+![image](https://github.com/user-attachments/assets/ea6745ad-4ae5-4132-86d8-0d7cff1e6793)
+
 
 ### Backend Architecture (Node.js + Express + MongoDB)
 
