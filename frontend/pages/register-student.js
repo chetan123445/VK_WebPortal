@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { BASE_API_URL } from "./apiurl";
 import { useRouter } from "next/navigation";
 
@@ -42,6 +42,7 @@ export default function RegisterStudent() {
   const router = useRouter();
   const [otpBlocks, setOtpBlocks] = useState(["", "", "", "", "", ""]);
   const otpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
+  const [otpTimer, setOtpTimer] = useState(0);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -113,6 +114,16 @@ export default function RegisterStudent() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (otpSent) setOtpTimer(180); // 3 minutes
+  }, [otpSent]);
+
+  useEffect(() => {
+    if (!otpSent || otpTimer <= 0) return;
+    const interval = setInterval(() => setOtpTimer(t => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [otpSent, otpTimer]);
+
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
@@ -147,8 +158,13 @@ export default function RegisterStudent() {
                   />
                 ))}
               </div>
+              {otpSent && (
+                <div style={{ marginBottom: 8, color: otpTimer > 0 ? '#1e3c72' : '#c00', fontWeight: 600 }}>
+                  {otpTimer > 0 ? `OTP expires in ${Math.floor(otpTimer/60)}:${(otpTimer%60).toString().padStart(2,'0')}` : 'OTP expired'}
+                </div>
+              )}
               <div style={{ position: 'relative' }}>
-                <input type={showPassword ? "text" : "password"} name="password" placeholder="Password" value={form.password} onChange={handleChange} required style={inputStyle} maxLength={30} />
+                <input type={showPassword ? "text" : "password"} name="password" placeholder="Password" value={form.password} onChange={handleChange} required style={inputStyle} maxLength={30} disabled={otpTimer <= 0} />
                 <span onClick={() => setShowPassword(v => !v)} style={{ position: 'absolute', right: 12, top: 14, cursor: 'pointer', userSelect: 'none', color: '#888', fontSize: 18 }} title={showPassword ? 'Hide password' : 'Show password'}>
                   {showPassword ? '🙈' : '👁️'}
                 </span>
@@ -158,7 +174,10 @@ export default function RegisterStudent() {
                   Password must contain: {getPasswordSuggestions(form.password).join(', ')}
                 </div>
               )}
-              <button type="submit" disabled={loading} style={btnStyle}>{loading ? "Registering..." : "Register"}</button>
+              <button type="submit" disabled={!otpSent || otpTimer <= 0} style={btnStyle}>{loading ? "Registering..." : "Register"}</button>
+              {otpSent && otpTimer <= 0 && (
+                <button type="button" onClick={handleSendOtp} style={{ marginTop: 8, color: '#1e3c72', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Resend OTP</button>
+              )}
             </>
           )}
         </form>

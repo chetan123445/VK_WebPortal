@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { BASE_API_URL } from "./apiurl";
 import { useRouter } from "next/navigation";
 
@@ -28,6 +28,7 @@ export default function RegisterParent() {
   const childOtpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
   const [childOtpSent, setChildOtpSent] = useState(false);
   const [childOtpVerified, setChildOtpVerified] = useState(false);
+  const [childOtpTimer, setChildOtpTimer] = useState(0);
 
   // Parent info
   const [parentName, setParentName] = useState("");
@@ -37,6 +38,7 @@ export default function RegisterParent() {
   const parentOtpRefs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
   const [parentOtpSent, setParentOtpSent] = useState(false);
   const [parentOtpVerified, setParentOtpVerified] = useState(false);
+  const [parentOtpTimer, setParentOtpTimer] = useState(0);
 
   const [msg, setMsg] = useState("");
   const [error, setError] = useState("");
@@ -45,6 +47,23 @@ export default function RegisterParent() {
 
   const [showStudentRegister, setShowStudentRegister] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (childOtpSent) setChildOtpTimer(180);
+  }, [childOtpSent]);
+  useEffect(() => {
+    if (!childOtpSent || childOtpTimer <= 0) return;
+    const interval = setInterval(() => setChildOtpTimer(t => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [childOtpSent, childOtpTimer]);
+  useEffect(() => {
+    if (parentOtpSent) setParentOtpTimer(180);
+  }, [parentOtpSent]);
+  useEffect(() => {
+    if (!parentOtpSent || parentOtpTimer <= 0) return;
+    const interval = setInterval(() => setParentOtpTimer(t => t - 1), 1000);
+    return () => clearInterval(interval);
+  }, [parentOtpSent, parentOtpTimer]);
 
   // Step 1: Verify child email and send OTP
   const handleChildEmailSubmit = async (e) => {
@@ -322,13 +341,19 @@ export default function RegisterParent() {
                   ))}
                 </div>
                 <input type="hidden" name="childOtp" value={childOtpBlocks.join("")} />
+                <div style={{ marginBottom: 8, color: childOtpTimer > 0 ? '#1e3c72' : '#c00', fontWeight: 600 }}>
+                  {childOtpTimer > 0 ? `OTP expires in ${Math.floor(childOtpTimer/60)}:${(childOtpTimer%60).toString().padStart(2,'0')}` : 'OTP expired'}
+                </div>
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={!childOtpSent || childOtpTimer <= 0}
                   style={btnStyle}
                 >
                   {loading ? "Verifying OTP..." : "Verify OTP"}
                 </button>
+                {childOtpSent && childOtpTimer <= 0 && (
+                  <button type="button" onClick={handleChildEmailSubmit} style={{ marginTop: 8, color: '#1e3c72', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Resend OTP</button>
+                )}
               </>
             )}
           </form>
@@ -399,9 +424,15 @@ export default function RegisterParent() {
                   ))}
                 </div>
                 <input type="hidden" name="parentOtp" value={parentOtpBlocks.join("")} />
-                <button type="submit" disabled={loading} style={btnStyle}>
+                <div style={{ marginBottom: 8, color: parentOtpTimer > 0 ? '#1e3c72' : '#c00', fontWeight: 600 }}>
+                  {parentOtpTimer > 0 ? `OTP expires in ${Math.floor(parentOtpTimer/60)}:${(parentOtpTimer%60).toString().padStart(2,'0')}` : 'OTP expired'}
+                </div>
+                <button type="submit" disabled={!parentOtpSent || parentOtpTimer <= 0} style={btnStyle}>
                   {loading ? "Verifying & Registering..." : "Verify OTP & Register"}
                 </button>
+                {parentOtpSent && parentOtpTimer <= 0 && (
+                  <button type="button" onClick={handleParentInfoSubmit} style={{ marginTop: 8, color: '#1e3c72', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Resend OTP</button>
+                )}
               </>
             )}
           </form>
