@@ -27,9 +27,10 @@ export const verifyChildEmail = async (req, res) => {
     const { childEmail } = req.body;
     if (!childEmail) return res.status(400).json({ message: "Child email is required" });
     const cleanEmail = childEmail.trim().toLowerCase();
-    const child = await User.findOne({ email: cleanEmail });
+    // Only allow if registeredAs === 'Student'
+    const child = await User.findOne({ email: cleanEmail, registeredAs: 'Student' });
     if (!child) {
-      return res.status(404).json({ message: "No child is registered with this email." });
+      return res.status(404).json({ message: "No student is registered with this email." });
     }
     const otp = generateOtp();
     childOtpStore[cleanEmail] = { otp, expires: Date.now() + 3 * 60 * 1000 }; // 3 min
