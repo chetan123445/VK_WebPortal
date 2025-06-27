@@ -10,14 +10,14 @@ export const announcementUpload = multer({
   storage,
   limits: { fileSize: 2 * 1024 * 1024 }, // 2MB per file
   fileFilter: (req, file, cb) => {
-    // Accept all common jpg/jpeg/png mimetypes
-    const allowed = ['image/jpeg', 'image/png', 'image/jpg', 'image/pjpeg'];
-    if (!allowed.includes(file.mimetype)) return cb(new Error('Only jpg and png images allowed'));
+    // Accept jpg/jpeg/png images and pdfs
+    const allowed = ['image/jpeg', 'image/png', 'image/jpg', 'image/pjpeg', 'application/pdf'];
+    if (!allowed.includes(file.mimetype)) return cb(new Error('Only jpg, png images and pdf files allowed'));
     cb(null, true);
   }
 });
 
-// Create announcement (images as Buffer)
+// Create announcement (images and pdfs as Buffer)
 export const createAnnouncement = async (req, res) => {
   try {
     const { text, createdBy } = req.body;
@@ -26,7 +26,11 @@ export const createAnnouncement = async (req, res) => {
     }
     let images = [];
     if (req.files && req.files.length > 0) {
-      images = req.files.map(f => ({ data: f.buffer, contentType: f.mimetype }));
+      images = req.files.map(f => ({
+        data: f.buffer,
+        contentType: f.mimetype,
+        fileType: f.mimetype === 'application/pdf' ? 'pdf' : 'image'
+      }));
     }
     const creatorEmail = createdBy || (req.user && req.user.email);
     if (!creatorEmail) {
@@ -43,14 +47,26 @@ export const createAnnouncement = async (req, res) => {
   }
 };
 
-// Get all announcements (convert images to base64)
+// Get all announcements (convert images and pdfs to base64 or download link)
 export const getAnnouncements = async (req, res) => {
   try {
     const announcements = await Announcement.find().sort({ createdAt: -1 });
     const announcementsWithBase64 = announcements.map(a => {
-      const images = (a.images || []).map(img =>
-        img && img.data ? `data:${img.contentType};base64,${img.data.toString('base64')}` : null
-      ).filter(Boolean);
+      const images = (a.images || []).map(img => {
+        if (!img || !img.data) return null;
+        if (img.contentType === 'application/pdf') {
+          // For PDFs, return a base64 data URL with fileType
+          return {
+            url: `data:application/pdf;base64,${img.data.toString('base64')}`,
+            fileType: 'pdf'
+          };
+        }
+        // For images
+        return {
+          url: `data:${img.contentType};base64,${img.data.toString('base64')}`,
+          fileType: 'image'
+        };
+      }).filter(Boolean);
       return {
         _id: a._id,
         text: a.text,
@@ -137,4 +153,4 @@ export const removeAnnouncementImage = async (req, res) => {
   } catch (err) {
     res.status(500).json({ message: 'Error removing image', error: err.message });
   }
-}; 
+};

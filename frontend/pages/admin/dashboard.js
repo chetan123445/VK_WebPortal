@@ -1264,6 +1264,9 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   const [removedImages, setRemovedImages] = useState([]);
   const [removingImage, setRemovingImage] = useState({ announcementId: null, imageIndex: null, loading: false });
 
+  // Preview modal state
+  const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '' });
+
   // Fetch announcements
   const fetchAnnouncements = useCallback(() => {
     setLoading(true);
@@ -1280,12 +1283,20 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     fetchAnnouncements();
   }, [fetchAnnouncements]);
 
-  // Handle image preview
+  // Handle image/pdf preview
   useEffect(() => {
     if (form.images && form.images.length > 0) {
-      const url = URL.createObjectURL(form.images[0]);
-      setPreview(url);
-      return () => URL.revokeObjectURL(url);
+      // Generate preview objects for all files
+      const previews = Array.from(form.images).map(file => {
+        if (file.type === "application/pdf") {
+          return { type: "pdf", url: URL.createObjectURL(file) };
+        }
+        return { type: "image", url: URL.createObjectURL(file) };
+      });
+      setPreview(previews);
+      return () => {
+        previews.forEach(p => URL.revokeObjectURL(p.url));
+      };
     } else {
       setPreview('');
     }
@@ -1397,9 +1408,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     const { name, value, files } = e.target;
     if (name === 'images' && files) {
       setForm(f => ({ ...f, images: Array.from(files) }));
-      // Show previews for new images
-      const filePreviews = Array.from(files).map(file => URL.createObjectURL(file));
-      setPreview(prev => Array.isArray(prev) ? [...prev, ...filePreviews] : filePreviews);
+      // Previews handled in useEffect
     } else if (name === 'text') {
       setForm(f => ({ ...f, text: value }));
     }
@@ -1464,24 +1473,51 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
                 </div>
               )}
               <div style={{ fontSize: 17, color: '#222', marginBottom: 12, whiteSpace: 'pre-line' }}>{a.text}</div>
-              {/* Show all images in the announcement */}
+              {/* Show all images/pdfs in the announcement */}
               {a.images && a.images.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
                   {a.images.map((img, idx) => (
                     <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
-                      <img src={img} alt="Announcement" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: '0 2px 8px rgba(30,60,114,0.10)' }} />
+                      {img.fileType === "pdf" ? (
+                        <div
+                          style={{ cursor: "pointer", position: "relative", display: "inline-block" }}
+                          onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "pdf" })}
+                        >
+                          <iframe
+                            src={img.url}
+                            title={`Announcement PDF ${idx + 1}`}
+                            style={{ width: 180, height: 120, border: "1px solid #e0e0e0", borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
+                          />
+                          <div style={{
+                            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+                            background: "rgba(255,255,255,0.01)", borderRadius: 8
+                          }} />
+                          <div style={{
+                            position: "absolute", bottom: 6, left: 6, background: "#fff", borderRadius: 4, padding: "2px 6px", fontSize: 13, color: "#c0392b", fontWeight: 700, boxShadow: "0 1px 4px rgba(30,60,114,0.08)"
+                          }}>
+                            PDF
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          src={img.url}
+                          alt="Announcement"
+                          style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: '0 2px 8px rgba(30,60,114,0.10)', cursor: "pointer" }}
+                          onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "image" })}
+                        />
+                      )}
                       {isSuperAdmin && (
                         <>
                           <button
                             type="button"
                             onClick={() => handleRemoveImageClick(a._id, idx)}
                             style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}
-                            title="Remove image"
+                            title="Remove file"
                             disabled={removingImage.loading && removingImage.announcementId === a._id && removingImage.imageIndex === idx}
                           >×</button>
                           {removingImage.announcementId === a._id && removingImage.imageIndex === idx && (
                             <div style={{ position: 'absolute', top: 30, right: 0, background: '#fff', border: '1px solid #c0392b', borderRadius: 6, padding: '8px 12px', zIndex: 10, boxShadow: '0 2px 8px rgba(192,57,43,0.10)', minWidth: 160 }}>
-                              <div style={{ color: '#c0392b', fontWeight: 600, marginBottom: 8 }}>Remove this image?</div>
+                              <div style={{ color: '#c0392b', fontWeight: 600, marginBottom: 8 }}>Remove this {img.fileType === "pdf" ? "PDF" : "image"}?</div>
                               <button
                                 type="button"
                                 onClick={() => handleConfirmRemoveImage(a._id, idx)}
@@ -1532,6 +1568,42 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
           ))}
         </div>
       )}
+      {/* Preview Modal for image/pdf */}
+      {previewModal.open && (
+        <div
+          style={{
+            position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+            background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center"
+          }}
+          onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}
+        >
+          <div
+            style={{
+              background: "#fff", borderRadius: 12, padding: 16, maxWidth: "90vw", maxHeight: "90vh",
+              boxShadow: "0 4px 24px rgba(30,60,114,0.18)", position: "relative", display: "flex", alignItems: "center", justifyContent: "center"
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}
+              style={{
+                position: "absolute", top: 8, right: 12, background: "#c0392b", color: "#fff", border: "none",
+                borderRadius: "50%", width: 32, height: 32, fontSize: 22, fontWeight: 700, cursor: "pointer", zIndex: 2
+              }}
+              aria-label="Close"
+            >×</button>
+            {previewModal.fileType === "pdf" ? (
+              <PDFWithLoader url={previewModal.url} />
+            ) : (
+              <img
+                src={previewModal.url}
+                alt="Preview"
+                style={{ maxWidth: "80vw", maxHeight: "80vh", borderRadius: 8 }}
+              />
+            )}
+          </div>
+        </div>
+      )}
       {/* Create Announcement Modal */}
       {showCreate && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
@@ -1539,8 +1611,21 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
             <h3 style={{ marginBottom: 18 }}>Create Announcement</h3>
             <form onSubmit={handleCreate}>
               <textarea name="text" value={form.text} onChange={handleFormChange} required rows={4} placeholder="Announcement text..." style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
-              <input type="file" name="images" accept="image/*" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
-              {preview && <img src={preview} alt="Preview" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 6, marginBottom: 8 }} />}
+              <input type="file" name="images" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
+              {/* Show previews for all selected files */}
+              {Array.isArray(preview) && preview.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+                  {preview.map((p, idx) => (
+                    <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                      {p.type === "pdf" ? (
+                        <iframe src={p.url} title={`PDF Preview ${idx + 1}`} style={{ width: 120, height: 80, border: "1px solid #e0e0e0", borderRadius: 6 }} />
+                      ) : (
+                        <img src={p.url} alt="Preview" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
               <div style={{ marginTop: 10, color: '#1e3c72', fontWeight: 500 }}>{status}</div>
               <div style={{ marginTop: 18, display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <button type="submit" style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Create</button>
@@ -1557,13 +1642,17 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
             <h3 style={{ marginBottom: 18 }}>Edit Announcement</h3>
             <form onSubmit={handleUpdate}>
               <textarea name="text" value={form.text} onChange={handleFormChange} required rows={4} placeholder="Announcement text..." style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
-              <input type="file" name="images" accept="image/jpeg,image/png,image/jpg" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
-              {/* Show all preview images with remove buttons */}
+              <input type="file" name="images" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
+              {/* Show all preview images/pdfs with remove buttons */}
               {Array.isArray(preview) && preview.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-                  {preview.map((img, idx) => (
+                  {preview.map((p, idx) => (
                     <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
-                      <img src={img} alt="Preview" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
+                      {p.type === "pdf" ? (
+                        <iframe src={p.url} title={`PDF Preview ${idx + 1}`} style={{ width: 120, height: 80, border: "1px solid #e0e0e0", borderRadius: 6 }} />
+                      ) : (
+                        <img src={p.url} alt="Preview" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
+                      )}
                       <button type="button" onClick={() => handleRemoveImage(idx)} style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}>×</button>
                     </div>
                   ))}
@@ -1578,6 +1667,42 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Add this helper component at the bottom of the file (outside any function/component):
+function PDFWithLoader({ url }) {
+  const [loading, setLoading] = useState(true);
+  return (
+    <div style={{ position: "relative", width: "70vw", height: "80vh" }}>
+      {loading && (
+        <div style={{
+          position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
+          display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.7)", zIndex: 1
+        }}>
+          <div style={{
+            border: "6px solid #eee",
+            borderTop: "6px solid #1e3c72",
+            borderRadius: "50%",
+            width: 48,
+            height: 48,
+            animation: "spin 1s linear infinite"
+          }} />
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg);}
+              100% { transform: rotate(360deg);}
+            }
+          `}</style>
+        </div>
+      )}
+      <iframe
+        src={url}
+        title="PDF Preview"
+        style={{ width: "100%", height: "100%", border: "none", borderRadius: 8, background: "#fff" }}
+        onLoad={() => setLoading(false)}
+      />
     </div>
   );
 }

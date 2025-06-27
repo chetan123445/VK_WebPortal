@@ -8,7 +8,8 @@ const announcementSchema = new mongoose.Schema({
   },
   images: [{
     data: Buffer,
-    contentType: String
+    contentType: String, // image/jpeg, image/png, application/pdf
+    fileType: { type: String, default: "image" } // "image" or "pdf"
   }],
   createdBy: {
     type: String, // email or admin id
@@ -25,4 +26,4 @@ const announcementSchema = new mongoose.Schema({
 });
 
 const Announcement = mongoose.model('Announcement', announcementSchema);
-export default Announcement; 
+export default Announcement;

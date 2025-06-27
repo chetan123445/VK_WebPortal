@@ -105,7 +105,7 @@ function PhoneInputBoxes({ value, onChange }) {
     onChange(newValue);
     if (val && idx < 9 && inputsRef.current[idx + 1]) {
       inputsRef.current[idx + 1].focus();
-    }
+    };
   };
   const handleKeyDown = (e, idx) => {
     if (e.key === "Backspace" && !value[idx] && idx > 0) {
@@ -155,6 +155,9 @@ function StudentDashboard() {
   // CBSE Updates state
   const [cbseUpdates, setCbseUpdates] = useState([]);
   const [cbseLoading, setCbseLoading] = useState(false);
+
+  // Preview modal state
+  const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '' });
 
   // Fetch profile on mount and when userEmail changes
   const fetchProfile = useCallback(() => {
@@ -827,13 +830,73 @@ function StudentDashboard() {
                   {a.images && a.images.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
                       {a.images.map((img, idx) => (
-                        <img key={idx} src={img} alt="Announcement" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }} />
+                        img.fileType === "pdf" ? (
+                          <div
+                            key={idx}
+                            style={{ cursor: "pointer", position: "relative", display: "inline-block" }}
+                            onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "pdf" })}
+                          >
+                            <iframe
+                              src={img.url}
+                              title={`Announcement PDF ${idx + 1}`}
+                              style={{ width: 180, height: 120, border: "1px solid #e0e0e0", borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
+                            />
+                            <div style={{
+                              position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+                              background: "rgba(255,255,255,0.01)", borderRadius: 8
+                            }} />
+                          </div>
+                        ) : (
+                          <img
+                            key={idx}
+                            src={img.url}
+                            alt="Announcement"
+                            style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)", cursor: "pointer" }}
+                            onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "image" })}
+                          />
+                        )
                       ))}
                     </div>
                   )}
-                  <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>By: {a.createdBy} | {new Date(a.createdAt).toLocaleString()}</div>
+                  <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>{new Date(a.createdAt).toLocaleString()}</div>
                 </div>
               ))}
+            </div>
+          )}
+          {/* Preview Modal for image/pdf */}
+          {previewModal.open && (
+            <div
+              style={{
+                position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+                background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center"
+              }}
+              onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}
+            >
+              <div
+                style={{
+                  background: "#fff", borderRadius: 12, padding: 16, maxWidth: "90vw", maxHeight: "90vh",
+                  boxShadow: "0 4px 24px rgba(30,60,114,0.18)", position: "relative", display: "flex", alignItems: "center", justifyContent: "center"
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}
+                  style={{
+                    position: "absolute", top: 8, right: 12, background: "#c0392b", color: "#fff", border: "none",
+                    borderRadius: "50%", width: 32, height: 32, fontSize: 22, fontWeight: 700, cursor: "pointer", zIndex: 2
+                  }}
+                  aria-label="Close"
+                >×</button>
+                {previewModal.fileType === "pdf" ? (
+                  <PDFWithLoader url={previewModal.url} />
+                ) : (
+                  <img
+                    src={previewModal.url}
+                    alt="Preview"
+                    style={{ maxWidth: "80vw", maxHeight: "80vh", borderRadius: 8 }}
+                  />
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1081,6 +1144,42 @@ export default function StudentDashboardPage(props) {
     <ProtectedRoute>
       <StudentDashboard {...props} />
     </ProtectedRoute>
+  );
+}
+
+// Add this helper component at the bottom of the file (outside any function/component):
+function PDFWithLoader({ url }) {
+  const [loading, setLoading] = useState(true);
+  return (
+    <div style={{ position: "relative", width: "70vw", height: "80vh" }}>
+      {loading && (
+        <div style={{
+          position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
+          display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.7)", zIndex: 1
+        }}>
+          <div style={{
+            border: "6px solid #eee",
+            borderTop: "6px solid #1e3c72",
+            borderRadius: "50%",
+            width: 48,
+            height: 48,
+            animation: "spin 1s linear infinite"
+          }} />
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg);}
+              100% { transform: rotate(360deg);}
+            }
+          `}</style>
+        </div>
+      )}
+      <iframe
+        src={url}
+        title="PDF Preview"
+        style={{ width: "100%", height: "100%", border: "none", borderRadius: 8, background: "#fff" }}
+        onLoad={() => setLoading(false)}
+      />
+    </div>
   );
 }
 
