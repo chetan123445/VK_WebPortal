@@ -144,6 +144,10 @@ function StudentDashboard() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const router = useRouter();
 
+  // Announcements state
+  const [announcements, setAnnouncements] = useState([]);
+  const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+
   // Fetch profile on mount and when userEmail changes
   const fetchProfile = useCallback(() => {
     if (userEmail) {
@@ -175,6 +179,18 @@ function StudentDashboard() {
     }
   }, [userEmail]);
 
+  // Fetch announcements when "announcements" menu is selected
+  const fetchAnnouncements = useCallback(() => {
+    setAnnouncementsLoading(true);
+    fetch(`${BASE_API_URL}/getannouncements`)
+      .then(res => res.json())
+      .then(data => {
+        setAnnouncements(data.announcements || []);
+        setAnnouncementsLoading(false);
+      })
+      .catch(() => setAnnouncementsLoading(false));
+  }, []);
+
   useEffect(() => {
     setUserEmail(localStorage.getItem("userEmail") || "");
   }, []);
@@ -188,6 +204,12 @@ function StudentDashboard() {
       fetchProfile();
     }
   }, [selectedMenu, userEmail, fetchProfile]);
+
+  useEffect(() => {
+    if (selectedMenu === "announcements") {
+      fetchAnnouncements();
+    }
+  }, [selectedMenu, fetchAnnouncements]);
 
   useEffect(() => {
     if (form.photo) {
@@ -765,6 +787,31 @@ function StudentDashboard() {
             </div>
           )}
         </>
+      );
+    }
+    if (selectedMenu === "announcements") {
+      return (
+        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Announcements</h2>
+          {announcementsLoading ? <div>Loading...</div> : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {announcements.length === 0 && <div>No announcements yet.</div>}
+              {announcements.map(a => (
+                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                  <div style={{ fontSize: 17, color: "#222", marginBottom: 12, whiteSpace: "pre-line" }}>{a.text}</div>
+                  {a.images && a.images.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
+                      {a.images.map((img, idx) => (
+                        <img key={idx} src={img} alt="Announcement" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }} />
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>By: {a.createdBy} | {new Date(a.createdAt).toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       );
     }
     // Main content for other menu items
