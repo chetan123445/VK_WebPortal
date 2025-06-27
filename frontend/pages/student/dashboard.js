@@ -9,13 +9,19 @@ import { useRouter } from 'next/navigation';
 // Sidebar component for Student (always visible, no hamburger)
 function StudentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedMenu }) {
   const menuItems = [
+    { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
+    { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
+    { key: "quizzes", label: "Quizzes", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
+    { key: "sample-papers", label: "Sample Papers", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
+    { key: "avlrs", label: "AVLRs", icon: <FaLaptop style={{ fontSize: 18 }} /> },
+    { key: "mind-maps", label: "Mind Maps", icon: <FaChartBar style={{ fontSize: 18 }} /> },
+    { key: "dlr", label: "DLRs", icon: <FaLaptop style={{ fontSize: 18 }} /> },
+    { key: "discussion-panel", label: "Discussion Panel", icon: <FaUser style={{ fontSize: 18 }} /> },
+    { key: "creative-corner", label: "Creative Corner", icon: <FaBookOpen style={{ fontSize: 18 }} /> }, // <-- Added
     { key: "assignments", label: "Assignments", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
     { key: "books", label: "Books", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
     { key: "performance", label: "Performance", icon: <FaChartBar style={{ fontSize: 18 }} /> },
-    { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
     { key: "timetable", label: "Timetable", icon: <FaCalendarAlt style={{ fontSize: 18 }} /> },
-    { key: "messages", label: "Messages", icon: <FaEnvelope style={{ fontSize: 18 }} /> },
-    { key: "resources", label: "Digital Resources", icon: <FaLaptop style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
     { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> }
   ];
@@ -148,6 +154,10 @@ function StudentDashboard() {
   const [announcements, setAnnouncements] = useState([]);
   const [announcementsLoading, setAnnouncementsLoading] = useState(false);
 
+  // CBSE Updates state
+  const [cbseUpdates, setCbseUpdates] = useState([]);
+  const [cbseLoading, setCbseLoading] = useState(false);
+
   // Fetch profile on mount and when userEmail changes
   const fetchProfile = useCallback(() => {
     if (userEmail) {
@@ -191,6 +201,17 @@ function StudentDashboard() {
       .catch(() => setAnnouncementsLoading(false));
   }, []);
 
+  const fetchCbseUpdates = useCallback(() => {
+    setCbseLoading(true);
+    fetch(`${BASE_API_URL}/cbse-updates`)
+      .then(res => res.json())
+      .then(data => {
+        setCbseUpdates(data.updates || []);
+        setCbseLoading(false);
+      })
+      .catch(() => setCbseLoading(false));
+  }, []);
+
   useEffect(() => {
     setUserEmail(localStorage.getItem("userEmail") || "");
   }, []);
@@ -210,6 +231,12 @@ function StudentDashboard() {
       fetchAnnouncements();
     }
   }, [selectedMenu, fetchAnnouncements]);
+
+  useEffect(() => {
+    if (selectedMenu === "cbse-updates") {
+      fetchCbseUpdates();
+    }
+  }, [selectedMenu, fetchCbseUpdates]);
 
   useEffect(() => {
     if (form.photo) {
@@ -814,6 +841,165 @@ function StudentDashboard() {
         </div>
       );
     }
+    if (selectedMenu === "cbse-updates") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{
+            fontWeight: 700,
+            fontSize: 32,
+            marginBottom: 28,
+            color: "#1e3c72",
+            letterSpacing: 1,
+            textAlign: "center"
+          }}>
+            <FaBullhorn style={{ marginRight: 12, color: "#ff0080", fontSize: 28, verticalAlign: "middle" }} />
+            CBSE Updates
+          </h2>
+          {cbseLoading ? (
+            <div style={{ textAlign: "center", color: "#1e3c72", fontSize: 20, marginTop: 40 }}>Loading...</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+              {cbseUpdates.length === 0 && (
+                <div style={{
+                  background: "#fff",
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                  padding: 32,
+                  textAlign: "center",
+                  color: "#888",
+                  fontSize: 18
+                }}>
+                  No updates found.
+                </div>
+              )}
+              {cbseUpdates.map((u, idx) => (
+                <a
+                  key={idx}
+                  href={u.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    background: "#fff",
+                    borderRadius: 14,
+                    boxShadow: "0 2px 12px rgba(30,60,114,0.10)",
+                    padding: "20px 28px",
+                    textDecoration: "none",
+                    transition: "box-shadow 0.18s, background 0.18s",
+                    borderLeft: "5px solid #1e3c72",
+                    marginBottom: 2,
+                    cursor: "pointer",
+                    position: "relative"
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = "#f7fafd"}
+                  onMouseOut={e => e.currentTarget.style.background = "#fff"}
+                >
+                  <span style={{
+                    fontSize: 22,
+                    color: "#ff0080",
+                    flexShrink: 0,
+                    marginRight: 2
+                  }}>
+                    {u.link && (u.link.endsWith(".pdf") || u.link.endsWith(".PDF"))
+                      ? <FaBookOpen />
+                      : <FaBullhorn />}
+                  </span>
+                  <span style={{
+                    fontWeight: 600,
+                    fontSize: 17,
+                    color: "#1e3c72",
+                    flex: 1,
+                    lineHeight: 1.5
+                  }}>
+                    {u.title}
+                  </span>
+                  <span style={{
+                    fontSize: 15,
+                    color: "#888",
+                    marginLeft: 12,
+                    flexShrink: 0
+                  }}>
+                    View &rarr;
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (selectedMenu === "quizzes") {
+      return (
+        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Quizzes</h2>
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
+            Feature coming soon.
+          </div>
+        </div>
+      );
+    }
+    if (selectedMenu === "sample-papers") {
+      return (
+        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Sample Papers</h2>
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
+            Feature coming soon.
+          </div>
+        </div>
+      );
+    }
+    if (selectedMenu === "avlrs") {
+      return (
+        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>AVLRs (Video Resource Learning)</h2>
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
+            Feature coming soon.
+          </div>
+        </div>
+      );
+    }
+    if (selectedMenu === "mind-maps") {
+      return (
+        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Mind Maps</h2>
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
+            Feature coming soon.
+          </div>
+        </div>
+      );
+    }
+    if (selectedMenu === "dlr") {
+      return (
+        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>DLR (Digital Resource Learning)</h2>
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
+            Feature coming soon.
+          </div>
+        </div>
+      );
+    }
+    if (selectedMenu === "discussion-panel") {
+      return (
+        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Discussion Panel</h2>
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
+            Feature coming soon.
+          </div>
+        </div>
+      );
+    }
+    if (selectedMenu === "creative-corner") {
+      return (
+        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Creative Corner</h2>
+          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
+            Feature coming soon.
+          </div>
+        </div>
+      );
+    }
     // Main content for other menu items
     return (
       <div style={{
@@ -846,7 +1032,6 @@ function StudentDashboard() {
               "performance": "Performance",
               "announcements": "Announcements",
               "timetable": "Timetable",
-              "messages": "Messages",
               "resources": "Digital Resources"
             }[selectedMenu] || "Welcome"}
           </h2>

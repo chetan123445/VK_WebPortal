@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser } from "react-icons/fa";
+import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen } from "react-icons/fa";
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { BASE_API_URL } from '../apiurl.js';
 import { getUserData, getToken, isAuthenticated, isTokenExpired, logout } from "../../utils/auth.js";
@@ -16,6 +16,7 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
     { key: "manage-books", label: "Manage Books", icon: <FaBook style={{ fontSize: 18 }} /> },
     { key: "records", label: "Records", icon: <FaRegListAlt style={{ fontSize: 18 }} /> },
     { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
+    { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> }, // <-- Added
     { key: "reports", label: "Reports", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "settings", label: "Settings", icon: <FaCog style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
@@ -128,6 +129,8 @@ function AdminDashboard() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [removingImage, setRemovingImage] = useState({ announcementId: null, imageIndex: null, loading: false });
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [cbseUpdates, setCbseUpdates] = useState([]);
+  const [cbseLoading, setCbseLoading] = useState(false);
 
   // PhoneInputBoxes component for 10-digit phone input
   function PhoneInputBoxes({ value, onChange }) {
@@ -556,6 +559,23 @@ function AdminDashboard() {
     }
   };
 
+  const fetchCbseUpdates = useCallback(() => {
+    setCbseLoading(true);
+    fetch(`${BASE_API_URL}/cbse-updates`)
+      .then(res => res.json())
+      .then(data => {
+        setCbseUpdates(data.updates || []);
+        setCbseLoading(false);
+      })
+      .catch(() => setCbseLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (selectedMenu === "cbse-updates") {
+      fetchCbseUpdates();
+    }
+  }, [selectedMenu, fetchCbseUpdates]);
+
   const renderContent = () => {
     if (selectedMenu === "profile") {
       if (!profile) {
@@ -901,6 +921,95 @@ function AdminDashboard() {
       // Announcements Section
       return (
         <AnnouncementsSection isSuperAdmin={isSuperAdmin} userEmail={userEmail} />
+      );
+    }
+    if (selectedMenu === "cbse-updates") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{
+            fontWeight: 700,
+            fontSize: 32,
+            marginBottom: 28,
+            color: "#1e3c72",
+            letterSpacing: 1,
+            textAlign: "center"
+          }}>
+            <FaBullhorn style={{ marginRight: 12, color: "#ff0080", fontSize: 28, verticalAlign: "middle" }} />
+            CBSE Updates
+          </h2>
+          {cbseLoading ? (
+            <div style={{ textAlign: "center", color: "#1e3c72", fontSize: 20, marginTop: 40 }}>Loading...</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+              {cbseUpdates.length === 0 && (
+                <div style={{
+                  background: "#fff",
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
+                  padding: 32,
+                  textAlign: "center",
+                  color: "#888",
+                  fontSize: 18
+                }}>
+                  No updates found.
+                </div>
+              )}
+              {cbseUpdates.map((u, idx) => (
+                <a
+                  key={idx}
+                  href={u.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    background: "#fff",
+                    borderRadius: 14,
+                    boxShadow: "0 2px 12px rgba(30,60,114,0.10)",
+                    padding: "20px 28px",
+                    textDecoration: "none",
+                    transition: "box-shadow 0.18s, background 0.18s",
+                    borderLeft: "5px solid #1e3c72",
+                    marginBottom: 2,
+                    cursor: "pointer",
+                    position: "relative"
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = "#f7fafd"}
+                  onMouseOut={e => e.currentTarget.style.background = "#fff"}
+                >
+                  <span style={{
+                    fontSize: 22,
+                    color: "#ff0080",
+                    flexShrink: 0,
+                    marginRight: 2
+                  }}>
+                    {u.link && (u.link.endsWith(".pdf") || u.link.endsWith(".PDF"))
+                      ? <FaBookOpen />
+                      : <FaBullhorn />}
+                  </span>
+                  <span style={{
+                    fontWeight: 600,
+                    fontSize: 17,
+                    color: "#1e3c72",
+                    flex: 1,
+                    lineHeight: 1.5
+                  }}>
+                    {u.title}
+                  </span>
+                  <span style={{
+                    fontSize: 15,
+                    color: "#888",
+                    marginLeft: 12,
+                    flexShrink: 0
+                  }}>
+                    View &rarr;
+                  </span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
       );
     }
     // Main content for other menu items

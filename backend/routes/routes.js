@@ -10,6 +10,7 @@ import * as parentController from '../controller/parentController.js';
 import { getChildProfile } from '../controller/parentChildController.js';
 import { findUserByEmail as manageFindUserByEmail, deleteUserByEmail as manageDeleteUserByEmail } from '../controller/manageUserController.js';
 import { createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnouncement, announcementUpload, removeAnnouncementImage } from '../controller/announcementController.js';
+import { getCbseUpdates } from '../controller/cbseController.js';
 
 const router = express.Router();
 
@@ -63,6 +64,9 @@ router.get('/api/getannouncements', getAnnouncements);
 router.put('/api/updateannouncement/:id', authenticateToken, announcementUpload.array('images', 5), updateAnnouncement);
 router.delete('/api/removeannouncement/:id', authenticateToken, deleteAnnouncement);
 router.put('/api/announcement/:id/remove-image', authenticateToken, removeAnnouncementImage);
+
+// CBSE Updates route
+router.get('/api/cbse-updates', getCbseUpdates);
 
 // Serve announcement images
 router.use('/uploads/announcements', express.static('backend/public/uploads/announcements'));
