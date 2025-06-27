@@ -17,11 +17,9 @@ function StudentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
     { key: "mind-maps", label: "Mind Maps", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "dlr", label: "DLRs", icon: <FaLaptop style={{ fontSize: 18 }} /> },
     { key: "discussion-panel", label: "Discussion Panel", icon: <FaUser style={{ fontSize: 18 }} /> },
-    { key: "creative-corner", label: "Creative Corner", icon: <FaBookOpen style={{ fontSize: 18 }} /> }, // <-- Added
-    { key: "assignments", label: "Assignments", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
+    { key: "creative-corner", label: "Creative Corner", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
     { key: "books", label: "Books", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
     { key: "performance", label: "Performance", icon: <FaChartBar style={{ fontSize: 18 }} /> },
-    { key: "timetable", label: "Timetable", icon: <FaCalendarAlt style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
     { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> }
   ];
@@ -1085,3 +1083,4 @@ export default function StudentDashboardPage(props) {
     </ProtectedRoute>
   );
 }
+
