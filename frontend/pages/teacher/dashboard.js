@@ -35,60 +35,62 @@ function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
       boxShadow: "2px 0 16px rgba(30,60,114,0.07)",
       overflow: "hidden"
     }}>
-      <div style={{ padding: "0 24px", marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, alignSelf: "flex-start", color: "#1e3c72" }}>Teacher Panel</div>
-        <img
-          src={userPhoto || "/default-avatar.png"}
-          alt="Profile"
-          style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
-        />
-        {userName && <div style={{ fontWeight: 600, fontSize: 16, color: "#1e3c72", marginBottom: 2 }}>{userName}</div>}
-        <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
+      <div style={{ height: "calc(100vh - 120px)", overflowY: "auto", paddingBottom: 24, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "0 24px", marginBottom: 32, display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ fontWeight: 700, fontSize: 20, marginBottom: 6, alignSelf: "flex-start", color: "#1e3c72" }}>Teacher Panel</div>
+          <img
+            src={userPhoto || "/default-avatar.png"}
+            alt="Profile"
+            style={{ width: 72, height: 72, borderRadius: "50%", margin: "14px 0", objectFit: "cover", boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
+          />
+          {userName && <div style={{ fontWeight: 600, fontSize: 16, color: "#1e3c72", marginBottom: 2 }}>{userName}</div>}
+          <div style={{ fontSize: 14, color: "#888", marginBottom: 6 }}>{userEmail}</div>
+        </div>
+        <nav>
+          {menuItems.map(item => (
+            <button
+              key={item.key}
+              onClick={() => { onMenuSelect(item.key); }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                width: "100%",
+                background: selectedMenu === item.key ? "linear-gradient(90deg,#e0e7ff 0%,#f7fafd 100%)" : "none",
+                border: "none",
+                textAlign: "left",
+                padding: "14px 28px",
+                fontSize: 17,
+                color: selectedMenu === item.key ? "#1e3c72" : "#444",
+                cursor: "pointer",
+                fontWeight: 600,
+                borderLeft: selectedMenu === item.key ? "4px solid #1e3c72" : "4px solid transparent",
+                transition: "background 0.18s, color 0.18s"
+              }}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <button
+          onClick={onLogout}
+          style={{
+            margin: "32px auto 0 auto",
+            width: "80%",
+            background: "#ff0080",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "10px 0",
+            fontWeight: 600,
+            cursor: "pointer",
+            alignSelf: "center"
+          }}
+        >
+          Logout
+        </button>
       </div>
-      <nav>
-        {menuItems.map(item => (
-          <button
-            key={item.key}
-            onClick={() => { onMenuSelect(item.key); }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              width: "100%",
-              background: selectedMenu === item.key ? "linear-gradient(90deg,#e0e7ff 0%,#f7fafd 100%)" : "none",
-              border: "none",
-              textAlign: "left",
-              padding: "14px 28px",
-              fontSize: 17,
-              color: selectedMenu === item.key ? "#1e3c72" : "#444",
-              cursor: "pointer",
-              fontWeight: 600,
-              borderLeft: selectedMenu === item.key ? "4px solid #1e3c72" : "4px solid transparent",
-              transition: "background 0.18s, color 0.18s"
-            }}
-          >
-            {item.icon}
-            {item.label}
-          </button>
-        ))}
-      </nav>
-      <button
-        onClick={onLogout}
-        style={{
-          margin: "32px 0 0 0",
-          width: "80%",
-          background: "#ff0080",
-          color: "#fff",
-          border: "none",
-          borderRadius: 8,
-          padding: "10px 0",
-          fontWeight: 600,
-          cursor: "pointer",
-          alignSelf: "center"
-        }}
-      >
-        Logout
-      </button>
     </aside>
   );
 }
@@ -154,6 +156,9 @@ function TeacherDashboard() {
   // CBSE Updates state
   const [cbseUpdates, setCbseUpdates] = useState([]);
   const [cbseLoading, setCbseLoading] = useState(false);
+
+  // Add this line to define previewModal state at the top level of TeacherDashboard
+  const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '' });
 
   const router = useRouter();
 
@@ -819,102 +824,80 @@ function TeacherDashboard() {
                   {a.images && a.images.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
                       {a.images.map((img, idx) => (
-                        <img key={idx} src={img} alt="Announcement" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }} />
+                        typeof img === "object" && img.url ? (
+                          img.fileType === "pdf" ? (
+                            <div
+                              key={idx}
+                              style={{ cursor: "pointer", position: "relative", display: "inline-block" }}
+                              onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "pdf" })}
+                            >
+                              <iframe
+                                src={img.url}
+                                title={`Announcement PDF ${idx + 1}`}
+                                style={{ width: 180, height: 120, border: "1px solid #e0e0e0", borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
+                              />
+                              <div style={{
+                                position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+                                background: "rgba(255,255,255,0.01)", borderRadius: 8
+                              }} />
+                            </div>
+                          ) : (
+                            <img
+                              key={idx}
+                              src={img.url}
+                              alt="Announcement"
+                              style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)", cursor: "pointer" }}
+                              onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "image" })}
+                            />
+                          )
+                        ) : (
+                          // fallback for old data: just show as image
+                          <img key={idx} src={img} alt="Announcement" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }} />
+                        )
                       ))}
                     </div>
                   )}
-                  <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>By: {a.createdBy} | {new Date(a.createdAt).toLocaleString()}</div>
+                  <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>
+                    {new Date(a.createdAt).toLocaleString()}
+                  </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
-      );
-    }
-    if (selectedMenu === "cbse-updates") {
-      return (
-        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
-          <h2 style={{
-            fontWeight: 700,
-            fontSize: 32,
-            marginBottom: 28,
-            color: "#1e3c72",
-            letterSpacing: 1,
-            textAlign: "center"
-          }}>
-            <FaBullhorn style={{ marginRight: 12, color: "#ff0080", fontSize: 28, verticalAlign: "middle" }} />
-            CBSE Updates
-          </h2>
-          {cbseLoading ? (
-            <div style={{ textAlign: "center", color: "#1e3c72", fontSize: 20, marginTop: 40 }}>Loading...</div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-              {cbseUpdates.length === 0 && (
-                <div style={{
-                  background: "#fff",
-                  borderRadius: 12,
-                  boxShadow: "0 2px 8px rgba(30,60,114,0.08)",
-                  padding: 32,
-                  textAlign: "center",
-                  color: "#888",
-                  fontSize: 18
-                }}>
-                  No updates found.
-                </div>
-              )}
-              {cbseUpdates.map((u, idx) => (
-                <a
-                  key={idx}
-                  href={u.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+          {/* Preview Modal for image/pdf */}
+          {previewModal.open && (
+            <div
+              style={{
+                position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+                background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center"
+              }}
+              onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}
+            >
+              <div
+                style={{
+                  background: "#fff", borderRadius: 12, padding: 16, maxWidth: "90vw", maxHeight: "90vh",
+                  boxShadow: "0 4px 24px rgba(30,60,114,0.18)", position: "relative", display: "flex", alignItems: "center", justifyContent: "center"
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 16,
-                    background: "#fff",
-                    borderRadius: 14,
-                    boxShadow: "0 2px 12px rgba(30,60,114,0.10)",
-                    padding: "20px 28px",
-                    textDecoration: "none",
-                    transition: "box-shadow 0.18s, background 0.18s",
-                    borderLeft: "5px solid #1e3c72",
-                    marginBottom: 2,
-                    cursor: "pointer",
-                    position: "relative"
+                    position: "absolute", top: 8, right: 12, background: "#c0392b", color: "#fff", border: "none",
+                    borderRadius: "50%", width: 32, height: 32, fontSize: 22, fontWeight: 700, cursor: "pointer", zIndex: 2
                   }}
-                  onMouseOver={e => e.currentTarget.style.background = "#f7fafd"}
-                  onMouseOut={e => e.currentTarget.style.background = "#fff"}
-                >
-                  <span style={{
-                    fontSize: 22,
-                    color: "#ff0080",
-                    flexShrink: 0,
-                    marginRight: 2
-                  }}>
-                    {u.link && (u.link.endsWith(".pdf") || u.link.endsWith(".PDF"))
-                      ? <FaBookOpen />
-                      : <FaBullhorn />}
-                  </span>
-                  <span style={{
-                    fontWeight: 600,
-                    fontSize: 17,
-                    color: "#1e3c72",
-                    flex: 1,
-                    lineHeight: 1.5
-                  }}>
-                    {u.title}
-                  </span>
-                  <span style={{
-                    fontSize: 15,
-                    color: "#888",
-                    marginLeft: 12,
-                    flexShrink: 0
-                  }}>
-                    View &rarr;
-                  </span>
-                </a>
-              ))}
+                  aria-label="Close"
+                >×</button>
+                {previewModal.fileType === "pdf" ? (
+                  <PDFWithLoader url={previewModal.url} />
+                ) : (
+                  <img
+                    src={previewModal.url}
+                    alt="Preview"
+                    style={{ maxWidth: "80vw", maxHeight: "80vh", borderRadius: 8 }}
+                  />
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1006,5 +989,41 @@ export default function TeacherDashboardPage(props) {
     <ProtectedRoute>
       <TeacherDashboard {...props} />
     </ProtectedRoute>
+  );
+}
+
+// Add this helper component at the bottom of the file (outside any function/component):
+function PDFWithLoader({ url }) {
+  const [loading, setLoading] = React.useState(true);
+  return (
+    <div style={{ position: "relative", width: "70vw", height: "80vh" }}>
+      {loading && (
+        <div style={{
+          position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
+          display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.7)", zIndex: 1
+        }}>
+          <div style={{
+            border: "6px solid #eee",
+            borderTop: "6px solid #1e3c72",
+            borderRadius: "50%",
+            width: 48,
+            height: 48,
+            animation: "spin 1s linear infinite"
+          }} />
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg);}
+              100% { transform: rotate(360deg);}
+            }
+          `}</style>
+        </div>
+      )}
+      <iframe
+        src={url}
+        title="PDF Preview"
+        style={{ width: "100%", height: "100%", border: "none", borderRadius: 8, background: "#fff" }}
+        onLoad={() => setLoading(false)}
+      />
+    </div>
   );
 }
