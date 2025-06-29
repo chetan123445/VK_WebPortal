@@ -11,6 +11,10 @@ const announcementSchema = new mongoose.Schema({
     contentType: String, // image/jpeg, image/png, application/pdf
     fileType: { type: String, default: "image" } // "image" or "pdf"
   }],
+  classes: [{
+    type: String, // e.g. "10", "11", "12"
+    required: true
+  }],
   createdBy: {
     type: String, // email or admin id
     required: true

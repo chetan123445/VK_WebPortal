@@ -20,9 +20,12 @@ export const announcementUpload = multer({
 // Create announcement (images and pdfs as Buffer)
 export const createAnnouncement = async (req, res) => {
   try {
-    const { text, createdBy } = req.body;
+    const { text, createdBy, classes } = req.body;
     if (!text || text.trim() === "") {
       return res.status(400).json({ message: 'Announcement text is required' });
+    }
+    if (!classes || !Array.isArray(classes) || classes.length === 0) {
+      return res.status(400).json({ message: 'At least one class is required' });
     }
     let images = [];
     if (req.files && req.files.length > 0) {
@@ -39,6 +42,7 @@ export const createAnnouncement = async (req, res) => {
     const announcement = await Announcement.create({
       text,
       images,
+      classes,
       createdBy: creatorEmail
     });
     res.status(201).json({ message: 'Announcement created', announcement });
@@ -48,9 +52,34 @@ export const createAnnouncement = async (req, res) => {
 };
 
 // Get all announcements (convert images and pdfs to base64 or download link)
+// Accepts optional ?class=10 parameter to filter for students
 export const getAnnouncements = async (req, res) => {
   try {
-    const announcements = await Announcement.find().sort({ createdAt: -1 });
+    let studentClass = req.query.class;
+    let announcements = await Announcement.find({}).sort({ createdAt: -1 });
+
+    console.log("Backend: Received class from frontend:", studentClass); // <-- log class received
+
+    // Only include announcements where the student's class is in the announcement's classes array
+    if (studentClass) {
+      announcements = announcements.filter(a =>
+        Array.isArray(a.classes) && a.classes.includes(studentClass)
+      );
+    }
+
+    // Log the announcements being sent back
+    console.log(
+      "Backend: Announcements being sent for class",
+      studentClass,
+      announcements.map(a => ({
+        _id: a._id,
+        text: a.text,
+        classes: a.classes,
+        createdBy: a.createdBy,
+        createdAt: a.createdAt
+      }))
+    );
+
     const announcementsWithBase64 = announcements.map(a => {
       const images = (a.images || []).map(img => {
         if (!img || !img.data) return null;
@@ -71,6 +100,7 @@ export const getAnnouncements = async (req, res) => {
         _id: a._id,
         text: a.text,
         images,
+        classes: a.classes,
         createdBy: a.createdBy,
         createdAt: a.createdAt,
         updatedAt: a.updatedAt
@@ -82,35 +112,60 @@ export const getAnnouncements = async (req, res) => {
   }
 };
 
-// Update announcement (replace/add images as Buffer)
+// Update announcement (replace/add images as Buffer, update classes)
 export const updateAnnouncement = async (req, res) => {
   try {
     const { id } = req.params;
     const { text } = req.body;
+    // Accept classes[] as array or string (from form-data)
+    let classes = req.body['classes[]'] || req.body.classes;
+    if (typeof classes === "string") {
+      // If only one class, it will be a string, else array
+      classes = [classes];
+    }
     const announcement = await Announcement.findById(id);
     if (!announcement) {
       return res.status(404).json({ message: 'Announcement not found' });
     }
     if (typeof text === 'string') announcement.text = text;
+    // Update classes if provided
+    if (classes && Array.isArray(classes) && classes.length > 0) {
+      announcement.classes = classes;
+    }
     // Add new images
     if (req.files && req.files.length > 0) {
-      const newImages = req.files.map(f => ({ data: f.buffer, contentType: f.mimetype }));
+      const newImages = req.files.map(f => ({
+        data: f.buffer,
+        contentType: f.mimetype,
+        fileType: f.mimetype === 'application/pdf' ? 'pdf' : 'image'
+      }));
       announcement.images = [...(announcement.images || []), ...newImages];
     }
     announcement.updatedAt = Date.now();
     await announcement.save();
     // Convert images to base64 for response
     const images = (announcement.images || []).map(img =>
-      img && img.data ? `data:${img.contentType};base64,${img.data.toString('base64')}` : null
+      img && img.data
+        ? {
+            url: img.contentType === 'application/pdf'
+              ? `data:application/pdf;base64,${img.data.toString('base64')}`
+              : `data:${img.contentType};base64,${img.data.toString('base64')}`,
+            fileType: img.fileType || (img.contentType === 'application/pdf' ? 'pdf' : 'image')
+          }
+        : null
     ).filter(Boolean);
-    res.json({ message: 'Announcement updated', announcement: {
-      _id: announcement._id,
-      text: announcement.text,
-      images,
-      createdBy: announcement.createdBy,
-      createdAt: announcement.createdAt,
-      updatedAt: announcement.updatedAt
-    }});
+    res.json({
+      message: 'Announcement updated',
+      announcement: {
+        _id: announcement._id,
+        text: announcement.text,
+        images,
+        classes: announcement.classes,
+        createdBy: announcement.createdBy,
+        createdAt: announcement.createdAt,
+        updatedAt: announcement.updatedAt
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: 'Error updating announcement', error: err.message });
   }

@@ -136,6 +136,9 @@ function PhoneInputBoxes({ value, onChange }) {
   );
 }
 
+// Move globalUserClass outside the component to persist across renders
+let globalUserClass = null;
+
 function StudentDashboard() {
   const [selectedMenu, setSelectedMenu] = useState("assignments");
   const [userEmail, setUserEmail] = useState("");
@@ -161,6 +164,26 @@ function StudentDashboard() {
   // Preview modal state
   const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '' });
 
+  // Track if announcements have already been fetched for the current class
+  const [lastFetchedClass, setLastFetchedClass] = useState(null);
+
+  const fetchAnnouncements = useCallback(() => {
+    const studentClass = (profile && profile.class) ? profile.class : globalUserClass;
+    if (!studentClass || lastFetchedClass === studentClass) return; // Prevent repeated fetches for same class
+    setAnnouncementsLoading(true);
+    setLastFetchedClass(studentClass);
+    const classParam = `?class=${encodeURIComponent(studentClass)}`;
+    console.log("Frontend: Sending class to backend:", studentClass);
+    fetch(`${BASE_API_URL}/getannouncements${classParam}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("Frontend: Announcements received for class", studentClass, data.announcements);
+        setAnnouncements(data.announcements || []);
+        setAnnouncementsLoading(false);
+      })
+      .catch(() => setAnnouncementsLoading(false));
+  }, [profile, lastFetchedClass]);
+
   // Fetch profile on mount and when userEmail changes
   const fetchProfile = useCallback(() => {
     if (userEmail) {
@@ -183,27 +206,23 @@ function StudentDashboard() {
           const photoUrl = data.user.photo && data.user.photo !== "" ? data.user.photo : "/default-avatar.png";
           setPreview(photoUrl);
           setUserPhoto(data.user.photo && data.user.photo !== "" ? data.user.photo : "");
+          globalUserClass = data.user.class || null;
+          console.log("Fetched user class:", globalUserClass);
+          if (selectedMenu === "announcements") {
+            fetchAnnouncements();
+          }
         })
         .catch(() => {
           setProfile(null);
           setUserName("");
           setUserPhoto('');
+          globalUserClass = null;
+          console.log("Fetched user class: null");
         });
     }
-  }, [userEmail]);
+  }, [userEmail, selectedMenu, fetchAnnouncements]);
 
-  // Fetch announcements when "announcements" menu is selected
-  const fetchAnnouncements = useCallback(() => {
-    setAnnouncementsLoading(true);
-    fetch(`${BASE_API_URL}/getannouncements`)
-      .then(res => res.json())
-      .then(data => {
-        setAnnouncements(data.announcements || []);
-        setAnnouncementsLoading(false);
-      })
-      .catch(() => setAnnouncementsLoading(false));
-  }, []);
-
+  // Fetch CBSE updates
   const fetchCbseUpdates = useCallback(() => {
     setCbseLoading(true);
     fetch(`${BASE_API_URL}/cbse-updates`)
@@ -1184,4 +1203,5 @@ function PDFWithLoader({ url }) {
     </div>
   );
 }
+
 

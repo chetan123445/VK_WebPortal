@@ -133,6 +133,8 @@ function AdminDashboard() {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [cbseUpdates, setCbseUpdates] = useState([]);
   const [cbseLoading, setCbseLoading] = useState(false);
+  const [selectedClasses, setSelectedClasses] = useState([]);
+  const [editClasses, setEditClasses] = useState(""); // <-- for editing classes
 
   // PhoneInputBoxes component for 10-digit phone input
   function PhoneInputBoxes({ value, onChange }) {
@@ -315,6 +317,7 @@ function AdminDashboard() {
     setForm({ text: announcement.text, images: [] });
     setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
     setRemovedImages([]);
+    setEditClasses(Array.isArray(announcement.classes) ? announcement.classes.join(",") : ""); // <-- prefill classes
     setShowEdit(true);
     setStatus('');
   };
@@ -461,6 +464,14 @@ function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
+      // Handle classes update
+      let classesArr = editClasses;
+      if (typeof classesArr === "string") {
+        classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+      }
+      if (Array.isArray(classesArr)) {
+        classesArr.forEach(cls => formData.append('classes[]', cls));
+      }
       if (form.images && form.images.length > 0) {
         for (let i = 0; i < form.images.length; i++) {
           formData.append('images', form.images[i]);
@@ -480,6 +491,7 @@ function AdminDashboard() {
         setShowEdit(false);
         setEditAnnouncement(null);
         setForm({ text: '', images: [] });
+        setEditClasses("");
         // Update the announcement in the state
         setAnnouncements(prev => prev.map(a => a._id === data.announcement._id ? data.announcement : a));
       } else {
@@ -885,7 +897,7 @@ function AdminDashboard() {
               </div>
               <button
                 onClick={() => setShowDeleteModal(true)}
-                style={{ marginTop: 18, background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "10px 28px", fontWeight: 600, fontSize: 16, cursor: "pointer" }}
+                style={{ marginTop: 18, background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "10px 28px", fontWeight: 600, cursor: "pointer" }}
               >
                 Delete User
               </button>
@@ -1269,6 +1281,10 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   // Preview modal state
   const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '' });
 
+  // Add this line to define selectedClasses state inside AnnouncementsSection
+  const [selectedClasses, setSelectedClasses] = useState([]);
+  const [editClasses, setEditClasses] = useState(""); // <-- for editing classes
+
   // Fetch announcements
   const fetchAnnouncements = useCallback(() => {
     setLoading(true);
@@ -1311,6 +1327,14 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
+      // Accept comma-separated classes as well as array
+      let classesArr = selectedClasses;
+      if (typeof classesArr === "string") {
+        classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+      }
+      if (Array.isArray(classesArr)) {
+        classesArr.forEach(cls => formData.append('classes[]', cls));
+      }
       if (form.images && form.images.length > 0) {
         for (let i = 0; i < form.images.length; i++) {
           formData.append('images', form.images[i]);
@@ -1326,8 +1350,8 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
       if (res.ok) {
         setStatus('Announcement created!');
         setForm({ text: '', images: [] });
+        setSelectedClasses([]);
         setShowCreate(false);
-        // Add the new announcement to the state
         setAnnouncements(prev => [data.announcement, ...prev]);
       } else {
         setStatus(data.message || 'Failed to create');
@@ -1343,6 +1367,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     setForm({ text: announcement.text, images: [] });
     setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
     setRemovedImages([]);
+    setEditClasses(Array.isArray(announcement.classes) ? announcement.classes.join(",") : ""); // <-- prefill classes
     setShowEdit(true);
     setStatus('');
   };
@@ -1354,6 +1379,14 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
+      // Handle classes update
+      let classesArr = editClasses;
+      if (typeof classesArr === "string") {
+        classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+      }
+      if (Array.isArray(classesArr)) {
+        classesArr.forEach(cls => formData.append('classes[]', cls));
+      }
       if (form.images && form.images.length > 0) {
         for (let i = 0; i < form.images.length; i++) {
           formData.append('images', form.images[i]);
@@ -1373,6 +1406,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
         setShowEdit(false);
         setEditAnnouncement(null);
         setForm({ text: '', images: [] });
+        setEditClasses("");
         // Update the announcement in the state
         setAnnouncements(prev => prev.map(a => a._id === data.announcement._id ? data.announcement : a));
       } else {
@@ -1597,6 +1631,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
             {previewModal.fileType === "pdf" ? (
               <PDFWithLoader url={previewModal.url} />
             ) : (
+             
               <img
                 src={previewModal.url}
                 alt="Preview"
@@ -1613,6 +1648,22 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
             <h3 style={{ marginBottom: 18 }}>Create Announcement</h3>
             <form onSubmit={handleCreate}>
               <textarea name="text" value={form.text} onChange={handleFormChange} required rows={4} placeholder="Announcement text..." style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
+              {/* Classes input */}
+              <div style={{ marginBottom: 12, textAlign: "left" }}>
+                <label style={{ fontWeight: 600, color: "#1e3c72" }}>Classes (comma separated):</label>
+                <input
+                  type="text"
+                  value={typeof selectedClasses === "string" ? selectedClasses : selectedClasses.join(",")}
+                  onChange={e => {
+                    // Accept raw string, but also update as array for internal use
+                    setSelectedClasses(e.target.value);
+                  }}
+                  placeholder="e.g. 10,11,12"
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginTop: 4 }}
+                  required
+                />
+                <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Enter one or more classes separated by commas (e.g. 10,11,12)</div>
+              </div>
               <input type="file" name="images" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
               {/* Show previews for all selected files */}
               {Array.isArray(preview) && preview.length > 0 && (
@@ -1644,6 +1695,19 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
             <h3 style={{ marginBottom: 18 }}>Edit Announcement</h3>
             <form onSubmit={handleUpdate}>
               <textarea name="text" value={form.text} onChange={handleFormChange} required rows={4} placeholder="Announcement text..." style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
+              {/* Classes input for editing */}
+              <div style={{ marginBottom: 12, textAlign: "left" }}>
+                <label style={{ fontWeight: 600, color: "#1e3c72" }}>Classes (comma separated):</label>
+                <input
+                  type="text"
+                  value={editClasses}
+                  onChange={e => setEditClasses(e.target.value)}
+                  placeholder="e.g. 10,11,12"
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginTop: 4 }}
+                  required
+                />
+                <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Edit, add, or remove classes separated by commas (e.g. 10,11,12)</div>
+              </div>
               <input type="file" name="images" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
               {/* Show all preview images/pdfs with remove buttons */}
               {Array.isArray(preview) && preview.length > 0 && (
