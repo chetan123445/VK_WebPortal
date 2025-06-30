@@ -1,0 +1,27 @@
+import mongoose from 'mongoose';
+
+const mindMapSchema = new mongoose.Schema({
+  class: {
+    type: String,
+    required: true
+  },
+  subject: {
+    type: String,
+    required: true
+  },
+  chapter: {
+    type: String,
+    required: true
+  },
+  mindmap: [{
+    data: Buffer,
+    contentType: String
+  }]
+});
+
+mindMapSchema.index({ class: 1 });
+mindMapSchema.index({ subject: 1 });
+mindMapSchema.index({ chapter: 1 });
+
+const MindMap = mongoose.model('MindMap', mindMapSchema);
+export default MindMap; 

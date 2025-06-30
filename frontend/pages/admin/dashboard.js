@@ -16,7 +16,8 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
     { key: "manage-books", label: "Manage Books", icon: <FaBook style={{ fontSize: 18 }} /> },
     { key: "records", label: "Records", icon: <FaRegListAlt style={{ fontSize: 18 }} /> },
     { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
-    { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> }, // <-- Added
+    { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
+    { key: "mindmap", label: "Mind Map", icon: <FaBookOpen style={{ fontSize: 18 }} /> }, // <-- Mind Map option
     { key: "reports", label: "Reports", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "settings", label: "Settings", icon: <FaCog style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
@@ -135,6 +136,97 @@ function AdminDashboard() {
   const [cbseLoading, setCbseLoading] = useState(false);
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [editClasses, setEditClasses] = useState(""); // <-- for editing classes
+
+  // Mind Map hooks (must be at top level)
+  const [mmClass, setMmClass] = useState("");
+  const [mmSubject, setMmSubject] = useState("");
+  const [mmChapter, setMmChapter] = useState("");
+  const [mmImages, setMmImages] = useState([]);
+  const [mmStatus, setMmStatus] = useState("");
+  const [mindMaps, setMindMaps] = useState([]);
+  const [mmLoading, setMmLoading] = useState(false);
+
+  // Add state for editing mind maps
+  const [editMindMap, setEditMindMap] = useState(null);
+  const [editMmClass, setEditMmClass] = useState("");
+  const [editMmSubject, setEditMmSubject] = useState("");
+  const [editMmChapter, setEditMmChapter] = useState("");
+  const [editMmImages, setEditMmImages] = useState([]); // new files
+  const [editMmRemove, setEditMmRemove] = useState([]); // indices to remove
+
+  // In Mind Map section, add a loading state for fetching mind maps
+  const [mindMapsLoading, setMindMapsLoading] = useState(true);
+
+  // Add state for preview modal
+  const [previewFile, setPreviewFile] = useState(null); // { url, fileType }
+
+  // Fetch all mind maps
+  useEffect(() => {
+    setMindMapsLoading(true);
+    fetch(`${BASE_API_URL}/mindmaps`)
+      .then(res => res.json())
+      .then(data => {
+        setMindMaps(data.mindMaps || []);
+        setMindMapsLoading(false);
+      })
+      .catch(() => {
+        setMindMaps([]);
+        setMindMapsLoading(false);
+      });
+  }, []);
+
+  // Handle image input
+  const handleMmImageChange = e => {
+    setMmImages(Array.from(e.target.files));
+  };
+
+  // Handle add mind map
+  const handleAddMindMap = async e => {
+    e.preventDefault();
+    setMmStatus("Adding...");
+    const formData = new FormData();
+    formData.append("class", mmClass);
+    formData.append("subject", mmSubject);
+    formData.append("chapter", mmChapter);
+    mmImages.forEach(img => formData.append("mindmap", img));
+    try {
+      const res = await fetch(`${BASE_API_URL}/mindmap`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMmStatus("Mind map added!");
+        setMmClass(""); setMmSubject(""); setMmChapter(""); setMmImages([]);
+        setMindMaps(prev => [data.mindMap, ...prev]);
+      } else {
+        setMmStatus(data.message || data.error || "Failed to add");
+      }
+    } catch {
+      setMmStatus("Failed to add");
+    }
+  };
+
+  // Handle delete mind map
+  const handleDeleteMindMap = async id => {
+    if (!window.confirm("Delete this mind map?")) return;
+    setMmStatus("Deleting...");
+    try {
+      const res = await fetch(`${BASE_API_URL}/mindmap/${id}`, {
+        method: "DELETE",
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (res.ok) {
+        setMindMaps(prev => prev.filter(m => m._id !== id));
+        setMmStatus("Deleted!");
+      } else {
+        setMmStatus("Failed to delete");
+      }
+    } catch {
+      setMmStatus("Failed to delete");
+    }
+  };
 
   // PhoneInputBoxes component for 10-digit phone input
   function PhoneInputBoxes({ value, onChange }) {
@@ -612,6 +704,56 @@ function AdminDashboard() {
     }
   }, [selectedMenu, fetchCbseUpdates]);
 
+  // Open edit modal
+  const handleOpenEditMindMap = (m) => {
+    setEditMindMap(m);
+    setEditMmClass(m.class);
+    setEditMmSubject(m.subject);
+    setEditMmChapter(m.chapter);
+    setEditMmImages([]);
+    setEditMmRemove([]);
+  };
+
+  // Remove existing image/pdf by index
+  const handleRemoveEditMmImage = (idx) => {
+    setEditMmRemove(prev => [...prev, idx]);
+  };
+
+  // Add new files
+  const handleEditMmImageChange = e => {
+    setEditMmImages(Array.from(e.target.files));
+  };
+
+  // Save edit
+  const handleSaveEditMindMap = async (e) => {
+    e.preventDefault();
+    if (!editMindMap) return;
+    setMmStatus("Saving...");
+    const formData = new FormData();
+    formData.append("class", editMmClass);
+    formData.append("subject", editMmSubject);
+    formData.append("chapter", editMmChapter);
+    editMmImages.forEach(img => formData.append("mindmap", img));
+    editMmRemove.forEach(idx => formData.append("removeImages", idx));
+    try {
+      const res = await fetch(`${BASE_API_URL}/mindmap/${editMindMap._id}`, {
+        method: "PUT",
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMindMaps(prev => prev.map(m => m._id === data.mindMap._id ? data.mindMap : m));
+        setEditMindMap(null);
+        setMmStatus("Mind map updated!");
+      } else {
+        setMmStatus(data.message || data.error || "Failed to update");
+      }
+    } catch {
+      setMmStatus("Failed to update");
+    }
+  };
+
   const renderContent = () => {
     if (selectedMenu === "profile") {
       if (!profile) {
@@ -1043,6 +1185,125 @@ function AdminDashboard() {
                   </span>
                 </a>
               ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (selectedMenu === "mindmap") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 32, marginBottom: 28, color: "#1e3c72", letterSpacing: 1, textAlign: "center" }}>
+            <FaBookOpen style={{ marginRight: 12, color: "#1e3c72", fontSize: 28, verticalAlign: "middle" }} />
+            Mind Maps
+          </h2>
+          <form onSubmit={handleAddMindMap} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18 }}>
+              <input type="text" placeholder="Class" value={mmClass} onChange={e => setMmClass(e.target.value)} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Subject" value={mmSubject} onChange={e => setMmSubject(e.target.value)} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={mmChapter} onChange={e => setMmChapter(e.target.value)} required style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <input type="file" accept="image/*,application/pdf" multiple onChange={handleMmImageChange} required style={{ fontSize: 16 }} />
+            </div>
+            <button type="submit" style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }} disabled={mmLoading}>Add Mind Map</button>
+            {mmStatus && <div style={{ marginTop: 12, color: mmStatus.includes("add") || mmStatus.includes("Deleted") ? "#28a745" : "#c0392b" }}>{mmStatus}</div>}
+          </form>
+          <div>
+            <h3 style={{ fontWeight: 700, fontSize: 22, marginBottom: 18, color: "#1e3c72" }}>All Mind Maps</h3>
+            {mindMapsLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+                <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+              </div>
+            ) : mindMaps.length === 0 ? (
+              <div style={{ color: "#888", fontSize: 17 }}>No mind maps found.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                {mindMaps.map(m => (
+                  <div key={m._id} style={{ background: "#fff", borderRadius: 10, boxShadow: "0 2px 8px rgba(30,60,114,0.06)", padding: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ fontWeight: 600, color: "#1e3c72" }}>Class: {m.class} | Subject: {m.subject} | Chapter: {m.chapter}</div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {m.mindmap && m.mindmap.map((img, idx) => (
+                        img.fileType === 'pdf'
+                          ? <div key={idx} style={{ display: 'inline-block', position: 'relative', width: 120, height: 80, border: '1px solid #eee', borderRadius: 6, background: '#fafafa', textAlign: 'center', verticalAlign: 'middle', lineHeight: '80px', fontWeight: 600, color: '#1e3c72', fontSize: 18, cursor: 'pointer' }} onClick={() => setPreviewFile({ url: img.url, fileType: 'pdf' })}>
+                              <span>PDF</span>
+                              <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 2 }}>
+                                <div className="spinner" style={{ width: 24, height: 24, border: '4px solid #eee', borderTop: '4px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                              </span>
+                              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+                            </div>
+                          : <img key={idx} src={img.url} alt="mindmap" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: "1px solid #eee", cursor: 'pointer' }} onClick={() => setPreviewFile({ url: img.url, fileType: 'image' })} />
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                      <button onClick={() => handleOpenEditMindMap(m)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                      <button onClick={() => handleDeleteMindMap(m._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Edit Mind Map Modal */}
+          {editMindMap && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
+              <form onSubmit={handleSaveEditMindMap} style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)', textAlign: 'center', maxWidth: 420 }}>
+                <h3 style={{ marginBottom: 18, color: '#1e3c72' }}>Edit Mind Map</h3>
+                <input type="text" placeholder="Class" value={editMmClass} onChange={e => setEditMmClass(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <input type="text" placeholder="Subject" value={editMmSubject} onChange={e => setEditMmSubject(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <input type="text" placeholder="Chapter" value={editMmChapter} onChange={e => setEditMmChapter(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Existing Files:</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {editMindMap.mindmap && editMindMap.mindmap.map((img, idx) => (
+                      <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                        {img.fileType === 'pdf'
+                          ? <a href={img.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', border: '1px solid #eee', borderRadius: 6, padding: 4, background: '#fafafa', maxWidth: 120, maxHeight: 80, overflow: 'hidden' }}>PDF {idx + 1}</a>
+                          : <img src={img.url} alt="mindmap" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: '1px solid #eee' }} />}
+                        <button type="button" onClick={() => handleRemoveEditMmImage(idx)} style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <input type="file" accept="image/*,application/pdf" multiple onChange={handleEditMmImageChange} style={{ fontSize: 16 }} />
+                </div>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 18 }}>
+                  <button type="submit" style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                  <button type="button" onClick={() => setEditMindMap(null)} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                </div>
+                {mmStatus && <div style={{ marginTop: 10, color: mmStatus.includes('update') ? '#28a745' : '#c0392b' }}>{mmStatus}</div>}
+              </form>
+            </div>
+          )}
+          {/* Preview Modal */}
+          {previewFile && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.92)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setPreviewFile(null)}>
+              <div
+                style={{
+                  position: 'relative', width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', boxShadow: 'none', borderRadius: 0, padding: 0
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setPreviewFile(null)}
+                  style={{
+                    position: 'fixed', top: 24, right: 32, background: '#c0392b', color: '#fff', border: 'none',
+                    borderRadius: '50%', width: 44, height: 44, fontSize: 28, fontWeight: 700, cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.18)'
+                  }}
+                  aria-label="Close"
+                >×</button>
+                {previewFile.fileType === 'pdf' ? (
+                  <PDFWithLoader url={previewFile.url} fullscreen={true} />
+                ) : (
+                  <img
+                    src={previewFile.url}
+                    alt="Preview"
+                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', objectFit: 'contain', background: '#222', borderRadius: 0, margin: 0, padding: 0, zIndex: 5 }}
+                  />
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1709,7 +1970,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
               aria-label="Close"
             >×</button>
             {previewModal.fileType === "pdf" ? (
-              <PDFWithLoader url={previewModal.url} />
+              <PDFWithLoader url={previewModal.url} fullscreen={true} />
             ) : (
              
               <img
@@ -1859,10 +2120,10 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
 }
 
 // Add this helper component at the bottom of the file (outside any function/component):
-function PDFWithLoader({ url }) {
+function PDFWithLoader({ url, fullscreen }) {
   const [loading, setLoading] = useState(true);
   return (
-    <div style={{ position: "relative", width: "70vw", height: "80vh" }}>
+    <div style={{ position: "relative", width: fullscreen ? "100vw" : "70vw", height: fullscreen ? "100vh" : "80vh" }}>
       {loading && (
         <div style={{
           position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
@@ -1887,7 +2148,7 @@ function PDFWithLoader({ url }) {
       <iframe
         src={url}
         title="PDF Preview"
-        style={{ width: "100%", height: "100%", border: "none", borderRadius: 8, background: "#fff" }}
+        style={{ width: "100%", height: "100%", border: "none", borderRadius: fullscreen ? 0 : 8, background: "#fff" }}
         onLoad={() => setLoading(false)}
       />
     </div>

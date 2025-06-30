@@ -11,6 +11,7 @@ import { getChildProfile } from '../controller/parentChildController.js';
 import { findUserByEmail as manageFindUserByEmail, deleteUserByEmail as manageDeleteUserByEmail } from '../controller/manageUserController.js';
 import { createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnouncement, announcementUpload, removeAnnouncementImage } from '../controller/announcementController.js';
 import { getCbseUpdates } from '../controller/cbseController.js';
+import { addMindMap, getMindMaps, deleteMindMap, mindMapUpload, updateMindMap } from '../controller/mindMapController.js';
 
 const router = express.Router();
 
@@ -67,6 +68,21 @@ router.put('/api/announcement/:id/remove-image', authenticateToken, removeAnnoun
 
 // CBSE Updates route
 router.get('/api/cbse-updates', getCbseUpdates);
+
+// Mind Map routes
+router.post('/api/mindmap', authenticateToken, mindMapUpload.array('mindmap', 10), addMindMap);
+router.get('/api/mindmaps', getMindMaps);
+router.delete('/api/mindmap/:id', authenticateToken, deleteMindMap);
+router.put('/api/mindmap/:id', authenticateToken, (req, res, next) => {
+  mindMapUpload.array('mindmap', 10)(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      return res.status(400).json({ message: err.message });
+    } else if (err) {
+      return res.status(400).json({ message: err.message });
+    }
+    next();
+  });
+}, updateMindMap);
 
 // Serve announcement images
 router.use('/uploads/announcements', express.static('backend/public/uploads/announcements'));

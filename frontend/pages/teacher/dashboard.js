@@ -19,7 +19,8 @@ function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
     { key: "messages", label: "Messages", icon: <FaEnvelope style={{ fontSize: 18 }} /> },
     { key: "resources", label: "Digital Resources", icon: <FaLaptop style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
-    { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> }
+    { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> },
+    { key: "mind-maps", label: "Mind Maps", icon: <FaChartBar style={{ fontSize: 18 }} /> },
   ];
   return (
     <aside style={{
@@ -159,6 +160,17 @@ function TeacherDashboard() {
 
   // Add this line to define previewModal state at the top level of TeacherDashboard
   const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '' });
+
+  // Add this state for mind maps
+  const [mindMaps, setMindMaps] = useState([]);
+  const [mindMapsLoading, setMindMapsLoading] = useState(false);
+  const [mmPreview, setMmPreview] = useState({ open: false, url: '', fileType: '' });
+
+  // Add state for Mind Map search fields
+  const [mmClass, setMmClass] = useState("");
+  const [mmSubject, setMmSubject] = useState("");
+  const [mmChapter, setMmChapter] = useState("");
+  const [mmStatus, setMmStatus] = useState("");
 
   const router = useRouter();
 
@@ -357,6 +369,36 @@ function TeacherDashboard() {
         router.replace("/Login");
       });
   }, []);
+
+  // Mind Map search handler
+  const handleMindMapSearch = async (e) => {
+    e.preventDefault();
+    if (!mmClass.trim() || !mmSubject.trim() || !mmChapter.trim()) {
+      setMmStatus("Please fill all fields.");
+      return;
+    }
+    setMindMapsLoading(true);
+    setMmStatus("");
+    setMindMaps([]);
+    try {
+      const res = await fetch(`${BASE_API_URL}/mindmaps`);
+      const data = await res.json();
+      if (res.ok && data.mindMaps) {
+        const filtered = data.mindMaps.filter(m =>
+          m.class === mmClass.trim().toLowerCase() &&
+          m.subject === mmSubject.trim().toLowerCase() &&
+          m.chapter === mmChapter.trim().toLowerCase()
+        );
+        setMindMaps(filtered);
+        if (filtered.length === 0) setMmStatus("No mind maps found.");
+      } else {
+        setMmStatus("No mind maps found.");
+      }
+    } catch {
+      setMmStatus("Failed to fetch mind maps.");
+    }
+    setMindMapsLoading(false);
+  };
 
   // Main content based on selected menu
   const renderContent = () => {
@@ -936,6 +978,90 @@ function TeacherDashboard() {
         </div>
       );
     }
+    if (selectedMenu === "mind-maps") {
+      return (
+        <div style={{ padding: 48, maxWidth: 900, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Search Mind Maps</h2>
+          <form onSubmit={handleMindMapSearch} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", flexDirection: 'column', gap: 18, marginBottom: 18 }}>
+              <div style={{ flex: 1 }}>
+                <input type="text" placeholder="Class" value={mmClass} onChange={e => setMmClass(e.target.value)} required style={{ width: '100%', padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginBottom: 12 }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <input type="text" placeholder="Subject" value={mmSubject} onChange={e => setMmSubject(e.target.value)} required style={{ width: '100%', padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginBottom: 12 }} />
+              </div>
+              <div style={{ flex: 2 }}>
+                <input type="text" placeholder="Chapter" value={mmChapter} onChange={e => setMmChapter(e.target.value)} required style={{ width: '100%', padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              </div>
+            </div>
+            <button type="submit" style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }}>Search</button>
+            {mmStatus && <div style={{ marginTop: 12, color: mmStatus.includes("found") ? "#c0392b" : "#1e3c72" }}>{mmStatus}</div>}
+          </form>
+          {mindMapsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : mindMaps.length === 0 && mmStatus ? null : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {mindMaps.map((m, idx) => (
+                <div key={m._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {m.class} | Subject: {m.subject} | Chapter: {m.chapter}</div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {m.mindmap && m.mindmap.map((img, i) => (
+                      img.fileType === 'pdf'
+                        ? <div key={i} style={{ display: 'inline-block', position: 'relative', width: 120, height: 80, border: '1px solid #eee', borderRadius: 6, background: '#fafafa', textAlign: 'center', verticalAlign: 'middle', lineHeight: '80px', fontWeight: 600, color: '#1e3c72', fontSize: 18, cursor: 'pointer' }} onClick={() => setMmPreview({ open: true, url: img.url, fileType: 'pdf' })}>
+                          <span>PDF</span>
+                          <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 2 }}>
+                            <div className="spinner" style={{ width: 24, height: 24, border: '4px solid #eee', borderTop: '4px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                          </span>
+                          <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+                        </div>
+                        : <img key={i} src={img.url} alt="mindmap" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: "1px solid #eee", cursor: 'pointer' }} onClick={() => setMmPreview({ open: true, url: img.url, fileType: 'image' })} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Preview Modal for image/pdf */}
+          {mmPreview.open && (
+            <div
+              style={{
+                position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+                background: "rgba(0,0,0,0.92)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center"
+              }}
+              onClick={() => setMmPreview({ open: false, url: '', fileType: '' })}
+            >
+              <div
+                style={{
+                  position: 'relative', width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', boxShadow: 'none', borderRadius: 0, padding: 0
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setMmPreview({ open: false, url: '', fileType: '' })}
+                  style={{
+                    position: 'fixed', top: 24, right: 32, background: '#c0392b', color: '#fff', border: 'none',
+                    borderRadius: '50%', width: 44, height: 44, fontSize: 28, fontWeight: 700, cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.18)'
+                  }}
+                  aria-label="Close"
+                >×</button>
+                {mmPreview.fileType === 'pdf' ? (
+                  <PDFWithLoader url={mmPreview.url} fullscreen={true} />
+                ) : (
+                  <img
+                    src={mmPreview.url}
+                    alt="Preview"
+                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', objectFit: 'contain', background: '#222', borderRadius: 0, margin: 0, padding: 0, zIndex: 5 }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
     // Main content for other menu items
     return (
       <div style={{
@@ -1026,10 +1152,10 @@ export default function TeacherDashboardPage(props) {
 }
 
 // Add this helper component at the bottom of the file (outside any function/component):
-function PDFWithLoader({ url }) {
+function PDFWithLoader({ url, fullscreen }) {
   const [loading, setLoading] = React.useState(true);
   return (
-    <div style={{ position: "relative", width: "70vw", height: "80vh" }}>
+    <div style={{ position: "relative", width: fullscreen ? "100vw" : "70vw", height: fullscreen ? "100vh" : "80vh" }}>
       {loading && (
         <div style={{
           position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
