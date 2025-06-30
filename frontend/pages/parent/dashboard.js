@@ -313,10 +313,15 @@ function ParentDashboard() {
 
   const fetchAnnouncements = useCallback(() => {
     setAnnouncementsLoading(true);
-    fetch(`${BASE_API_URL}/getannouncements`)
+    fetch(`${BASE_API_URL}/getannouncements?registeredAs=Parent`)
       .then(res => res.json())
       .then(data => {
-        setAnnouncements(data.announcements || []);
+        const filtered = (data.announcements || []).filter(a => {
+          // Case-insensitive check for Parent in announcementFor
+          if (a.announcementFor && Array.isArray(a.announcementFor) && !a.announcementFor.some(role => role.toLowerCase() === 'parent')) return false;
+          return true;
+        });
+        setAnnouncements(filtered);
         setAnnouncementsLoading(false);
       })
       .catch(() => setAnnouncementsLoading(false));
@@ -472,6 +477,25 @@ function ParentDashboard() {
                       }}
                     />
                   </div>
+                  {/* Registered As (read-only) */}
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>Registered As:</label>
+                    <input
+                      name="registeredAs"
+                      value={profile?.registeredAs || ""}
+                      disabled
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 6,
+                        border: "1.5px solid #e0e0e0",
+                        fontSize: 16,
+                        marginTop: 4,
+                        background: "#f8f9fa",
+                        color: "#666"
+                      }}
+                    />
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
                   <button
@@ -594,6 +618,10 @@ function ParentDashboard() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>School:</span>
                   <span style={{ color: "#222", fontSize: 16 }}>{profile.school || "-"}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Registered As:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.registeredAs}</span>
                 </div>
               </div>
               <button

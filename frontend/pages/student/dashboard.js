@@ -172,13 +172,19 @@ function StudentDashboard() {
     if (!studentClass || lastFetchedClass === studentClass) return; // Prevent repeated fetches for same class
     setAnnouncementsLoading(true);
     setLastFetchedClass(studentClass);
-    const classParam = `?class=${encodeURIComponent(studentClass)}`;
-    console.log("Frontend: Sending class to backend:", studentClass);
+    const classParam = `?class=${encodeURIComponent(studentClass)}&registeredAs=Student`;
     fetch(`${BASE_API_URL}/getannouncements${classParam}`)
       .then(res => res.json())
       .then(data => {
-        console.log("Frontend: Announcements received for class", studentClass, data.announcements);
-        setAnnouncements(data.announcements || []);
+        // Filter announcements: show if classes includes 'ALL' or student's class
+        const filtered = (data.announcements || []).filter(a => {
+          // Case-insensitive check for Student in announcementFor
+          if (a.announcementFor && Array.isArray(a.announcementFor) && !a.announcementFor.some(role => role.toLowerCase() === 'student')) return false;
+          if (!a.classes || a.classes.length === 0) return true;
+          if (a.classes.some(c => c && typeof c === 'string' && c.trim().toLowerCase() === 'all')) return true;
+          return a.classes.includes(studentClass);
+        });
+        setAnnouncements(filtered);
         setAnnouncementsLoading(false);
       })
       .catch(() => setAnnouncementsLoading(false));
@@ -508,6 +514,25 @@ function StudentDashboard() {
                       }}
                     />
                   </div>
+                  {/* Registered As (read-only) */}
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>Registered As:</label>
+                    <input
+                      name="registeredAs"
+                      value={profile?.registeredAs || ""}
+                      disabled
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 6,
+                        border: "1.5px solid #e0e0e0",
+                        fontSize: 16,
+                        marginTop: 4,
+                        background: "#f8f9fa",
+                        color: "#666"
+                      }}
+                    />
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
                   <button
@@ -634,6 +659,10 @@ function StudentDashboard() {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Class:</span>
                   <span style={{ color: "#222", fontSize: 16 }}>{profile.class || "-"}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Registered As:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.registeredAs}</span>
                 </div>
               </div>
               <button
