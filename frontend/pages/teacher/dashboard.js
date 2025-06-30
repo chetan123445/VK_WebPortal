@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from "react";
-import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt } from "react-icons/fa";
+import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt, FaFilePdf } from "react-icons/fa";
 import ProfileMenu from '../ProfileMenu'; // If you want to use the same ProfileMenu as admin
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken, logout } from "../../utils/auth.js";
@@ -22,6 +22,7 @@ function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
     { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> },
     { key: "mind-maps", label: "Mind Maps", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "avlrs", label: "AVLRs", icon: <FaLaptop style={{ fontSize: 18 }} /> },
+    { key: "dlrs", label: "DLRs", icon: <FaFilePdf style={{ fontSize: 18 }} /> },
   ];
   return (
     <aside style={{
@@ -178,6 +179,15 @@ function TeacherDashboard() {
   const [avlrsLoading, setAvlrsLoading] = useState(false);
   const [search, setSearch] = useState({ class: '', subject: '', chapter: '' });
   const [searchInitiated, setSearchInitiated] = useState(false);
+
+  // Add state for DLRs
+  const [dlrs, setDlrs] = useState([]);
+  const [dlrsLoading, setDlrsLoading] = useState(false);
+  const [dlrSearch, setDlrSearch] = useState({ class: '', subject: '', chapter: '' });
+  const [dlrSearchInitiated, setDlrSearchInitiated] = useState(false);
+
+  // Add previewPdf state and modal as in admin dashboard
+  const [previewPdf, setPreviewPdf] = useState({ open: false, url: '' });
 
   const router = useRouter();
 
@@ -424,6 +434,26 @@ function TeacherDashboard() {
     } catch {
       setAvlrs([]);
       setAvlrsLoading(false);
+    }
+  };
+
+  // Search DLRs
+  const handleDlrSearch = async (e) => {
+    e.preventDefault();
+    setDlrsLoading(true);
+    setDlrSearchInitiated(true);
+    try {
+      const params = new URLSearchParams();
+      if (dlrSearch.class) params.append('class', dlrSearch.class);
+      if (dlrSearch.subject) params.append('subject', dlrSearch.subject);
+      if (dlrSearch.chapter) params.append('chapter', dlrSearch.chapter);
+      const res = await fetch(`${BASE_API_URL}/dlrs?${params.toString()}`);
+      const data = await res.json();
+      setDlrs(data.dlrs || []);
+      setDlrsLoading(false);
+    } catch {
+      setDlrs([]);
+      setDlrsLoading(false);
     }
   };
 
@@ -1122,6 +1152,55 @@ function TeacherDashboard() {
               ))}
             </div>
           ))}
+        </div>
+      );
+    }
+    if (selectedMenu === "dlrs") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>DLRs</h2>
+          <form onSubmit={handleDlrSearch} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18 }}>
+              <input type="text" placeholder="Class" value={dlrSearch.class} onChange={e => setDlrSearch(f => ({ ...f, class: e.target.value }))} style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Subject" value={dlrSearch.subject} onChange={e => setDlrSearch(f => ({ ...f, subject: e.target.value }))} style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={dlrSearch.chapter} onChange={e => setDlrSearch(f => ({ ...f, chapter: e.target.value }))} style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <button type="submit" style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }}>Search</button>
+          </form>
+          {dlrsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : (!dlrSearchInitiated ? (
+            <div style={{ color: "#888", fontSize: 17 }}>Enter search criteria to find DLRs.</div>
+          ) : dlrs.length === 0 ? (
+            <div style={{ color: "#888", fontSize: 17 }}>No DLRs found.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {dlrs.map(dlr => (
+                <div key={dlr._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {dlr.class} | Subject: {dlr.subject} | Chapter: {dlr.chapter}</div>
+                  <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    {dlr.pdfs.map((pdf, idx) => (
+                      <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setPreviewPdf({ open: true, url: pdf.url })}>
+                        <FaFilePdf style={{ fontSize: 20, color: '#e74c3c' }} /> <span style={{ fontWeight: 600 }}>PDF {idx + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+          {/* PDF Preview Modal */}
+          {previewPdf.open && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(30,60,114,0.18)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', width: '90vw', height: '90vh', background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.13)', display: 'flex', flexDirection: 'column' }}>
+                <button onClick={() => setPreviewPdf({ open: false, url: '' })} style={{ position: 'absolute', top: 16, right: 24, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 36, height: 36, fontWeight: 700, fontSize: 22, cursor: 'pointer', zIndex: 2 }}>×</button>
+                <iframe src={previewPdf.url} title="PDF Preview" style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12, background: '#fff' }} />
+              </div>
+            </div>
+          )}
         </div>
       );
     }

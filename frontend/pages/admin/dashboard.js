@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen, FaLaptop } from "react-icons/fa";
+import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen, FaLaptop, FaFilePdf } from "react-icons/fa";
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { BASE_API_URL } from '../apiurl.js';
 import { getUserData, getToken, isAuthenticated, isTokenExpired, logout } from "../../utils/auth.js";
@@ -22,6 +22,7 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
     { key: "settings", label: "Settings", icon: <FaCog style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
     { key: "avlrs", label: "AVLRs", icon: <FaLaptop style={{ fontSize: 18 }} /> },
+    { key: "dlrs", label: "DLRs", icon: <FaFilePdf style={{ fontSize: 18 }} /> },
   ];
   return (
     <aside style={{
@@ -167,6 +168,16 @@ function AdminDashboard() {
   const [avlrForm, setAvlrForm] = useState({ class: '', subject: '', chapter: '', link: '' });
   const [avlrStatus, setAvlrStatus] = useState('');
   const [editAvlr, setEditAvlr] = useState(null);
+
+  // Add state for DLRs
+  const [dlrs, setDlrs] = useState([]);
+  const [dlrsLoading, setDlrsLoading] = useState(false);
+  const [dlrForm, setDlrForm] = useState({ class: '', subject: '', chapter: '', pdfs: [] });
+  const [dlrStatus, setDlrStatus] = useState('');
+  const [editDlr, setEditDlr] = useState(null);
+
+  // Add state for PDF preview modal
+  const [previewPdf, setPreviewPdf] = useState({ open: false, url: '' });
 
   // Fetch all mind maps
   useEffect(() => {
@@ -1359,6 +1370,61 @@ function AdminDashboard() {
         </div>
       );
     }
+    if (selectedMenu === "dlrs") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>DLRs</h2>
+          <form onSubmit={editDlr ? handleUpdateDlr : handleAddDlr} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18 }}>
+              <input type="text" placeholder="Class" value={dlrForm.class} onChange={e => setDlrForm(f => ({ ...f, class: e.target.value }))} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Subject" value={dlrForm.subject} onChange={e => setDlrForm(f => ({ ...f, subject: e.target.value }))} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={dlrForm.chapter} onChange={e => setDlrForm(f => ({ ...f, chapter: e.target.value }))} required style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <input type="file" accept="application/pdf" multiple onChange={handleDlrFileChange} style={{ width: '100%', padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <button type="submit" style={{ background: editDlr ? "#f7ca18" : "#1e3c72", color: editDlr ? "#222" : "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }}>{editDlr ? 'Update' : 'Add'} DLR</button>
+            {dlrStatus && <div style={{ marginTop: 12, color: dlrStatus.includes("add") || dlrStatus.includes("updated") || dlrStatus.includes("Deleted") ? "#28a745" : "#c0392b" }}>{dlrStatus}</div>}
+          </form>
+          {dlrsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : dlrs.length === 0 ? (
+            <div style={{ color: "#888", fontSize: 17 }}>No DLRs found.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {dlrs.map(dlr => (
+                <div key={dlr._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {dlr.class} | Subject: {dlr.subject} | Chapter: {dlr.chapter}</div>
+                  <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    {dlr.pdfs.map((pdf, idx) => (
+                      <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setPreviewPdf({ open: true, url: pdf.url })}>
+                        <FaFilePdf style={{ fontSize: 20, color: '#e74c3c' }} /> <span style={{ fontWeight: 600 }}>PDF {idx + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                    <button onClick={() => handleEditDlr(dlr)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                    <button onClick={() => handleDeleteDlr(dlr._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* PDF Preview Modal */}
+          {previewPdf.open && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(30,60,114,0.18)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', width: '90vw', height: '90vh', background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.13)', display: 'flex', flexDirection: 'column' }}>
+                <button onClick={() => setPreviewPdf({ open: false, url: '' })} style={{ position: 'absolute', top: 16, right: 24, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 36, height: 36, fontWeight: 700, fontSize: 22, cursor: 'pointer', zIndex: 2 }}>×</button>
+                <iframe src={previewPdf.url} title="PDF Preview" style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12, background: '#fff' }} />
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
     // Main content for other menu items
     return (
       <div style={{
@@ -1493,6 +1559,108 @@ function AdminDashboard() {
       }
     } catch {
       setAvlrStatus('Failed to delete');
+    }
+  };
+
+  const fetchDlrs = () => {
+    setDlrsLoading(true);
+    fetch(`${BASE_API_URL}/dlrs`)
+      .then(res => res.json())
+      .then(data => {
+        setDlrs(data.dlrs || []);
+        setDlrsLoading(false);
+      })
+      .catch(() => {
+        setDlrs([]);
+        setDlrsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    if (selectedMenu === "dlrs") fetchDlrs();
+  }, [selectedMenu]);
+
+  const handleDlrFileChange = e => {
+    setDlrForm(f => ({ ...f, pdfs: Array.from(e.target.files) }));
+  };
+
+  const handleAddDlr = async (e) => {
+    e.preventDefault();
+    setDlrStatus('Adding...');
+    const formData = new FormData();
+    formData.append('class', dlrForm.class);
+    formData.append('subject', dlrForm.subject);
+    formData.append('chapter', dlrForm.chapter);
+    dlrForm.pdfs.forEach(pdf => formData.append('pdfs', pdf));
+    try {
+      const res = await fetch(`${BASE_API_URL}/dlr`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDlrStatus('DLR added!');
+        setDlrForm({ class: '', subject: '', chapter: '', pdfs: [] });
+        fetchDlrs();
+      } else {
+        setDlrStatus(data.message || 'Failed to add');
+      }
+    } catch {
+      setDlrStatus('Failed to add');
+    }
+  };
+
+  const handleEditDlr = (dlr) => {
+    setEditDlr(dlr);
+    setDlrForm({ class: dlr.class, subject: dlr.subject, chapter: dlr.chapter, pdfs: [] });
+  };
+
+  const handleUpdateDlr = async (e) => {
+    e.preventDefault();
+    if (!editDlr) return;
+    setDlrStatus('Updating...');
+    const formData = new FormData();
+    formData.append('class', dlrForm.class);
+    formData.append('subject', dlrForm.subject);
+    formData.append('chapter', dlrForm.chapter);
+    dlrForm.pdfs.forEach(pdf => formData.append('pdfs', pdf));
+    try {
+      const res = await fetch(`${BASE_API_URL}/dlr/${editDlr._id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDlrStatus('DLR updated!');
+        setEditDlr(null);
+        setDlrForm({ class: '', subject: '', chapter: '', pdfs: [] });
+        fetchDlrs();
+      } else {
+        setDlrStatus(data.message || 'Failed to update');
+      }
+    } catch {
+      setDlrStatus('Failed to update');
+    }
+  };
+
+  const handleDeleteDlr = async (id) => {
+    if (!window.confirm('Delete this DLR?')) return;
+    setDlrStatus('Deleting...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/dlr/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (res.ok) {
+        setDlrStatus('Deleted!');
+        fetchDlrs();
+      } else {
+        setDlrStatus('Failed to delete');
+      }
+    } catch {
+      setDlrStatus('Failed to delete');
     }
   };
 

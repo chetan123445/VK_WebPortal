@@ -13,6 +13,7 @@ import { createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnounc
 import { getCbseUpdates } from '../controller/cbseController.js';
 import { addMindMap, getMindMaps, deleteMindMap, mindMapUpload, updateMindMap } from '../controller/mindMapController.js';
 import { addAVLR, getAVLRs, updateAVLR, deleteAVLR } from '../controller/avlrController.js';
+import { createDLR, getDLRs, updateDLR, deleteDLR, removeDLRPdf, dlrUpload } from '../controller/dlrController.js';
 
 const router = express.Router();
 
@@ -90,6 +91,13 @@ router.post('/api/avlr', authenticateToken, addAVLR);
 router.get('/api/avlrs', getAVLRs);
 router.put('/api/avlr/:id', authenticateToken, updateAVLR);
 router.delete('/api/avlr/:id', authenticateToken, deleteAVLR);
+
+// DLR routes
+router.post('/api/dlr', dlrUpload.array('pdfs', 10), createDLR);
+router.get('/api/dlrs', getDLRs);
+router.put('/api/dlr/:id', dlrUpload.array('pdfs', 10), updateDLR);
+router.delete('/api/dlr/:id', deleteDLR);
+router.post('/api/dlr/:id/remove-pdf', removeDLRPdf);
 
 // Serve announcement images
 router.use('/uploads/announcements', express.static('backend/public/uploads/announcements'));
