@@ -49,6 +49,8 @@ export default function RegisterParent() {
   const [showStudentRegister, setShowStudentRegister] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const [childClass, setChildClass] = useState("");
+
   useEffect(() => {
     // If already authenticated, redirect to dashboard
     const token = getToken();
@@ -102,6 +104,7 @@ export default function RegisterParent() {
       const data = await res.json();
       if (res.ok) {
         setChildOtpSent(true);
+        setChildClass("");
         setMsg("Child found. OTP sent to child email.");
       } else {
         setError(data.message || "Child verification failed");
@@ -265,6 +268,7 @@ export default function RegisterParent() {
           otp: parentOtpBlocks.join(""),
           registeredAs: "Parent",
           childEmail: childEmail.trim().toLowerCase(),
+          childClass: childClass.trim(),
         }),
       });
       const data = await res.json();
@@ -415,6 +419,15 @@ export default function RegisterParent() {
               placeholder="Parent Email"
               value={parentEmail}
               onChange={e => setParentEmail(e.target.value)}
+              required
+              disabled={parentOtpSent}
+              style={inputStyle}
+            />
+            <input
+              type="text"
+              placeholder="Enter your child's class (e.g. 5A, 10, etc.)"
+              value={childClass}
+              onChange={e => setChildClass(e.target.value)}
               required
               disabled={parentOtpSent}
               style={inputStyle}

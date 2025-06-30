@@ -76,34 +76,31 @@ export const getAnnouncements = async (req, res) => {
     let registeredAs = req.query.registeredAs;
     let announcements = await Announcement.find({}).sort({ createdAt: -1 });
 
+    // Log the query parameters
+    console.log('Fetching announcements for:', { registeredAs, class: studentClass });
+
     // Filter by announcementFor
     if (registeredAs) {
       announcements = announcements.filter(a => {
-        // Check if the announcement is for this user type
-        const isForUser = Array.isArray(a.announcementFor) && 
-          (a.announcementFor.includes(registeredAs) || a.announcementFor.includes("All"));
-        
-        // For students, further filter by class if classes is set
-        if (registeredAs === "Student" && studentClass && isForUser) {
-          // Log announcement text, classes, and studentClass
-          console.log(`Announcement: ${a.text}`);
-          console.log(`Announcement classes: ${JSON.stringify(a.classes)}`);
-          console.log(`Student class: ${studentClass}`);
-          // If announcementFor includes Student and classes is empty, show to all students
-          if (a.announcementFor.includes("Student") && (!a.classes || a.classes.length === 0)) {
-            return true;
-          }
-          // If announcement has specific classes, check if student's class or 'ALL' is included
-          if (a.classes && a.classes.length > 0) {
-            return a.classes.includes("ALL") || a.classes.includes(studentClass);
-          }
-          // If no specific classes (empty array), it's for all students
+        // Always include announcements for Parent
+        if (Array.isArray(a.announcementFor) && a.announcementFor.includes("Parent")) return true;
+
+        // If class param is present, also include Student announcements for that class
+        if (
+          studentClass &&
+          Array.isArray(a.announcementFor) && a.announcementFor.includes("Student") &&
+          Array.isArray(a.classes) && (a.classes.includes("ALL") || a.classes.includes(studentClass))
+        ) {
           return true;
         }
-        
-        return isForUser;
+
+        // Fallback to original logic
+        return Array.isArray(a.announcementFor) && (a.announcementFor.includes(registeredAs) || a.announcementFor.includes("All"));
       });
     }
+
+    // Log the filtered announcements
+    console.log('Announcements returned:', announcements.map(a => ({ _id: a._id, text: a.text, classes: a.classes, announcementFor: a.announcementFor })));
 
     const announcementsWithBase64 = announcements.map(a => {
       const images = (a.images || []).map(img => {
