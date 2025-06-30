@@ -1564,8 +1564,16 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
       )}
       {loading ? <div>Loading...</div> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {announcements.length === 0 && <div>No announcements yet.</div>}
-          {announcements.map(a => (
+          {(
+            isSuperAdmin
+              ? announcements
+              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
+          ).length === 0 && <div>No announcements yet.</div>}
+          {(
+            isSuperAdmin
+              ? announcements
+              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
+          ).map(a => (
             <div key={a._id} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(30,60,114,0.08)', padding: 24, position: 'relative', marginBottom: 8 }}>
               {isSuperAdmin && (
                 <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
@@ -1641,7 +1649,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
               )}
               <div style={{ fontSize: 13, color: '#888', marginTop: 8 }}>By: {a.createdBy} | {new Date(a.createdAt).toLocaleString()}</div>
               {/* Delete confirmation popup below the announcement */}
-              {deleteConfirmId === a._id && (
+              {isSuperAdmin && deleteConfirmId === a._id && (
                 <div style={{
                   position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 8,
                   background: '#fff', border: '1.5px solid #c0392b', borderRadius: 10, boxShadow: '0 4px 24px rgba(192,57,43,0.10)',
