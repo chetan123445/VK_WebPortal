@@ -580,7 +580,6 @@ function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
-      
       // Parse and send announcementFor as array
       let announcementForArr = editAnnouncementFor;
       if (typeof announcementForArr === "string") {
@@ -608,33 +607,7 @@ function AdminDashboard() {
         }
       }
       
-      
-      // Parse and send announcementFor as array
-      let announcementForArr = editAnnouncementFor;
-      if (typeof announcementForArr === "string") {
-        announcementForArr = announcementForArr.split(",").map(item => item.trim()).filter(Boolean);
-      }
-      if (Array.isArray(announcementForArr)) {
-        announcementForArr.forEach(item => formData.append('announcementFor[]', item));
-      }
-      
-      // Only send classes if ONLY Student is selected
-      const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
-      if (isOnlyStudent) {
-        // Handle classes update
-        let classesArr = editClasses;
-        if (typeof classesArr === "string") {
-          classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
-        }
-        if (Array.isArray(classesArr)) {
-          classesArr.forEach(cls => formData.append('classes[]', cls));
-        }
-      } else {
-        // If Student is selected with others, send empty classes array (all students)
-        if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
-          formData.append('classes[]', ''); // Empty array for all students
-        }
-      }
+    
       
       if (form.images && form.images.length > 0) {
         for (let i = 0; i < form.images.length; i++) {
@@ -1941,7 +1914,6 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   const [showEdit, setShowEdit] = useState(false);
   const [editAnnouncement, setEditAnnouncement] = useState(null);
   const [form, setForm] = useState({ text: '', images: [], announcementFor: '' });
-  const [form, setForm] = useState({ text: '', images: [], announcementFor: '' });
   const [status, setStatus] = useState('');
   const [preview, setPreview] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -1954,7 +1926,6 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   // Add this line to define selectedClasses state inside AnnouncementsSection
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [editClasses, setEditClasses] = useState(""); // <-- for editing classes
-  const [editAnnouncementFor, setEditAnnouncementFor] = useState(""); // <-- for editing announcementFor
   const [editAnnouncementFor, setEditAnnouncementFor] = useState(""); // <-- for editing announcementFor
 
   // Fetch announcements
