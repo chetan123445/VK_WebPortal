@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen } from "react-icons/fa";
+import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen, FaLaptop } from "react-icons/fa";
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { BASE_API_URL } from '../apiurl.js';
 import { getUserData, getToken, isAuthenticated, isTokenExpired, logout } from "../../utils/auth.js";
@@ -21,6 +21,7 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
     { key: "reports", label: "Reports", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "settings", label: "Settings", icon: <FaCog style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
+    { key: "avlrs", label: "AVLRs", icon: <FaLaptop style={{ fontSize: 18 }} /> },
   ];
   return (
     <aside style={{
@@ -159,6 +160,13 @@ function AdminDashboard() {
 
   // Add state for preview modal
   const [previewFile, setPreviewFile] = useState(null); // { url, fileType }
+
+  // Add state for AVLRs
+  const [avlrs, setAvlrs] = useState([]);
+  const [avlrsLoading, setAvlrsLoading] = useState(false);
+  const [avlrForm, setAvlrForm] = useState({ class: '', subject: '', chapter: '', link: '' });
+  const [avlrStatus, setAvlrStatus] = useState('');
+  const [editAvlr, setEditAvlr] = useState(null);
 
   // Fetch all mind maps
   useEffect(() => {
@@ -1309,6 +1317,48 @@ function AdminDashboard() {
         </div>
       );
     }
+    if (selectedMenu === "avlrs") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>AVLRs</h2>
+          <form onSubmit={editAvlr ? handleUpdateAvlr : handleAddAvlr} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18 }}>
+              <input type="text" placeholder="Class" value={avlrForm.class} onChange={e => setAvlrForm(f => ({ ...f, class: e.target.value }))} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Subject" value={avlrForm.subject} onChange={e => setAvlrForm(f => ({ ...f, subject: e.target.value }))} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={avlrForm.chapter} onChange={e => setAvlrForm(f => ({ ...f, chapter: e.target.value }))} required style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <input type="url" placeholder="Link (https://...)" value={avlrForm.link} onChange={e => setAvlrForm(f => ({ ...f, link: e.target.value }))} required style={{ width: '100%', padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <button type="submit" style={{ background: editAvlr ? "#f7ca18" : "#1e3c72", color: editAvlr ? "#222" : "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }}>{editAvlr ? 'Update' : 'Add'} AVLR</button>
+            {avlrStatus && <div style={{ marginTop: 12, color: avlrStatus.includes("add") || avlrStatus.includes("updated") || avlrStatus.includes("Deleted") ? "#28a745" : "#c0392b" }}>{avlrStatus}</div>}
+          </form>
+          {avlrsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : avlrs.length === 0 ? (
+            <div style={{ color: "#888", fontSize: 17 }}>No AVLRs found.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {avlrs.map(a => (
+                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {a.class} | Subject: {a.subject} | Chapter: {a.chapter}</div>
+                  <div style={{ marginBottom: 8 }}>
+                    <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", fontWeight: 600, wordBreak: 'break-all' }}>{a.link}</a>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                    <button onClick={() => handleEditAvlr(a)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                    <button onClick={() => handleDeleteAvlr(a._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
     // Main content for other menu items
     return (
       <div style={{
@@ -1355,6 +1405,95 @@ function AdminDashboard() {
         </div>
       </div>
     );
+  };
+
+  // Move AVLRs functions inside AdminDashboard
+  const fetchAvlrs = () => {
+    setAvlrsLoading(true);
+    fetch(`${BASE_API_URL}/avlrs`)
+      .then(res => res.json())
+      .then(data => {
+        setAvlrs(data.avlrs || []);
+        setAvlrsLoading(false);
+      })
+      .catch(() => {
+        setAvlrs([]);
+        setAvlrsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    if (selectedMenu === "avlrs") fetchAvlrs();
+  }, [selectedMenu]);
+
+  const handleAddAvlr = async (e) => {
+    e.preventDefault();
+    setAvlrStatus('Adding...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/avlr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify(avlrForm)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAvlrStatus('AVLR added!');
+        setAvlrForm({ class: '', subject: '', chapter: '', link: '' });
+        fetchAvlrs();
+      } else {
+        setAvlrStatus(data.message || 'Failed to add');
+      }
+    } catch {
+      setAvlrStatus('Failed to add');
+    }
+  };
+
+  const handleEditAvlr = (avlr) => {
+    setEditAvlr(avlr);
+    setAvlrForm({ class: avlr.class, subject: avlr.subject, chapter: avlr.chapter, link: avlr.link });
+  };
+
+  const handleUpdateAvlr = async (e) => {
+    e.preventDefault();
+    if (!editAvlr) return;
+    setAvlrStatus('Updating...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/avlr/${editAvlr._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify(avlrForm)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAvlrStatus('AVLR updated!');
+        setEditAvlr(null);
+        setAvlrForm({ class: '', subject: '', chapter: '', link: '' });
+        fetchAvlrs();
+      } else {
+        setAvlrStatus(data.message || 'Failed to update');
+      }
+    } catch {
+      setAvlrStatus('Failed to update');
+    }
+  };
+
+  const handleDeleteAvlr = async (id) => {
+    if (!window.confirm('Delete this AVLR?')) return;
+    setAvlrStatus('Deleting...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/avlr/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (res.ok) {
+        setAvlrStatus('Deleted!');
+        fetchAvlrs();
+      } else {
+        setAvlrStatus('Failed to delete');
+      }
+    } catch {
+      setAvlrStatus('Failed to delete');
+    }
   };
 
   return (

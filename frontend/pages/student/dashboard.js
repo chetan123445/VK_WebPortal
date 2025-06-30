@@ -175,6 +175,12 @@ function StudentDashboard() {
   const [mmStatus, setMmStatus] = useState("");
   const [mmPreview, setMmPreview] = useState({ open: false, url: '', fileType: '' });
 
+  // Add state for AVLRs
+  const [avlrs, setAvlrs] = useState([]);
+  const [avlrsLoading, setAvlrsLoading] = useState(false);
+  const [search, setSearch] = useState({ class: '', subject: '', chapter: '' });
+  const [searchInitiated, setSearchInitiated] = useState(false);
+
   const fetchAnnouncements = useCallback(() => {
     const studentClass = (profile && profile.class) ? profile.class : globalUserClass;
     if (!studentClass || lastFetchedClass === studentClass) return; // Prevent repeated fetches for same class
@@ -281,6 +287,13 @@ function StudentDashboard() {
       return () => URL.revokeObjectURL(url);
     }
   }, [form.photo]);
+
+  // Prefill class from student profile
+  useEffect(() => {
+    if (profile && profile.class) {
+      setSearch(f => ({ ...f, class: profile.class }));
+    }
+  }, [profile]);
 
   const handleEdit = () => setEditMode(true);
   const handleCancel = () => {
@@ -404,6 +417,26 @@ function StudentDashboard() {
       setMmStatus("Failed to fetch mind maps.");
     }
     setMindMapsLoading(false);
+  };
+
+  // Search AVLRs
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    setAvlrsLoading(true);
+    setSearchInitiated(true);
+    try {
+      const params = new URLSearchParams();
+      if (search.class) params.append('class', search.class);
+      if (search.subject) params.append('subject', search.subject);
+      if (search.chapter) params.append('chapter', search.chapter);
+      const res = await fetch(`${BASE_API_URL}/avlrs?${params.toString()}`);
+      const data = await res.json();
+      setAvlrs(data.avlrs || []);
+      setAvlrsLoading(false);
+    } catch {
+      setAvlrs([]);
+      setAvlrsLoading(false);
+    }
   };
 
   const renderContent = () => {
@@ -1107,11 +1140,37 @@ function StudentDashboard() {
     }
     if (selectedMenu === "avlrs") {
       return (
-        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
-          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>AVLRs (Video Resource Learning)</h2>
-          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
-            Feature coming soon.
-          </div>
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>AVLRs</h2>
+          <form onSubmit={handleSearch} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18 }}>
+              <input type="text" placeholder="Class" value={search.class} onChange={e => setSearch(f => ({ ...f, class: e.target.value }))} style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} readOnly />
+              <input type="text" placeholder="Subject" value={search.subject} onChange={e => setSearch(f => ({ ...f, subject: e.target.value }))} style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={search.chapter} onChange={e => setSearch(f => ({ ...f, chapter: e.target.value }))} style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <button type="submit" style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }}>Search</button>
+          </form>
+          {avlrsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : (!searchInitiated ? (
+            <div style={{ color: "#888", fontSize: 17 }}>Enter subject/chapter to find AVLRs for your class.</div>
+          ) : avlrs.length === 0 ? (
+            <div style={{ color: "#888", fontSize: 17 }}>No AVLRs found.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {avlrs.map(a => (
+                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {a.class} | Subject: {a.subject} | Chapter: {a.chapter}</div>
+                  <div style={{ marginBottom: 8 }}>
+                    <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", fontWeight: 600, wordBreak: 'break-all' }}>{a.link}</a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       );
     }

@@ -12,6 +12,7 @@ import { findUserByEmail as manageFindUserByEmail, deleteUserByEmail as manageDe
 import { createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnouncement, announcementUpload, removeAnnouncementImage } from '../controller/announcementController.js';
 import { getCbseUpdates } from '../controller/cbseController.js';
 import { addMindMap, getMindMaps, deleteMindMap, mindMapUpload, updateMindMap } from '../controller/mindMapController.js';
+import { addAVLR, getAVLRs, updateAVLR, deleteAVLR } from '../controller/avlrController.js';
 
 const router = express.Router();
 
@@ -83,6 +84,12 @@ router.put('/api/mindmap/:id', authenticateToken, (req, res, next) => {
     next();
   });
 }, updateMindMap);
+
+// AVLR routes
+router.post('/api/avlr', authenticateToken, addAVLR);
+router.get('/api/avlrs', getAVLRs);
+router.put('/api/avlr/:id', authenticateToken, updateAVLR);
+router.delete('/api/avlr/:id', authenticateToken, deleteAVLR);
 
 // Serve announcement images
 router.use('/uploads/announcements', express.static('backend/public/uploads/announcements'));
