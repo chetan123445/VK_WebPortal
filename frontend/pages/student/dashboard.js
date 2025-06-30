@@ -871,7 +871,12 @@ function StudentDashboard() {
       return (
         <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
           <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Announcements</h2>
-          {announcementsLoading ? <div>Loading...</div> : (
+          {announcementsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {announcements.length === 0 && <div>No announcements yet.</div>}
               {announcements.map(a => (

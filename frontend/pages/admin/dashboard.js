@@ -1210,30 +1210,32 @@ function AdminDashboard() {
             background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
           }}>
             <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
-            {/* Show superadmins first, then admins, with emails listed below each */}
-            <div>
-              <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
-              <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
-                {admins.filter(a => a.isSuperAdmin).map(a => (
-                  <li key={a._id} style={{ marginBottom: 2 }}>
-                    {a.email}
-                  </li>
-                ))}
-              </ul>
-              <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                {admins.filter(a => !a.isSuperAdmin).map(a => (
-                  <li key={a._id} style={{ marginBottom: 2 }}>
-                    {a.email}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <button onClick={() => setShowViewAdmins(false)} style={{
-              marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
-            }}>
-              Close
-            </button>
+            {admins.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 80 }}>
+                <div className="spinner" style={{ width: 40, height: 40, border: '5px solid #eee', borderTop: '5px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
+                <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
+                  {admins.filter(a => a.isSuperAdmin).map(a => (
+                    <li key={a._id} style={{ marginBottom: 2 }}>
+                      {a.email}
+                    </li>
+                  ))}
+                </ul>
+                <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                  {admins.filter(a => !a.isSuperAdmin).map(a => (
+                    <li key={a._id} style={{ marginBottom: 2 }}>
+                      {a.email}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button onClick={() => setShowViewAdmins(false)} style={{ marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}>Close</button>
           </div>
         </div>
       )}
@@ -1562,7 +1564,12 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
           + Create Announcement
         </button>
       )}
-      {loading ? <div>Loading...</div> : (
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+          <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+        </div>
+      ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
           {(
             isSuperAdmin

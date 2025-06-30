@@ -99,9 +99,6 @@ export const getAnnouncements = async (req, res) => {
       });
     }
 
-    // Log the filtered announcements
-    console.log('Announcements returned:', announcements.map(a => ({ _id: a._id, text: a.text, classes: a.classes, announcementFor: a.announcementFor })));
-
     const announcementsWithBase64 = announcements.map(a => {
       const images = (a.images || []).map(img => {
         if (!img || !img.data) return null;
