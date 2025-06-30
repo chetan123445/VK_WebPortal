@@ -1311,7 +1311,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   // Fetch announcements
   const fetchAnnouncements = useCallback(() => {
     setLoading(true);
-    fetch(`${BASE_API_URL}/getannouncements?registeredAs=Admin`)
+    fetch(`${BASE_API_URL}/getannouncements`)
       .then(res => res.json())
       .then(data => {
         setAnnouncements(data.announcements || []);
