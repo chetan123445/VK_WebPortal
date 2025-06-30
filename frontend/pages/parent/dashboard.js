@@ -313,14 +313,31 @@ function ParentDashboard() {
 
   const fetchAnnouncements = useCallback(() => {
     setAnnouncementsLoading(true);
-    fetch(`${BASE_API_URL}/getannouncements`)
+    // If profile.childClass exists, fetch with class param for Student announcements
+    let url = `${BASE_API_URL}/getannouncements?registeredAs=Parent`;
+    if (profile && profile.childClass) {
+      url += `&class=${encodeURIComponent(profile.childClass)}`;
+    }
+    fetch(url)
       .then(res => res.json())
       .then(data => {
-        setAnnouncements(data.announcements || []);
+        // Filter announcements: show if for Parent, or for Student and class matches
+        const filtered = (data.announcements || []).filter(a => {
+          // For Parent
+          if (a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'parent')) return true;
+          // For Student and class matches
+          if (
+            profile && profile.childClass &&
+            a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'student') &&
+            a.classes && Array.isArray(a.classes) && (a.classes.includes('ALL') || a.classes.includes(profile.childClass))
+          ) return true;
+          return false;
+        });
+        setAnnouncements(filtered);
         setAnnouncementsLoading(false);
       })
       .catch(() => setAnnouncementsLoading(false));
-  }, []);
+  }, [profile]);
 
   const fetchCbseUpdates = useCallback(() => {
     setCbseLoading(true);
@@ -472,6 +489,25 @@ function ParentDashboard() {
                       }}
                     />
                   </div>
+                  {/* Registered As (read-only) */}
+                  <div>
+                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>Registered As:</label>
+                    <input
+                      name="registeredAs"
+                      value={profile?.registeredAs || ""}
+                      disabled
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 6,
+                        border: "1.5px solid #e0e0e0",
+                        fontSize: 16,
+                        marginTop: 4,
+                        background: "#f8f9fa",
+                        color: "#666"
+                      }}
+                    />
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
                   <button
@@ -595,6 +631,22 @@ function ParentDashboard() {
                   <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>School:</span>
                   <span style={{ color: "#222", fontSize: 16 }}>{profile.school || "-"}</span>
                 </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Registered As:</span>
+                  <span style={{ color: "#222", fontSize: 16 }}>{profile.registeredAs}</span>
+                </div>
+                {profile.registeredAs === 'Parent' && profile.childEmail && (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Child Email:</span>
+                      <span style={{ color: "#222", fontSize: 16 }}>{profile.childEmail}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Child Class:</span>
+                      <span style={{ color: "#222", fontSize: 16 }}>{profile.childClass || '-'}</span>
+                    </div>
+                  </>
+                )}
               </div>
               <button
                 onClick={handleEdit}
@@ -917,7 +969,12 @@ function ParentDashboard() {
       return (
         <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
           <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Announcements</h2>
-          {announcementsLoading ? <div>Loading...</div> : (
+          {announcementsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {announcements.length === 0 && <div>No announcements yet.</div>}
               {announcements.map(a => {

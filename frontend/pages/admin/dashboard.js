@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen } from "react-icons/fa";
+import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen, FaLaptop, FaFilePdf } from "react-icons/fa";
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { BASE_API_URL } from '../apiurl.js';
 import { getUserData, getToken, isAuthenticated, isTokenExpired, logout } from "../../utils/auth.js";
@@ -18,11 +18,12 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
     { key: "records", label: "Records", icon: <FaRegListAlt style={{ fontSize: 18 }} /> },
     { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
     { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
-    { key: "mindmap", label: "Mind Map", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
+    { key: "mindmap", label: "Mind Map", icon: <FaBookOpen style={{ fontSize: 18 }} /> }, // <-- Mind Map option
     { key: "reports", label: "Reports", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "settings", label: "Settings", icon: <FaCog style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
-    { key: "avlr", label: "AVLR", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
+    { key: "avlrs", label: "AVLRs", icon: <FaLaptop style={{ fontSize: 18 }} /> },
+    { key: "dlrs", label: "DLRs", icon: <FaFilePdf style={{ fontSize: 18 }} /> },
   ];
   return (
     <aside style={{
@@ -138,6 +139,114 @@ function AdminDashboard() {
   const [cbseLoading, setCbseLoading] = useState(false);
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [editClasses, setEditClasses] = useState(""); // <-- for editing classes
+
+  // Mind Map hooks (must be at top level)
+  const [mmClass, setMmClass] = useState("");
+  const [mmSubject, setMmSubject] = useState("");
+  const [mmChapter, setMmChapter] = useState("");
+  const [mmImages, setMmImages] = useState([]);
+  const [mmStatus, setMmStatus] = useState("");
+  const [mindMaps, setMindMaps] = useState([]);
+  const [mmLoading, setMmLoading] = useState(false);
+
+  // Add state for editing mind maps
+  const [editMindMap, setEditMindMap] = useState(null);
+  const [editMmClass, setEditMmClass] = useState("");
+  const [editMmSubject, setEditMmSubject] = useState("");
+  const [editMmChapter, setEditMmChapter] = useState("");
+  const [editMmImages, setEditMmImages] = useState([]); // new files
+  const [editMmRemove, setEditMmRemove] = useState([]); // indices to remove
+
+  // In Mind Map section, add a loading state for fetching mind maps
+  const [mindMapsLoading, setMindMapsLoading] = useState(true);
+
+  // Add state for preview modal
+  const [previewFile, setPreviewFile] = useState(null); // { url, fileType }
+
+  // Add state for AVLRs
+  const [avlrs, setAvlrs] = useState([]);
+  const [avlrsLoading, setAvlrsLoading] = useState(false);
+  const [avlrForm, setAvlrForm] = useState({ class: '', subject: '', chapter: '', link: '' });
+  const [avlrStatus, setAvlrStatus] = useState('');
+  const [editAvlr, setEditAvlr] = useState(null);
+
+  // Add state for DLRs
+  const [dlrs, setDlrs] = useState([]);
+  const [dlrsLoading, setDlrsLoading] = useState(false);
+  const [dlrForm, setDlrForm] = useState({ class: '', subject: '', chapter: '', pdfs: [] });
+  const [dlrStatus, setDlrStatus] = useState('');
+  const [editDlr, setEditDlr] = useState(null);
+
+  // Add state for PDF preview modal
+  const [previewPdf, setPreviewPdf] = useState({ open: false, url: '' });
+
+  // Fetch all mind maps
+  useEffect(() => {
+    setMindMapsLoading(true);
+    fetch(`${BASE_API_URL}/mindmaps`)
+      .then(res => res.json())
+      .then(data => {
+        setMindMaps(data.mindMaps || []);
+        setMindMapsLoading(false);
+      })
+      .catch(() => {
+        setMindMaps([]);
+        setMindMapsLoading(false);
+      });
+  }, []);
+
+  // Handle image input
+  const handleMmImageChange = e => {
+    setMmImages(Array.from(e.target.files));
+  };
+
+  // Handle add mind map
+  const handleAddMindMap = async e => {
+    e.preventDefault();
+    setMmStatus("Adding...");
+    const formData = new FormData();
+    formData.append("class", mmClass);
+    formData.append("subject", mmSubject);
+    formData.append("chapter", mmChapter);
+    mmImages.forEach(img => formData.append("mindmap", img));
+    try {
+      const res = await fetch(`${BASE_API_URL}/mindmap`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMmStatus("Mind map added!");
+        setMmClass(""); setMmSubject(""); setMmChapter(""); setMmImages([]);
+        setMindMaps(prev => [data.mindMap, ...prev]);
+      } else {
+        setMmStatus(data.message || data.error || "Failed to add");
+      }
+    } catch {
+      setMmStatus("Failed to add");
+    }
+  };
+
+  // Handle delete mind map
+  const handleDeleteMindMap = async id => {
+    if (!window.confirm("Delete this mind map?")) return;
+    setMmStatus("Deleting...");
+    try {
+      const res = await fetch(`${BASE_API_URL}/mindmap/${id}`, {
+        method: "DELETE",
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (res.ok) {
+        setMindMaps(prev => prev.filter(m => m._id !== id));
+        setMmStatus("Deleted!");
+      } else {
+        setMmStatus("Failed to delete");
+      }
+    } catch {
+      setMmStatus("Failed to delete");
+    }
+  };
 
   // PhoneInputBoxes component for 10-digit phone input
   function PhoneInputBoxes({ value, onChange }) {
@@ -317,10 +426,11 @@ function AdminDashboard() {
 
   const handleEdit = (announcement) => {
     setEditAnnouncement(announcement);
-    setForm({ text: announcement.text, images: [], announcementFor: announcement.announcementFor || '' });
+    setForm({ text: announcement.text, images: [], announcementFor: announcement.announcementFor || '', announcementFor: announcement.announcementFor || '' });
     setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
     setRemovedImages([]);
     setEditClasses(Array.isArray(announcement.classes) ? announcement.classes.join(",") : ""); // <-- prefill classes
+    setEditAnnouncementFor(Array.isArray(announcement.announcementFor) ? announcement.announcementFor.join(",") : ""); // <-- prefill announcementFor
     setEditAnnouncementFor(Array.isArray(announcement.announcementFor) ? announcement.announcementFor.join(",") : ""); // <-- prefill announcementFor
     setShowEdit(true);
     setStatus('');
@@ -459,6 +569,8 @@ function AdminDashboard() {
       setPreview(prev => Array.isArray(prev) ? [...prev, ...filePreviews] : filePreviews);
     } else if (name === 'text' || name === 'announcementFor') {
       setForm(f => ({ ...f, [name]: value }));
+    } else if (name === 'text' || name === 'announcementFor') {
+      setForm(f => ({ ...f, [name]: value }));
     }
   };
 
@@ -468,6 +580,34 @@ function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
+      
+      // Parse and send announcementFor as array
+      let announcementForArr = editAnnouncementFor;
+      if (typeof announcementForArr === "string") {
+        announcementForArr = announcementForArr.split(",").map(item => item.trim()).filter(Boolean);
+      }
+      if (Array.isArray(announcementForArr)) {
+        announcementForArr.forEach(item => formData.append('announcementFor[]', item));
+      }
+      
+      // Only send classes if ONLY Student is selected
+      const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
+      if (isOnlyStudent) {
+        // Handle classes update
+        let classesArr = editClasses;
+        if (typeof classesArr === "string") {
+          classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+        }
+        if (Array.isArray(classesArr)) {
+          classesArr.forEach(cls => formData.append('classes[]', cls));
+        }
+      } else {
+        // If Student is selected with others, send empty classes array (all students)
+        if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
+          formData.append('classes[]', ''); // Empty array for all students
+        }
+      }
+      
       
       // Parse and send announcementFor as array
       let announcementForArr = editAnnouncementFor;
@@ -515,7 +655,9 @@ function AdminDashboard() {
         setShowEdit(false);
         setEditAnnouncement(null);
         setForm({ text: '', images: [], announcementFor: '' });
+        setForm({ text: '', images: [], announcementFor: '' });
         setEditClasses("");
+        setEditAnnouncementFor("");
         setEditAnnouncementFor("");
         // Update the announcement in the state
         setAnnouncements(prev => prev.map(a => a._id === data.announcement._id ? data.announcement : a));
@@ -614,6 +756,56 @@ function AdminDashboard() {
       fetchCbseUpdates();
     }
   }, [selectedMenu, fetchCbseUpdates]);
+
+  // Open edit modal
+  const handleOpenEditMindMap = (m) => {
+    setEditMindMap(m);
+    setEditMmClass(m.class);
+    setEditMmSubject(m.subject);
+    setEditMmChapter(m.chapter);
+    setEditMmImages([]);
+    setEditMmRemove([]);
+  };
+
+  // Remove existing image/pdf by index
+  const handleRemoveEditMmImage = (idx) => {
+    setEditMmRemove(prev => [...prev, idx]);
+  };
+
+  // Add new files
+  const handleEditMmImageChange = e => {
+    setEditMmImages(Array.from(e.target.files));
+  };
+
+  // Save edit
+  const handleSaveEditMindMap = async (e) => {
+    e.preventDefault();
+    if (!editMindMap) return;
+    setMmStatus("Saving...");
+    const formData = new FormData();
+    formData.append("class", editMmClass);
+    formData.append("subject", editMmSubject);
+    formData.append("chapter", editMmChapter);
+    editMmImages.forEach(img => formData.append("mindmap", img));
+    editMmRemove.forEach(idx => formData.append("removeImages", idx));
+    try {
+      const res = await fetch(`${BASE_API_URL}/mindmap/${editMindMap._id}`, {
+        method: "PUT",
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMindMaps(prev => prev.map(m => m._id === data.mindMap._id ? data.mindMap : m));
+        setEditMindMap(null);
+        setMmStatus("Mind map updated!");
+      } else {
+        setMmStatus(data.message || data.error || "Failed to update");
+      }
+    } catch {
+      setMmStatus("Failed to update");
+    }
+  };
 
   const renderContent = () => {
     if (selectedMenu === "profile") {
@@ -1068,6 +1260,222 @@ function AdminDashboard() {
     if (selectedMenu === "avlr") {
       return <AVLR isAdmin={true} token={getToken()} />;
     }
+    if (selectedMenu === "mindmap") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 32, marginBottom: 28, color: "#1e3c72", letterSpacing: 1, textAlign: "center" }}>
+            <FaBookOpen style={{ marginRight: 12, color: "#1e3c72", fontSize: 28, verticalAlign: "middle" }} />
+            Mind Maps
+          </h2>
+          <form onSubmit={handleAddMindMap} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18 }}>
+              <input type="text" placeholder="Class" value={mmClass} onChange={e => setMmClass(e.target.value)} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Subject" value={mmSubject} onChange={e => setMmSubject(e.target.value)} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={mmChapter} onChange={e => setMmChapter(e.target.value)} required style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <input type="file" accept="image/*,application/pdf" multiple onChange={handleMmImageChange} required style={{ fontSize: 16 }} />
+            </div>
+            <button type="submit" style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }} disabled={mmLoading}>Add Mind Map</button>
+            {mmStatus && <div style={{ marginTop: 12, color: mmStatus.includes("add") || mmStatus.includes("Deleted") ? "#28a745" : "#c0392b" }}>{mmStatus}</div>}
+          </form>
+          <div>
+            <h3 style={{ fontWeight: 700, fontSize: 22, marginBottom: 18, color: "#1e3c72" }}>All Mind Maps</h3>
+            {mindMapsLoading ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+                <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+              </div>
+            ) : mindMaps.length === 0 ? (
+              <div style={{ color: "#888", fontSize: 17 }}>No mind maps found.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                {mindMaps.map(m => (
+                  <div key={m._id} style={{ background: "#fff", borderRadius: 10, boxShadow: "0 2px 8px rgba(30,60,114,0.06)", padding: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <div style={{ fontWeight: 600, color: "#1e3c72" }}>Class: {m.class} | Subject: {m.subject} | Chapter: {m.chapter}</div>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {m.mindmap && m.mindmap.map((img, idx) => (
+                        img.fileType === 'pdf'
+                          ? <div key={idx} style={{ display: 'inline-block', position: 'relative', width: 120, height: 80, border: '1px solid #eee', borderRadius: 6, background: '#fafafa', textAlign: 'center', verticalAlign: 'middle', lineHeight: '80px', fontWeight: 600, color: '#1e3c72', fontSize: 18, cursor: 'pointer' }} onClick={() => setPreviewFile({ url: img.url, fileType: 'pdf' })}>
+                              <span>PDF</span>
+                              <span style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 2 }}>
+                                <div className="spinner" style={{ width: 24, height: 24, border: '4px solid #eee', borderTop: '4px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                              </span>
+                              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+                            </div>
+                          : <img key={idx} src={img.url} alt="mindmap" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: "1px solid #eee", cursor: 'pointer' }} onClick={() => setPreviewFile({ url: img.url, fileType: 'image' })} />
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                      <button onClick={() => handleOpenEditMindMap(m)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                      <button onClick={() => handleDeleteMindMap(m._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Edit Mind Map Modal */}
+          {editMindMap && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
+              <form onSubmit={handleSaveEditMindMap} style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)', textAlign: 'center', maxWidth: 420 }}>
+                <h3 style={{ marginBottom: 18, color: '#1e3c72' }}>Edit Mind Map</h3>
+                <input type="text" placeholder="Class" value={editMmClass} onChange={e => setEditMmClass(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <input type="text" placeholder="Subject" value={editMmSubject} onChange={e => setEditMmSubject(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <input type="text" placeholder="Chapter" value={editMmChapter} onChange={e => setEditMmChapter(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Existing Files:</div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    {editMindMap.mindmap && editMindMap.mindmap.map((img, idx) => (
+                      <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                        {img.fileType === 'pdf'
+                          ? <a href={img.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', border: '1px solid #eee', borderRadius: 6, padding: 4, background: '#fafafa', maxWidth: 120, maxHeight: 80, overflow: 'hidden' }}>PDF {idx + 1}</a>
+                          : <img src={img.url} alt="mindmap" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: '1px solid #eee' }} />}
+                        <button type="button" onClick={() => handleRemoveEditMmImage(idx)} style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <input type="file" accept="image/*,application/pdf" multiple onChange={handleEditMmImageChange} style={{ fontSize: 16 }} />
+                </div>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 18 }}>
+                  <button type="submit" style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                  <button type="button" onClick={() => setEditMindMap(null)} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                </div>
+                {mmStatus && <div style={{ marginTop: 10, color: mmStatus.includes('update') ? '#28a745' : '#c0392b' }}>{mmStatus}</div>}
+              </form>
+            </div>
+          )}
+          {/* Preview Modal */}
+          {previewFile && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.92)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setPreviewFile(null)}>
+              <div
+                style={{
+                  position: 'relative', width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', boxShadow: 'none', borderRadius: 0, padding: 0
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                <button
+                  onClick={() => setPreviewFile(null)}
+                  style={{
+                    position: 'fixed', top: 24, right: 32, background: '#c0392b', color: '#fff', border: 'none',
+                    borderRadius: '50%', width: 44, height: 44, fontSize: 28, fontWeight: 700, cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.18)'
+                  }}
+                  aria-label="Close"
+                >×</button>
+                {previewFile.fileType === 'pdf' ? (
+                  <PDFWithLoader url={previewFile.url} fullscreen={true} />
+                ) : (
+                  <img
+                    src={previewFile.url}
+                    alt="Preview"
+                    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', objectFit: 'contain', background: '#222', borderRadius: 0, margin: 0, padding: 0, zIndex: 5 }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (selectedMenu === "avlrs") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>AVLRs</h2>
+          <form onSubmit={editAvlr ? handleUpdateAvlr : handleAddAvlr} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18 }}>
+              <input type="text" placeholder="Class" value={avlrForm.class} onChange={e => setAvlrForm(f => ({ ...f, class: e.target.value }))} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Subject" value={avlrForm.subject} onChange={e => setAvlrForm(f => ({ ...f, subject: e.target.value }))} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={avlrForm.chapter} onChange={e => setAvlrForm(f => ({ ...f, chapter: e.target.value }))} required style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <input type="url" placeholder="Link (https://...)" value={avlrForm.link} onChange={e => setAvlrForm(f => ({ ...f, link: e.target.value }))} required style={{ width: '100%', padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <button type="submit" style={{ background: editAvlr ? "#f7ca18" : "#1e3c72", color: editAvlr ? "#222" : "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }}>{editAvlr ? 'Update' : 'Add'} AVLR</button>
+            {avlrStatus && <div style={{ marginTop: 12, color: avlrStatus.includes("add") || avlrStatus.includes("updated") || avlrStatus.includes("Deleted") ? "#28a745" : "#c0392b" }}>{avlrStatus}</div>}
+          </form>
+          {avlrsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : avlrs.length === 0 ? (
+            <div style={{ color: "#888", fontSize: 17 }}>No AVLRs found.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {avlrs.map(a => (
+                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {a.class} | Subject: {a.subject} | Chapter: {a.chapter}</div>
+                  <div style={{ marginBottom: 8 }}>
+                    <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", fontWeight: 600, wordBreak: 'break-all' }}>{a.link}</a>
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                    <button onClick={() => handleEditAvlr(a)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                    <button onClick={() => handleDeleteAvlr(a._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    if (selectedMenu === "dlrs") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>DLRs</h2>
+          <form onSubmit={editDlr ? handleUpdateDlr : handleAddDlr} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18 }}>
+              <input type="text" placeholder="Class" value={dlrForm.class} onChange={e => setDlrForm(f => ({ ...f, class: e.target.value }))} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Subject" value={dlrForm.subject} onChange={e => setDlrForm(f => ({ ...f, subject: e.target.value }))} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={dlrForm.chapter} onChange={e => setDlrForm(f => ({ ...f, chapter: e.target.value }))} required style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <input type="file" accept="application/pdf" multiple onChange={handleDlrFileChange} style={{ width: '100%', padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <button type="submit" style={{ background: editDlr ? "#f7ca18" : "#1e3c72", color: editDlr ? "#222" : "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer" }}>{editDlr ? 'Update' : 'Add'} DLR</button>
+            {dlrStatus && <div style={{ marginTop: 12, color: dlrStatus.includes("add") || dlrStatus.includes("updated") || dlrStatus.includes("Deleted") ? "#28a745" : "#c0392b" }}>{dlrStatus}</div>}
+          </form>
+          {dlrsLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : dlrs.length === 0 ? (
+            <div style={{ color: "#888", fontSize: 17 }}>No DLRs found.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {dlrs.map(dlr => (
+                <div key={dlr._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {dlr.class} | Subject: {dlr.subject} | Chapter: {dlr.chapter}</div>
+                  <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                    {dlr.pdfs.map((pdf, idx) => (
+                      <div key={idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => setPreviewPdf({ open: true, url: pdf.url })}>
+                        <FaFilePdf style={{ fontSize: 20, color: '#e74c3c' }} /> <span style={{ fontWeight: 600 }}>PDF {idx + 1}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                    <button onClick={() => handleEditDlr(dlr)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                    <button onClick={() => handleDeleteDlr(dlr._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* PDF Preview Modal */}
+          {previewPdf.open && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(30,60,114,0.18)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', width: '90vw', height: '90vh', background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.13)', display: 'flex', flexDirection: 'column' }}>
+                <button onClick={() => setPreviewPdf({ open: false, url: '' })} style={{ position: 'absolute', top: 16, right: 24, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 36, height: 36, fontWeight: 700, fontSize: 22, cursor: 'pointer', zIndex: 2 }}>×</button>
+                <iframe src={previewPdf.url} title="PDF Preview" style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12, background: '#fff' }} />
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
     // Main content for other menu items
     return (
       <div style={{
@@ -1114,6 +1522,197 @@ function AdminDashboard() {
         </div>
       </div>
     );
+  };
+
+  // Move AVLRs functions inside AdminDashboard
+  const fetchAvlrs = () => {
+    setAvlrsLoading(true);
+    fetch(`${BASE_API_URL}/avlrs`)
+      .then(res => res.json())
+      .then(data => {
+        setAvlrs(data.avlrs || []);
+        setAvlrsLoading(false);
+      })
+      .catch(() => {
+        setAvlrs([]);
+        setAvlrsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    if (selectedMenu === "avlrs") fetchAvlrs();
+  }, [selectedMenu]);
+
+  const handleAddAvlr = async (e) => {
+    e.preventDefault();
+    setAvlrStatus('Adding...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/avlr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify(avlrForm)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAvlrStatus('AVLR added!');
+        setAvlrForm({ class: '', subject: '', chapter: '', link: '' });
+        fetchAvlrs();
+      } else {
+        setAvlrStatus(data.message || 'Failed to add');
+      }
+    } catch {
+      setAvlrStatus('Failed to add');
+    }
+  };
+
+  const handleEditAvlr = (avlr) => {
+    setEditAvlr(avlr);
+    setAvlrForm({ class: avlr.class, subject: avlr.subject, chapter: avlr.chapter, link: avlr.link });
+  };
+
+  const handleUpdateAvlr = async (e) => {
+    e.preventDefault();
+    if (!editAvlr) return;
+    setAvlrStatus('Updating...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/avlr/${editAvlr._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify(avlrForm)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAvlrStatus('AVLR updated!');
+        setEditAvlr(null);
+        setAvlrForm({ class: '', subject: '', chapter: '', link: '' });
+        fetchAvlrs();
+      } else {
+        setAvlrStatus(data.message || 'Failed to update');
+      }
+    } catch {
+      setAvlrStatus('Failed to update');
+    }
+  };
+
+  const handleDeleteAvlr = async (id) => {
+    if (!window.confirm('Delete this AVLR?')) return;
+    setAvlrStatus('Deleting...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/avlr/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (res.ok) {
+        setAvlrStatus('Deleted!');
+        fetchAvlrs();
+      } else {
+        setAvlrStatus('Failed to delete');
+      }
+    } catch {
+      setAvlrStatus('Failed to delete');
+    }
+  };
+
+  const fetchDlrs = () => {
+    setDlrsLoading(true);
+    fetch(`${BASE_API_URL}/dlrs`)
+      .then(res => res.json())
+      .then(data => {
+        setDlrs(data.dlrs || []);
+        setDlrsLoading(false);
+      })
+      .catch(() => {
+        setDlrs([]);
+        setDlrsLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    if (selectedMenu === "dlrs") fetchDlrs();
+  }, [selectedMenu]);
+
+  const handleDlrFileChange = e => {
+    setDlrForm(f => ({ ...f, pdfs: Array.from(e.target.files) }));
+  };
+
+  const handleAddDlr = async (e) => {
+    e.preventDefault();
+    setDlrStatus('Adding...');
+    const formData = new FormData();
+    formData.append('class', dlrForm.class);
+    formData.append('subject', dlrForm.subject);
+    formData.append('chapter', dlrForm.chapter);
+    dlrForm.pdfs.forEach(pdf => formData.append('pdfs', pdf));
+    try {
+      const res = await fetch(`${BASE_API_URL}/dlr`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDlrStatus('DLR added!');
+        setDlrForm({ class: '', subject: '', chapter: '', pdfs: [] });
+        fetchDlrs();
+      } else {
+        setDlrStatus(data.message || 'Failed to add');
+      }
+    } catch {
+      setDlrStatus('Failed to add');
+    }
+  };
+
+  const handleEditDlr = (dlr) => {
+    setEditDlr(dlr);
+    setDlrForm({ class: dlr.class, subject: dlr.subject, chapter: dlr.chapter, pdfs: [] });
+  };
+
+  const handleUpdateDlr = async (e) => {
+    e.preventDefault();
+    if (!editDlr) return;
+    setDlrStatus('Updating...');
+    const formData = new FormData();
+    formData.append('class', dlrForm.class);
+    formData.append('subject', dlrForm.subject);
+    formData.append('chapter', dlrForm.chapter);
+    dlrForm.pdfs.forEach(pdf => formData.append('pdfs', pdf));
+    try {
+      const res = await fetch(`${BASE_API_URL}/dlr/${editDlr._id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDlrStatus('DLR updated!');
+        setEditDlr(null);
+        setDlrForm({ class: '', subject: '', chapter: '', pdfs: [] });
+        fetchDlrs();
+      } else {
+        setDlrStatus(data.message || 'Failed to update');
+      }
+    } catch {
+      setDlrStatus('Failed to update');
+    }
+  };
+
+  const handleDeleteDlr = async (id) => {
+    if (!window.confirm('Delete this DLR?')) return;
+    setDlrStatus('Deleting...');
+    try {
+      const res = await fetch(`${BASE_API_URL}/dlr/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` }
+      });
+      if (res.ok) {
+        setDlrStatus('Deleted!');
+        fetchDlrs();
+      } else {
+        setDlrStatus('Failed to delete');
+      }
+    } catch {
+      setDlrStatus('Failed to delete');
+    }
   };
 
   return (
@@ -1256,6 +1855,32 @@ function AdminDashboard() {
               </div>
             )}
             <button onClick={() => setShowViewAdmins(false)} style={{ marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}>Close</button>
+            {admins.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 80 }}>
+                <div className="spinner" style={{ width: 40, height: 40, border: '5px solid #eee', borderTop: '5px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
+                <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
+                  {admins.filter(a => a.isSuperAdmin).map(a => (
+                    <li key={a._id} style={{ marginBottom: 2 }}>
+                      {a.email}
+                    </li>
+                  ))}
+                </ul>
+                <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                  {admins.filter(a => !a.isSuperAdmin).map(a => (
+                    <li key={a._id} style={{ marginBottom: 2 }}>
+                      {a.email}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button onClick={() => setShowViewAdmins(false)} style={{ marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}>Close</button>
           </div>
         </div>
       )}
@@ -1316,6 +1941,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   const [showEdit, setShowEdit] = useState(false);
   const [editAnnouncement, setEditAnnouncement] = useState(null);
   const [form, setForm] = useState({ text: '', images: [], announcementFor: '' });
+  const [form, setForm] = useState({ text: '', images: [], announcementFor: '' });
   const [status, setStatus] = useState('');
   const [preview, setPreview] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -1328,6 +1954,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   // Add this line to define selectedClasses state inside AnnouncementsSection
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [editClasses, setEditClasses] = useState(""); // <-- for editing classes
+  const [editAnnouncementFor, setEditAnnouncementFor] = useState(""); // <-- for editing announcementFor
   const [editAnnouncementFor, setEditAnnouncementFor] = useState(""); // <-- for editing announcementFor
 
   // Fetch announcements
@@ -1385,14 +2012,34 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
       // Only send classes if ONLY Student is selected
       const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
       if (isOnlyStudent) {
+        
+      // Parse and send announcementFor as array
+      let announcementForArr = form.announcementFor;
+      if (typeof announcementForArr === "string") {
+        announcementForArr = announcementForArr.split(",").map(item => item.trim()).filter(Boolean);
+      }
+      if (Array.isArray(announcementForArr)) {
+        announcementForArr.forEach(item => formData.append('announcementFor[]', item));
+      }
+      
+      // Only send classes if ONLY Student is selected
+      const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
+      if (isOnlyStudent) {
         // Accept comma-separated classes as well as array
-        let classesArr = selectedClasses;
-        if (typeof classesArr === "string") {
-          classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+          let classesArr = selectedClasses;
+          if (typeof classesArr === "string") {
+            classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+          }
+          if (Array.isArray(classesArr)) {
+            classesArr.forEach(cls => formData.append('classes[]', cls));
+          }
+      } else {
+        // If Student is selected with others, send empty classes array (all students)
+        if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
+          formData.append('classes[]', ''); // Empty array for all students
         }
-        if (Array.isArray(classesArr)) {
-          classesArr.forEach(cls => formData.append('classes[]', cls));
-        }
+      }
+      
       } else {
         // If Student is selected with others, send empty classes array (all students)
         if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
@@ -1584,123 +2231,111 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
           + Create Announcement
         </button>
       )}
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
-          <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
-        </div>
-      ) : (
+      {loading ? <div>Loading...</div> : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {(
-            isSuperAdmin
-              ? announcements
-              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
-          ).length === 0 && <div>No announcements yet.</div>}
-          {(
-            isSuperAdmin
-              ? announcements
-              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
-          ).map(a => {
-            const dateObj = new Date(a.createdAt);
-            const day = dateObj.toLocaleString('en-US', { day: '2-digit' });
-            const month = dateObj.toLocaleString('en-US', { month: 'short' });
-            const year = dateObj.getFullYear();
-            const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            return (
-              <div key={a._id} style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                background: 'linear-gradient(90deg, #f0f4ff 0%, #e8eafc 100%)', // subtle fading color
-                borderRadius: 12,
-                padding: '20px 32px',
-                marginBottom: 18,
-                boxShadow: 'none',
-                border: 'none',
-                gap: 24,
-                minHeight: 70,
-                width: '100%',
-                maxWidth: 'none',
-              }}>
-                {/* Date column */}
+          {announcements.length === 0 && <div>No announcements yet.</div>}
+          {announcements.map(a => (
+            <div key={a._id} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(30,60,114,0.08)', padding: 24, position: 'relative', marginBottom: 8 }}>
+              {isSuperAdmin && (
+                <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
+                  <button onClick={() => handleEdit(a)} style={{ background: '#f7ca18', color: '#222', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
+                  <button onClick={() => setDeleteConfirmId(a._id)} style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+                </div>
+              )}
+              <div style={{ fontSize: 17, color: '#222', marginBottom: 12, whiteSpace: 'pre-line' }}>{a.text}</div>
+              {/* Show all images/pdfs in the announcement */}
+              {a.images && a.images.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+                  {a.images.map((img, idx) => (
+                    <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                      {img.fileType === "pdf" ? (
+                        <div
+                          style={{ cursor: "pointer", position: "relative", display: "inline-block" }}
+                          onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "pdf" })}
+                        >
+                          <iframe
+                            src={img.url}
+                            title={`Announcement PDF ${idx + 1}`}
+                            style={{ width: 180, height: 120, border: "1px solid #e0e0e0", borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
+                          />
+                          <div style={{
+                            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+                            background: "rgba(255,255,255,0.01)", borderRadius: 8
+                          }} />
+                          <div style={{
+                            position: "absolute", bottom: 6, left: 6, background: "#fff", borderRadius: 4, padding: "2px 6px", fontSize: 13, color: "#c0392b", fontWeight: 700, boxShadow: "0 1px 4px rgba(30,60,114,0.08)"
+                          }}>
+                            PDF
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          src={img.url}
+                          alt="Announcement"
+                          style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: '0 2px 8px rgba(30,60,114,0.10)', cursor: "pointer" }}
+                          onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "image" })}
+                        />
+                      )}
+                      {isSuperAdmin && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImageClick(a._id, idx)}
+                            style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}
+                            title="Remove file"
+                            disabled={removingImage.loading && removingImage.announcementId === a._id && removingImage.imageIndex === idx}
+                          >×</button>
+                          {removingImage.announcementId === a._id && removingImage.imageIndex === idx && (
+                            <div style={{ position: 'absolute', top: 30, right: 0, background: '#fff', border: '1px solid #c0392b', borderRadius: 6, padding: '8px 12px', zIndex: 10, boxShadow: '0 2px 8px rgba(192,57,43,0.10)', minWidth: 160 }}>
+                              <div style={{ color: '#c0392b', fontWeight: 600, marginBottom: 8 }}>Remove this {img.fileType === "pdf" ? "PDF" : "image"}?</div>
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmRemoveImage(a._id, idx)}
+                                style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 600, marginRight: 8, cursor: 'pointer' }}
+                                disabled={removingImage.loading}
+                              >{removingImage.loading ? 'Removing...' : 'Yes'}</button>
+                              <button
+                                type="button"
+                                onClick={handleCancelRemoveImage}
+                                style={{ background: '#eee', color: '#1e3c72', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }}
+                                disabled={removingImage.loading}
+                              >Cancel</button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div style={{ fontSize: 13, color: '#888', marginTop: 8 }}>By: {a.createdBy} | {new Date(a.createdAt).toLocaleString()}</div>
+              {/* Delete confirmation popup below the announcement */}
+              {deleteConfirmId === a._id && (
                 <div style={{
-                  minWidth: 60,
-                  textAlign: 'right',
-                  color: '#b0b0b0',
-                  fontWeight: 500,
-                  fontSize: 15,
-                  lineHeight: 1.2,
-                  marginTop: 2
+                  position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 8,
+                  background: '#fff', border: '1.5px solid #c0392b', borderRadius: 10, boxShadow: '0 4px 24px rgba(192,57,43,0.10)',
+                  padding: 24, zIndex: 10, textAlign: 'center',
                 }}>
-                  <div>{day}</div>
-                  <div>{month}</div>
-                  <div>{year !== new Date().getFullYear() ? year : time}</div>
-                </div>
-                {/* Announcement content */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                  {/* Edit/Delete modern buttons for admin */}
-                  {isSuperAdmin && (
-                    <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 10 }}>
-                      <button
-                        onClick={() => handleEdit(a)}
-                        style={{
-                          background: '#f7ca18',
-                          color: '#232946',
-                          border: 'none',
-                          borderRadius: 50,
-                          padding: '8px 16px',
-                          fontWeight: 700,
-                          fontSize: 16,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          boxShadow: '0 2px 8px rgba(153, 53, 176, 0.1)',
-                          cursor: 'pointer',
-                          transition: 'background 0.18s, color 0.18s',
-                        }}
-                        onMouseOver={e => e.currentTarget.style.background = '#ffe066'}
-                        onMouseOut={e => e.currentTarget.style.background = '#f7ca18'}
-                      >
-                        <FaCog style={{ fontSize: 18 }} /> Edit
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(a._id)}
-                        style={{
-                          background: '#c0392b',
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: 50,
-                          padding: '8px 16px',
-                          fontWeight: 700,
-                          fontSize: 16,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          boxShadow: '0 2px 8px rgba(192,57,43,0.10)',
-                          cursor: 'pointer',
-                          transition: 'background 0.18s, color 0.18s',
-                        }}
-                        onMouseOver={e => e.currentTarget.style.background = '#e74c3c'}
-                        onMouseOut={e => e.currentTarget.style.background = '#c0392b'}
-                      >
-                        <FaTimes style={{ fontSize: 18 }} /> Delete
-                      </button>
-                    </div>
-                  )}
-                  <div style={{ color: '#222', fontSize: 17, fontWeight: 400, lineHeight: 1.5, whiteSpace: 'pre-line', marginRight: isSuperAdmin ? 120 : 0 }}>
-                    {a.text || ''}
+                  <div style={{ fontWeight: 600, fontSize: 16, color: '#c0392b', marginBottom: 12 }}>
+                    Are you sure you want to delete this announcement?
                   </div>
-                  {/* Images or files if any */}
-                  {a.images && a.images.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
-                      {a.images.map((img, idx) => (
-                        <img key={idx} src={img.url} alt="Announcement" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
-                      ))}
-                    </div>
-                  )}
+                  <button
+                    onClick={() => handleDelete(a._id)}
+                    style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer', marginRight: 12 }}
+                  >
+                    Yes, Delete
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirmId(null)}
+                    style={{ background: '#eee', color: '#1e3c72', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  {status && <div style={{ marginTop: 10, color: status.includes('Deleted') ? '#28a745' : '#c0392b' }}>{status}</div>}
                 </div>
-              </div>
-            );
-          })}
+              )}
+            </div>
+          ))}
         </div>
       )}
       {/* Preview Modal for image/pdf */}
@@ -1728,7 +2363,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
               aria-label="Close"
             >×</button>
             {previewModal.fileType === "pdf" ? (
-              <PDFWithLoader url={previewModal.url} />
+              <PDFWithLoader url={previewModal.url} fullscreen={true} />
             ) : (
              
               <img
@@ -1878,10 +2513,10 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
 }
 
 // Add this helper component at the bottom of the file (outside any function/component):
-function PDFWithLoader({ url }) {
+function PDFWithLoader({ url, fullscreen }) {
   const [loading, setLoading] = useState(true);
   return (
-    <div style={{ position: "relative", width: "70vw", height: "80vh" }}>
+    <div style={{ position: "relative", width: fullscreen ? "100vw" : "70vw", height: fullscreen ? "100vh" : "80vh" }}>
       {loading && (
         <div style={{
           position: "absolute", left: 0, top: 0, width: "100%", height: "100%",
@@ -1906,7 +2541,7 @@ function PDFWithLoader({ url }) {
       <iframe
         src={url}
         title="PDF Preview"
-        style={{ width: "100%", height: "100%", border: "none", borderRadius: 8, background: "#fff" }}
+        style={{ width: "100%", height: "100%", border: "none", borderRadius: fullscreen ? 0 : 8, background: "#fff" }}
         onLoad={() => setLoading(false)}
       />
     </div>
