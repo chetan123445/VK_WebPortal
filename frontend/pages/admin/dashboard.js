@@ -4,6 +4,7 @@ import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { BASE_API_URL } from '../apiurl.js';
 import { getUserData, getToken, isAuthenticated, isTokenExpired, logout } from "../../utils/auth.js";
+import AVLR from '../../components/AVLR/AVLR';
 
 function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSuperAdmin, setShowAddAdmin, setShowRemoveAdmin, setShowViewAdmins }) {
   const menuItems = [
@@ -16,10 +17,12 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
     { key: "manage-books", label: "Manage Books", icon: <FaBook style={{ fontSize: 18 }} /> },
     { key: "records", label: "Records", icon: <FaRegListAlt style={{ fontSize: 18 }} /> },
     { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
-    { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> }, // <-- Added
+    { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
+    { key: "mindmap", label: "Mind Map", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
     { key: "reports", label: "Reports", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "settings", label: "Settings", icon: <FaCog style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
+    { key: "avlr", label: "AVLR", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
   ];
   return (
     <aside style={{
@@ -77,7 +80,7 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
           style={{
             margin: "32px auto 0 auto",
             width: "80%",
-            background: "#ff0080",
+            background: "rgb(98, 106, 169)",
             color: "#fff",
             border: "none",
             borderRadius: 8,
@@ -314,10 +317,11 @@ function AdminDashboard() {
 
   const handleEdit = (announcement) => {
     setEditAnnouncement(announcement);
-    setForm({ text: announcement.text, images: [] });
+    setForm({ text: announcement.text, images: [], announcementFor: announcement.announcementFor || '' });
     setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
     setRemovedImages([]);
     setEditClasses(Array.isArray(announcement.classes) ? announcement.classes.join(",") : ""); // <-- prefill classes
+    setEditAnnouncementFor(Array.isArray(announcement.announcementFor) ? announcement.announcementFor.join(",") : ""); // <-- prefill announcementFor
     setShowEdit(true);
     setStatus('');
   };
@@ -453,8 +457,8 @@ function AdminDashboard() {
       // Show previews for new images
       const filePreviews = Array.from(files).map(file => URL.createObjectURL(file));
       setPreview(prev => Array.isArray(prev) ? [...prev, ...filePreviews] : filePreviews);
-    } else if (name === 'text') {
-      setForm(f => ({ ...f, text: value }));
+    } else if (name === 'text' || name === 'announcementFor') {
+      setForm(f => ({ ...f, [name]: value }));
     }
   };
 
@@ -464,14 +468,34 @@ function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
-      // Handle classes update
-      let classesArr = editClasses;
-      if (typeof classesArr === "string") {
-        classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+      
+      // Parse and send announcementFor as array
+      let announcementForArr = editAnnouncementFor;
+      if (typeof announcementForArr === "string") {
+        announcementForArr = announcementForArr.split(",").map(item => item.trim()).filter(Boolean);
       }
-      if (Array.isArray(classesArr)) {
-        classesArr.forEach(cls => formData.append('classes[]', cls));
+      if (Array.isArray(announcementForArr)) {
+        announcementForArr.forEach(item => formData.append('announcementFor[]', item));
       }
+      
+      // Only send classes if ONLY Student is selected
+      const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
+      if (isOnlyStudent) {
+        // Handle classes update
+        let classesArr = editClasses;
+        if (typeof classesArr === "string") {
+          classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+        }
+        if (Array.isArray(classesArr)) {
+          classesArr.forEach(cls => formData.append('classes[]', cls));
+        }
+      } else {
+        // If Student is selected with others, send empty classes array (all students)
+        if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
+          formData.append('classes[]', ''); // Empty array for all students
+        }
+      }
+      
       if (form.images && form.images.length > 0) {
         for (let i = 0; i < form.images.length; i++) {
           formData.append('images', form.images[i]);
@@ -490,8 +514,9 @@ function AdminDashboard() {
         setStatus('Announcement updated!');
         setShowEdit(false);
         setEditAnnouncement(null);
-        setForm({ text: '', images: [] });
+        setForm({ text: '', images: [], announcementFor: '' });
         setEditClasses("");
+        setEditAnnouncementFor("");
         // Update the announcement in the state
         setAnnouncements(prev => prev.map(a => a._id === data.announcement._id ? data.announcement : a));
       } else {
@@ -1026,6 +1051,23 @@ function AdminDashboard() {
         </div>
       );
     }
+    if (selectedMenu === "mindmap") {
+      return (
+        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 32, marginBottom: 28, color: "#1e3c72", letterSpacing: 1, textAlign: "center" }}>
+            <FaBookOpen style={{ marginRight: 12, color: "#1e3c72", fontSize: 28, verticalAlign: "middle" }} />
+            Mind Maps
+          </h2>
+          {/* Mind Map management UI will go here */}
+          <div style={{ textAlign: "center", color: "#888", fontSize: 18, marginTop: 40 }}>
+            Mind Map management coming soon.
+          </div>
+        </div>
+      );
+    }
+    if (selectedMenu === "avlr") {
+      return <AVLR isAdmin={true} token={getToken()} />;
+    }
     // Main content for other menu items
     return (
       <div style={{
@@ -1188,30 +1230,32 @@ function AdminDashboard() {
             background: "#fff", color: "#222", borderRadius: 12, padding: 32, minWidth: 320, boxShadow: "0 4px 24px rgba(0,0,0,0.18)"
           }}>
             <h2 style={{ marginBottom: 18 }}>Current Admins</h2>
-            {/* Show superadmins first, then admins, with emails listed below each */}
-            <div>
-              <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
-              <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
-                {admins.filter(a => a.isSuperAdmin).map(a => (
-                  <li key={a._id} style={{ marginBottom: 2 }}>
-                    {a.email}
-                  </li>
-                ))}
-              </ul>
-              <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
-              <ul style={{ listStyle: "none", padding: 0 }}>
-                {admins.filter(a => !a.isSuperAdmin).map(a => (
-                  <li key={a._id} style={{ marginBottom: 2 }}>
-                    {a.email}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <button onClick={() => setShowViewAdmins(false)} style={{
-              marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer"
-            }}>
-              Close
-            </button>
+            {admins.length === 0 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 80 }}>
+                <div className="spinner" style={{ width: 40, height: 40, border: '5px solid #eee', borderTop: '5px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
+                <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
+                  {admins.filter(a => a.isSuperAdmin).map(a => (
+                    <li key={a._id} style={{ marginBottom: 2 }}>
+                      {a.email}
+                    </li>
+                  ))}
+                </ul>
+                <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
+                <ul style={{ listStyle: "none", padding: 0 }}>
+                  {admins.filter(a => !a.isSuperAdmin).map(a => (
+                    <li key={a._id} style={{ marginBottom: 2 }}>
+                      {a.email}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <button onClick={() => setShowViewAdmins(false)} style={{ marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}>Close</button>
           </div>
         </div>
       )}
@@ -1271,7 +1315,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [editAnnouncement, setEditAnnouncement] = useState(null);
-  const [form, setForm] = useState({ text: '', images: [] });
+  const [form, setForm] = useState({ text: '', images: [], announcementFor: '' });
   const [status, setStatus] = useState('');
   const [preview, setPreview] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -1284,6 +1328,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   // Add this line to define selectedClasses state inside AnnouncementsSection
   const [selectedClasses, setSelectedClasses] = useState([]);
   const [editClasses, setEditClasses] = useState(""); // <-- for editing classes
+  const [editAnnouncementFor, setEditAnnouncementFor] = useState(""); // <-- for editing announcementFor
 
   // Fetch announcements
   const fetchAnnouncements = useCallback(() => {
@@ -1327,14 +1372,34 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
-      // Accept comma-separated classes as well as array
-      let classesArr = selectedClasses;
-      if (typeof classesArr === "string") {
-        classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+      
+      // Parse and send announcementFor as array
+      let announcementForArr = form.announcementFor;
+      if (typeof announcementForArr === "string") {
+        announcementForArr = announcementForArr.split(",").map(item => item.trim()).filter(Boolean);
       }
-      if (Array.isArray(classesArr)) {
-        classesArr.forEach(cls => formData.append('classes[]', cls));
+      if (Array.isArray(announcementForArr)) {
+        announcementForArr.forEach(item => formData.append('announcementFor[]', item));
       }
+      
+      // Only send classes if ONLY Student is selected
+      const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
+      if (isOnlyStudent) {
+        // Accept comma-separated classes as well as array
+        let classesArr = selectedClasses;
+        if (typeof classesArr === "string") {
+          classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+        }
+        if (Array.isArray(classesArr)) {
+          classesArr.forEach(cls => formData.append('classes[]', cls));
+        }
+      } else {
+        // If Student is selected with others, send empty classes array (all students)
+        if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
+          formData.append('classes[]', ''); // Empty array for all students
+        }
+      }
+      
       if (form.images && form.images.length > 0) {
         for (let i = 0; i < form.images.length; i++) {
           formData.append('images', form.images[i]);
@@ -1349,7 +1414,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
       const data = await res.json();
       if (res.ok) {
         setStatus('Announcement created!');
-        setForm({ text: '', images: [] });
+        setForm({ text: '', images: [], announcementFor: '' });
         setSelectedClasses([]);
         setShowCreate(false);
         setAnnouncements(prev => [data.announcement, ...prev]);
@@ -1364,10 +1429,11 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   // Edit announcement
   const handleEdit = (announcement) => {
     setEditAnnouncement(announcement);
-    setForm({ text: announcement.text, images: [] });
+    setForm({ text: announcement.text, images: [], announcementFor: announcement.announcementFor || '' });
     setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
     setRemovedImages([]);
     setEditClasses(Array.isArray(announcement.classes) ? announcement.classes.join(",") : ""); // <-- prefill classes
+    setEditAnnouncementFor(Array.isArray(announcement.announcementFor) ? announcement.announcementFor.join(",") : ""); // <-- prefill announcementFor
     setShowEdit(true);
     setStatus('');
   };
@@ -1379,14 +1445,34 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
-      // Handle classes update
-      let classesArr = editClasses;
-      if (typeof classesArr === "string") {
-        classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+      
+      // Parse and send announcementFor as array
+      let announcementForArr = editAnnouncementFor;
+      if (typeof announcementForArr === "string") {
+        announcementForArr = announcementForArr.split(",").map(item => item.trim()).filter(Boolean);
       }
-      if (Array.isArray(classesArr)) {
-        classesArr.forEach(cls => formData.append('classes[]', cls));
+      if (Array.isArray(announcementForArr)) {
+        announcementForArr.forEach(item => formData.append('announcementFor[]', item));
       }
+      
+      // Only send classes if ONLY Student is selected
+      const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
+      if (isOnlyStudent) {
+        // Handle classes update
+        let classesArr = editClasses;
+        if (typeof classesArr === "string") {
+          classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
+        }
+        if (Array.isArray(classesArr)) {
+          classesArr.forEach(cls => formData.append('classes[]', cls));
+        }
+      } else {
+        // If Student is selected with others, send empty classes array (all students)
+        if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
+          formData.append('classes[]', ''); // Empty array for all students
+        }
+      }
+      
       if (form.images && form.images.length > 0) {
         for (let i = 0; i < form.images.length; i++) {
           formData.append('images', form.images[i]);
@@ -1405,8 +1491,9 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
         setStatus('Announcement updated!');
         setShowEdit(false);
         setEditAnnouncement(null);
-        setForm({ text: '', images: [] });
+        setForm({ text: '', images: [], announcementFor: '' });
         setEditClasses("");
+        setEditAnnouncementFor("");
         // Update the announcement in the state
         setAnnouncements(prev => prev.map(a => a._id === data.announcement._id ? data.announcement : a));
       } else {
@@ -1445,8 +1532,8 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     if (name === 'images' && files) {
       setForm(f => ({ ...f, images: Array.from(files) }));
       // Previews handled in useEffect
-    } else if (name === 'text') {
-      setForm(f => ({ ...f, text: value }));
+    } else if (name === 'text' || name === 'announcementFor') {
+      setForm(f => ({ ...f, [name]: value }));
     }
   };
 
@@ -1492,116 +1579,128 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
     <div style={{ padding: 48, maxWidth: 700, margin: '0 auto' }}>
       <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: '#1e3c72' }}>Announcements</h2>
       {isSuperAdmin && (
-        <button onClick={() => { setShowCreate(true); setForm({ text: '', images: [] }); setPreview(''); setStatus(''); }}
+        <button onClick={() => { setShowCreate(true); setForm({ text: '', images: [], announcementFor: '' }); setPreview(''); setStatus(''); }}
           style={{ marginBottom: 24, background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 28px', fontWeight: 600, fontSize: 16, cursor: 'pointer' }}>
           + Create Announcement
         </button>
       )}
-      {loading ? <div>Loading...</div> : (
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+          <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+        </div>
+      ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {announcements.length === 0 && <div>No announcements yet.</div>}
-          {announcements.map(a => (
-            <div key={a._id} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(30,60,114,0.08)', padding: 24, position: 'relative', marginBottom: 8 }}>
-              {isSuperAdmin && (
-                <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
-                  <button onClick={() => handleEdit(a)} style={{ background: '#f7ca18', color: '#222', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>
-                  <button onClick={() => setDeleteConfirmId(a._id)} style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }}>Delete</button>
-                </div>
-              )}
-              <div style={{ fontSize: 17, color: '#222', marginBottom: 12, whiteSpace: 'pre-line' }}>{a.text}</div>
-              {/* Show all images/pdfs in the announcement */}
-              {a.images && a.images.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-                  {a.images.map((img, idx) => (
-                    <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
-                      {img.fileType === "pdf" ? (
-                        <div
-                          style={{ cursor: "pointer", position: "relative", display: "inline-block" }}
-                          onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "pdf" })}
-                        >
-                          <iframe
-                            src={img.url}
-                            title={`Announcement PDF ${idx + 1}`}
-                            style={{ width: 180, height: 120, border: "1px solid #e0e0e0", borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
-                          />
-                          <div style={{
-                            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-                            background: "rgba(255,255,255,0.01)", borderRadius: 8
-                          }} />
-                          <div style={{
-                            position: "absolute", bottom: 6, left: 6, background: "#fff", borderRadius: 4, padding: "2px 6px", fontSize: 13, color: "#c0392b", fontWeight: 700, boxShadow: "0 1px 4px rgba(30,60,114,0.08)"
-                          }}>
-                            PDF
-                          </div>
-                        </div>
-                      ) : (
-                        <img
-                          src={img.url}
-                          alt="Announcement"
-                          style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: '0 2px 8px rgba(30,60,114,0.10)', cursor: "pointer" }}
-                          onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "image" })}
-                        />
-                      )}
-                      {isSuperAdmin && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveImageClick(a._id, idx)}
-                            style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}
-                            title="Remove file"
-                            disabled={removingImage.loading && removingImage.announcementId === a._id && removingImage.imageIndex === idx}
-                          >×</button>
-                          {removingImage.announcementId === a._id && removingImage.imageIndex === idx && (
-                            <div style={{ position: 'absolute', top: 30, right: 0, background: '#fff', border: '1px solid #c0392b', borderRadius: 6, padding: '8px 12px', zIndex: 10, boxShadow: '0 2px 8px rgba(192,57,43,0.10)', minWidth: 160 }}>
-                              <div style={{ color: '#c0392b', fontWeight: 600, marginBottom: 8 }}>Remove this {img.fileType === "pdf" ? "PDF" : "image"}?</div>
-                              <button
-                                type="button"
-                                onClick={() => handleConfirmRemoveImage(a._id, idx)}
-                                style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 600, marginRight: 8, cursor: 'pointer' }}
-                                disabled={removingImage.loading}
-                              >{removingImage.loading ? 'Removing...' : 'Yes'}</button>
-                              <button
-                                type="button"
-                                onClick={handleCancelRemoveImage}
-                                style={{ background: '#eee', color: '#1e3c72', border: 'none', borderRadius: 6, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }}
-                                disabled={removingImage.loading}
-                              >Cancel</button>
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div style={{ fontSize: 13, color: '#888', marginTop: 8 }}>By: {a.createdBy} | {new Date(a.createdAt).toLocaleString()}</div>
-              {/* Delete confirmation popup below the announcement */}
-              {deleteConfirmId === a._id && (
+          {(
+            isSuperAdmin
+              ? announcements
+              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
+          ).length === 0 && <div>No announcements yet.</div>}
+          {(
+            isSuperAdmin
+              ? announcements
+              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
+          ).map(a => {
+            const dateObj = new Date(a.createdAt);
+            const day = dateObj.toLocaleString('en-US', { day: '2-digit' });
+            const month = dateObj.toLocaleString('en-US', { month: 'short' });
+            const year = dateObj.getFullYear();
+            const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return (
+              <div key={a._id} style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                background: 'linear-gradient(90deg, #f0f4ff 0%, #e8eafc 100%)', // subtle fading color
+                borderRadius: 12,
+                padding: '20px 32px',
+                marginBottom: 18,
+                boxShadow: 'none',
+                border: 'none',
+                gap: 24,
+                minHeight: 70,
+                width: '100%',
+                maxWidth: 'none',
+              }}>
+                {/* Date column */}
                 <div style={{
-                  position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 8,
-                  background: '#fff', border: '1.5px solid #c0392b', borderRadius: 10, boxShadow: '0 4px 24px rgba(192,57,43,0.10)',
-                  padding: 24, zIndex: 10, textAlign: 'center',
+                  minWidth: 60,
+                  textAlign: 'right',
+                  color: '#b0b0b0',
+                  fontWeight: 500,
+                  fontSize: 15,
+                  lineHeight: 1.2,
+                  marginTop: 2
                 }}>
-                  <div style={{ fontWeight: 600, fontSize: 16, color: '#c0392b', marginBottom: 12 }}>
-                    Are you sure you want to delete this announcement?
-                  </div>
-                  <button
-                    onClick={() => handleDelete(a._id)}
-                    style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer', marginRight: 12 }}
-                  >
-                    Yes, Delete
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirmId(null)}
-                    style={{ background: '#eee', color: '#1e3c72', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                  {status && <div style={{ marginTop: 10, color: status.includes('Deleted') ? '#28a745' : '#c0392b' }}>{status}</div>}
+                  <div>{day}</div>
+                  <div>{month}</div>
+                  <div>{year !== new Date().getFullYear() ? year : time}</div>
                 </div>
-              )}
-            </div>
-          ))}
+                {/* Announcement content */}
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                  {/* Edit/Delete modern buttons for admin */}
+                  {isSuperAdmin && (
+                    <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: 10 }}>
+                      <button
+                        onClick={() => handleEdit(a)}
+                        style={{
+                          background: '#f7ca18',
+                          color: '#232946',
+                          border: 'none',
+                          borderRadius: 50,
+                          padding: '8px 16px',
+                          fontWeight: 700,
+                          fontSize: 16,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          boxShadow: '0 2px 8px rgba(153, 53, 176, 0.1)',
+                          cursor: 'pointer',
+                          transition: 'background 0.18s, color 0.18s',
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = '#ffe066'}
+                        onMouseOut={e => e.currentTarget.style.background = '#f7ca18'}
+                      >
+                        <FaCog style={{ fontSize: 18 }} /> Edit
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmId(a._id)}
+                        style={{
+                          background: '#c0392b',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 50,
+                          padding: '8px 16px',
+                          fontWeight: 700,
+                          fontSize: 16,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          boxShadow: '0 2px 8px rgba(192,57,43,0.10)',
+                          cursor: 'pointer',
+                          transition: 'background 0.18s, color 0.18s',
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = '#e74c3c'}
+                        onMouseOut={e => e.currentTarget.style.background = '#c0392b'}
+                      >
+                        <FaTimes style={{ fontSize: 18 }} /> Delete
+                      </button>
+                    </div>
+                  )}
+                  <div style={{ color: '#222', fontSize: 17, fontWeight: 400, lineHeight: 1.5, whiteSpace: 'pre-line', marginRight: isSuperAdmin ? 120 : 0 }}>
+                    {a.text || ''}
+                  </div>
+                  {/* Images or files if any */}
+                  {a.images && a.images.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+                      {a.images.map((img, idx) => (
+                        <img key={idx} src={img.url} alt="Announcement" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
       {/* Preview Modal for image/pdf */}
@@ -1648,22 +1747,43 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
             <h3 style={{ marginBottom: 18 }}>Create Announcement</h3>
             <form onSubmit={handleCreate}>
               <textarea name="text" value={form.text} onChange={handleFormChange} required rows={4} placeholder="Announcement text..." style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
-              {/* Classes input */}
+              
+              {/* Announcement For input */}
               <div style={{ marginBottom: 12, textAlign: "left" }}>
-                <label style={{ fontWeight: 600, color: "#1e3c72" }}>Classes (comma separated):</label>
+                <label style={{ fontWeight: 600, color: "#1e3c72" }}>Announcement For (comma separated):</label>
                 <input
                   type="text"
-                  value={typeof selectedClasses === "string" ? selectedClasses : selectedClasses.join(",")}
-                  onChange={e => {
-                    // Accept raw string, but also update as array for internal use
-                    setSelectedClasses(e.target.value);
-                  }}
-                  placeholder="e.g. 10,11,12"
+                  name="announcementFor"
+                  value={form.announcementFor}
+                  onChange={handleFormChange}
+                  placeholder="e.g. Student, Teacher, Parent, Admin, All"
                   style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginTop: 4 }}
                   required
                 />
-                <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Enter one or more classes separated by commas (e.g. 10,11,12)</div>
+                <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Enter target audience separated by commas (e.g. Student, Teacher, Parent, Admin, All)</div>
               </div>
+              
+              {/* Classes input - only show if ONLY Student is selected */}
+              {form.announcementFor && 
+               form.announcementFor.toLowerCase().split(',').map(item => item.trim()).filter(Boolean).length === 1 && 
+               form.announcementFor.toLowerCase().split(',').map(item => item.trim()).filter(Boolean)[0] === 'student' && (
+                <div style={{ marginBottom: 12, textAlign: "left" }}>
+                  <label style={{ fontWeight: 600, color: "#1e3c72" }}>Classes (comma separated):</label>
+                  <input
+                    type="text"
+                    value={typeof selectedClasses === "string" ? selectedClasses : selectedClasses.join(",")}
+                    onChange={e => {
+                      // Accept raw string, but also update as array for internal use
+                      setSelectedClasses(e.target.value);
+                    }}
+                    placeholder="e.g. 10,11,12"
+                    style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginTop: 4 }}
+                    required
+                  />
+                  <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Enter one or more classes separated by commas (e.g. 10,11,12)</div>
+                </div>
+              )}
+              
               <input type="file" name="images" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
               {/* Show previews for all selected files */}
               {Array.isArray(preview) && preview.length > 0 && (
@@ -1695,19 +1815,39 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
             <h3 style={{ marginBottom: 18 }}>Edit Announcement</h3>
             <form onSubmit={handleUpdate}>
               <textarea name="text" value={form.text} onChange={handleFormChange} required rows={4} placeholder="Announcement text..." style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
-              {/* Classes input for editing */}
+              
+              {/* Announcement For input for editing */}
               <div style={{ marginBottom: 12, textAlign: "left" }}>
-                <label style={{ fontWeight: 600, color: "#1e3c72" }}>Classes (comma separated):</label>
+                <label style={{ fontWeight: 600, color: "#1e3c72" }}>Announcement For (comma separated):</label>
                 <input
                   type="text"
-                  value={editClasses}
-                  onChange={e => setEditClasses(e.target.value)}
-                  placeholder="e.g. 10,11,12"
+                  value={editAnnouncementFor}
+                  onChange={e => setEditAnnouncementFor(e.target.value)}
+                  placeholder="e.g. Student, Teacher, Parent, Admin, All"
                   style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginTop: 4 }}
                   required
                 />
-                <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Edit, add, or remove classes separated by commas (e.g. 10,11,12)</div>
+                <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Edit, add, or remove target audience separated by commas (e.g. Student, Teacher, Parent, Admin, All)</div>
               </div>
+              
+              {/* Classes input for editing - only show if ONLY Student is selected */}
+              {editAnnouncementFor && 
+               editAnnouncementFor.toLowerCase().split(',').map(item => item.trim()).filter(Boolean).length === 1 && 
+               editAnnouncementFor.toLowerCase().split(',').map(item => item.trim()).filter(Boolean)[0] === 'student' && (
+                <div style={{ marginBottom: 12, textAlign: "left" }}>
+                  <label style={{ fontWeight: 600, color: "#1e3c72" }}>Classes (comma separated):</label>
+                  <input
+                    type="text"
+                    value={editClasses}
+                    onChange={e => setEditClasses(e.target.value)}
+                    placeholder="e.g. 10,11,12"
+                    style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginTop: 4 }}
+                    required
+                  />
+                  <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>Edit, add, or remove classes separated by commas (e.g. 10,11,12)</div>
+                </div>
+              )}
+              
               <input type="file" name="images" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple onChange={handleFormChange} style={{ marginBottom: 12 }} />
               {/* Show all preview images/pdfs with remove buttons */}
               {Array.isArray(preview) && preview.length > 0 && (

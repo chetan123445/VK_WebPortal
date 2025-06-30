@@ -19,7 +19,7 @@ function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
     { key: "messages", label: "Messages", icon: <FaEnvelope style={{ fontSize: 18 }} /> },
     { key: "resources", label: "Digital Resources", icon: <FaLaptop style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
-    { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> }
+    { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> },
   ];
   return (
     <aside style={{
@@ -78,7 +78,7 @@ function TeacherSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
           style={{
             margin: "32px auto 0 auto",
             width: "80%",
-            background: "#ff0080",
+            background: "rgb(98, 106, 169)",
             color: "#fff",
             border: "none",
             borderRadius: 8,
@@ -818,50 +818,58 @@ function TeacherDashboard() {
           {announcementsLoading ? <div>Loading...</div> : (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {announcements.length === 0 && <div>No announcements yet.</div>}
-              {announcements.map(a => (
-                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
-                  <div style={{ fontSize: 17, color: "#222", marginBottom: 12, whiteSpace: "pre-line" }}>{a.text}</div>
-                  {a.images && a.images.length > 0 && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>
-                      {a.images.map((img, idx) => (
-                        typeof img === "object" && img.url ? (
-                          img.fileType === "pdf" ? (
-                            <div
-                              key={idx}
-                              style={{ cursor: "pointer", position: "relative", display: "inline-block" }}
-                              onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "pdf" })}
-                            >
-                              <iframe
-                                src={img.url}
-                                title={`Announcement PDF ${idx + 1}`}
-                                style={{ width: 180, height: 120, border: "1px solid #e0e0e0", borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }}
-                              />
-                              <div style={{
-                                position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-                                background: "rgba(255,255,255,0.01)", borderRadius: 8
-                              }} />
-                            </div>
-                          ) : (
-                            <img
-                              key={idx}
-                              src={img.url}
-                              alt="Announcement"
-                              style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)", cursor: "pointer" }}
-                              onClick={() => setPreviewModal({ open: true, url: img.url, fileType: "image" })}
-                            />
-                          )
-                        ) : (
-                          // fallback for old data: just show as image
-                          <img key={idx} src={img} alt="Announcement" style={{ maxWidth: 180, maxHeight: 120, borderRadius: 8, boxShadow: "0 2px 8px rgba(30,60,114,0.10)" }} />
-                        )
-                      ))}
+              {announcements.map(a => {
+                const dateObj = new Date(a.createdAt);
+                const day = dateObj.toLocaleString('en-US', { day: '2-digit' });
+                const month = dateObj.toLocaleString('en-US', { month: 'short' });
+                const year = dateObj.getFullYear();
+                const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return (
+                  <div key={a._id} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    background: 'linear-gradient(90deg, #f0f4ff 0%, #e8eafc 100%)',
+                    borderRadius: 12,
+                    padding: '20px 32px',
+                    marginBottom: 18,
+                    boxShadow: 'none',
+                    border: 'none',
+                    gap: 24,
+                    minHeight: 70,
+                    width: '100%',
+                    maxWidth: 'none',
+                  }}>
+                    {/* Date column */}
+                    <div style={{
+                      minWidth: 60,
+                      textAlign: 'right',
+                      color: '#b0b0b0',
+                      fontWeight: 500,
+                      fontSize: 15,
+                      lineHeight: 1.2,
+                      marginTop: 2
+                    }}>
+                      <div>{day}</div>
+                      <div>{month}</div>
+                      <div>{year !== new Date().getFullYear() ? year : time}</div>
                     </div>
-                  )}
-                  <div style={{ fontSize: 13, color: "#888", marginTop: 8 }}>
-                    {new Date(a.createdAt).toLocaleString()}
+                    {/* Announcement content */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ color: '#222', fontSize: 17, fontWeight: 400, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                        {a.text || ''}
+                      </div>
+                      {/* Images or files if any */}
+                      {a.images && a.images.length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
+                          {a.images.map((img, idx) => (
+                            <img key={idx} src={img.url} alt="Announcement" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           {/* Preview Modal for image/pdf */}
