@@ -4,7 +4,6 @@ import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { BASE_API_URL } from '../apiurl.js';
 import { getUserData, getToken, isAuthenticated, isTokenExpired, logout } from "../../utils/auth.js";
-import AVLR from '../../components/AVLR/AVLR';
 
 function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSuperAdmin, setShowAddAdmin, setShowRemoveAdmin, setShowViewAdmins }) {
   const menuItems = [
@@ -81,7 +80,7 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
           style={{
             margin: "32px auto 0 auto",
             width: "80%",
-            background: "rgb(98, 106, 169)",
+            background: "#ff0080",
             color: "#fff",
             border: "none",
             borderRadius: 8,
@@ -426,11 +425,10 @@ function AdminDashboard() {
 
   const handleEdit = (announcement) => {
     setEditAnnouncement(announcement);
-    setForm({ text: announcement.text, images: [], announcementFor: announcement.announcementFor || '', announcementFor: announcement.announcementFor || '' });
+    setForm({ text: announcement.text, images: [], announcementFor: announcement.announcementFor || '' });
     setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
     setRemovedImages([]);
     setEditClasses(Array.isArray(announcement.classes) ? announcement.classes.join(",") : ""); // <-- prefill classes
-    setEditAnnouncementFor(Array.isArray(announcement.announcementFor) ? announcement.announcementFor.join(",") : ""); // <-- prefill announcementFor
     setEditAnnouncementFor(Array.isArray(announcement.announcementFor) ? announcement.announcementFor.join(",") : ""); // <-- prefill announcementFor
     setShowEdit(true);
     setStatus('');
@@ -569,8 +567,6 @@ function AdminDashboard() {
       setPreview(prev => Array.isArray(prev) ? [...prev, ...filePreviews] : filePreviews);
     } else if (name === 'text' || name === 'announcementFor') {
       setForm(f => ({ ...f, [name]: value }));
-    } else if (name === 'text' || name === 'announcementFor') {
-      setForm(f => ({ ...f, [name]: value }));
     }
   };
 
@@ -580,6 +576,7 @@ function AdminDashboard() {
     try {
       const formData = new FormData();
       formData.append('text', form.text);
+      
       // Parse and send announcementFor as array
       let announcementForArr = editAnnouncementFor;
       if (typeof announcementForArr === "string") {
@@ -607,8 +604,6 @@ function AdminDashboard() {
         }
       }
       
-    
-      
       if (form.images && form.images.length > 0) {
         for (let i = 0; i < form.images.length; i++) {
           formData.append('images', form.images[i]);
@@ -628,9 +623,7 @@ function AdminDashboard() {
         setShowEdit(false);
         setEditAnnouncement(null);
         setForm({ text: '', images: [], announcementFor: '' });
-        setForm({ text: '', images: [], announcementFor: '' });
         setEditClasses("");
-        setEditAnnouncementFor("");
         setEditAnnouncementFor("");
         // Update the announcement in the state
         setAnnouncements(prev => prev.map(a => a._id === data.announcement._id ? data.announcement : a));
@@ -1215,23 +1208,6 @@ function AdminDashboard() {
           )}
         </div>
       );
-    }
-    if (selectedMenu === "mindmap") {
-      return (
-        <div style={{ padding: 48, maxWidth: 800, margin: "0 auto" }}>
-          <h2 style={{ fontWeight: 700, fontSize: 32, marginBottom: 28, color: "#1e3c72", letterSpacing: 1, textAlign: "center" }}>
-            <FaBookOpen style={{ marginRight: 12, color: "#1e3c72", fontSize: 28, verticalAlign: "middle" }} />
-            Mind Maps
-          </h2>
-          {/* Mind Map management UI will go here */}
-          <div style={{ textAlign: "center", color: "#888", fontSize: 18, marginTop: 40 }}>
-            Mind Map management coming soon.
-          </div>
-        </div>
-      );
-    }
-    if (selectedMenu === "avlr") {
-      return <AVLR isAdmin={true} token={getToken()} />;
     }
     if (selectedMenu === "mindmap") {
       return (
@@ -1828,32 +1804,6 @@ function AdminDashboard() {
               </div>
             )}
             <button onClick={() => setShowViewAdmins(false)} style={{ marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}>Close</button>
-            {admins.length === 0 ? (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 80 }}>
-                <div className="spinner" style={{ width: 40, height: 40, border: '5px solid #eee', borderTop: '5px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
-              </div>
-            ) : (
-              <div>
-                <div style={{ fontWeight: 700, marginBottom: 8, color: "#ff0080" }}>Superadmins</div>
-                <ul style={{ listStyle: "none", padding: 0, marginBottom: 8 }}>
-                  {admins.filter(a => a.isSuperAdmin).map(a => (
-                    <li key={a._id} style={{ marginBottom: 2 }}>
-                      {a.email}
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ fontWeight: 700, margin: "18px 0 8px 0", color: "#1e3c72" }}>Admins</div>
-                <ul style={{ listStyle: "none", padding: 0 }}>
-                  {admins.filter(a => !a.isSuperAdmin).map(a => (
-                    <li key={a._id} style={{ marginBottom: 2 }}>
-                      {a.email}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <button onClick={() => setShowViewAdmins(false)} style={{ marginTop: 18, background: "#bbb", color: "#222", border: "none", borderRadius: 6, padding: "8px 18px", fontWeight: 600, cursor: "pointer" }}>Close</button>
           </div>
         </div>
       )}
@@ -1983,34 +1933,14 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
       // Only send classes if ONLY Student is selected
       const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
       if (isOnlyStudent) {
-        
-      // Parse and send announcementFor as array
-      let announcementForArr = form.announcementFor;
-      if (typeof announcementForArr === "string") {
-        announcementForArr = announcementForArr.split(",").map(item => item.trim()).filter(Boolean);
-      }
-      if (Array.isArray(announcementForArr)) {
-        announcementForArr.forEach(item => formData.append('announcementFor[]', item));
-      }
-      
-      // Only send classes if ONLY Student is selected
-      const isOnlyStudent = announcementForArr.length === 1 && announcementForArr[0].toLowerCase() === 'student';
-      if (isOnlyStudent) {
         // Accept comma-separated classes as well as array
-          let classesArr = selectedClasses;
-          if (typeof classesArr === "string") {
-            classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
-          }
-          if (Array.isArray(classesArr)) {
-            classesArr.forEach(cls => formData.append('classes[]', cls));
-          }
-      } else {
-        // If Student is selected with others, send empty classes array (all students)
-        if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
-          formData.append('classes[]', ''); // Empty array for all students
+        let classesArr = selectedClasses;
+        if (typeof classesArr === "string") {
+          classesArr = classesArr.split(",").map(cls => cls.trim()).filter(Boolean);
         }
-      }
-      
+        if (Array.isArray(classesArr)) {
+          classesArr.forEach(cls => formData.append('classes[]', cls));
+        }
       } else {
         // If Student is selected with others, send empty classes array (all students)
         if (announcementForArr.some(item => item.toLowerCase() === 'student')) {
@@ -2202,10 +2132,23 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
           + Create Announcement
         </button>
       )}
-      {loading ? <div>Loading...</div> : (
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+          <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+        </div>
+      ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-          {announcements.length === 0 && <div>No announcements yet.</div>}
-          {announcements.map(a => (
+          {(
+            isSuperAdmin
+              ? announcements
+              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
+          ).length === 0 && <div>No announcements yet.</div>}
+          {(
+            isSuperAdmin
+              ? announcements
+              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
+          ).map(a => (
             <div key={a._id} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(30,60,114,0.08)', padding: 24, position: 'relative', marginBottom: 8 }}>
               {isSuperAdmin && (
                 <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
@@ -2281,7 +2224,7 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
               )}
               <div style={{ fontSize: 13, color: '#888', marginTop: 8 }}>By: {a.createdBy} | {new Date(a.createdAt).toLocaleString()}</div>
               {/* Delete confirmation popup below the announcement */}
-              {deleteConfirmId === a._id && (
+              {isSuperAdmin && deleteConfirmId === a._id && (
                 <div style={{
                   position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 8,
                   background: '#fff', border: '1.5px solid #c0392b', borderRadius: 10, boxShadow: '0 4px 24px rgba(192,57,43,0.10)',

@@ -266,7 +266,7 @@ export default function RegisterParent() {
           email: guardianEmail.trim().toLowerCase(),
           password: guardianPassword,
           otp: guardianOtpBlocks.join(""),
-          registeredAs: "Guardian",
+          registeredAs: "Parent",
           childEmail: childEmail.trim().toLowerCase(),
           childClass: childClass.trim(),
         }),
@@ -418,7 +418,7 @@ export default function RegisterParent() {
               value={childClass}
               onChange={e => setChildClass(e.target.value)}
               required
-              disabled={parentOtpSent}
+              disabled={guardianOtpSent}
               style={inputStyle}
             />
             <div style={{ position: 'relative' }}>

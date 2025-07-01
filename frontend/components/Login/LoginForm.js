@@ -350,6 +350,63 @@ export default function LoginForm(props) {
           />
         </div>
       )}
+      {/* User Not Found Modal */}
+      {showNotFoundPopup && (
+        <div style={{
+          position: "fixed",
+          top: 0, left: 0, width: "100vw", height: "100vh",
+          background: "rgba(34,47,91,0.45)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 3000
+        }}>
+          <div style={{
+            background: "#fff",
+            borderRadius: 16,
+            boxShadow: vkShadow,
+            padding: 36,
+            minWidth: 320,
+            maxWidth: 370,
+            textAlign: "center",
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center"
+          }}>
+            <button
+              onClick={() => setShowNotFoundPopup(false)}
+              style={{
+                position: "absolute", top: 12, right: 16, background: "#eee", color: vkAccent, border: "none",
+                borderRadius: "50%", width: 32, height: 32, fontSize: 20, fontWeight: 700, cursor: "pointer"
+              }}
+              aria-label="Close"
+            >×</button>
+            <div style={{ fontWeight: 700, fontSize: "1.25rem", color: vkAccent, marginBottom: 16 }}>
+              User not found
+            </div>
+            <div style={{ color: "#888", fontSize: 15, marginBottom: 24 }}>
+              User not found. Please register to continue.
+            </div>
+            <button
+              onClick={() => { setShowNotFoundPopup(false); setShowRegister(true); }}
+              style={{
+                width: "100%",
+                background: vkGradient,
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "13px 0",
+                fontWeight: 700,
+                fontSize: "1.08rem",
+                cursor: "pointer",
+                marginBottom: 10,
+                boxShadow: "0 2px 8px #4a69bb22"
+              }}
+            >
+              Register
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
