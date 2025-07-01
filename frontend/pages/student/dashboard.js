@@ -225,7 +225,8 @@ function StudentDashboard() {
         .then(data => {
           setProfile(data.user);
           setUserName(data.user.name || "");
-          setForm({
+          // Only update form state if not in edit mode
+          setForm(f => editMode ? f : {
             name: data.user.name || '',
             phone: data.user.phone || '',
             school: data.user.school || '',
@@ -249,7 +250,7 @@ function StudentDashboard() {
           console.log("Fetched user class: null");
         });
     }
-  }, [userEmail, selectedMenu, fetchAnnouncements]);
+  }, [userEmail, selectedMenu, fetchAnnouncements, editMode]);
 
   // Fetch CBSE updates
   const fetchCbseUpdates = useCallback(() => {
@@ -310,7 +311,18 @@ function StudentDashboard() {
     }
   }, [profile]);
 
-  const handleEdit = () => setEditMode(true);
+  const handleEdit = () => {
+    // When entering edit mode, set form state from profile
+    setForm({
+      name: profile?.name || '',
+      phone: profile?.phone || '',
+      school: profile?.school || '',
+      class: profile?.class || '',
+      photo: null
+    });
+    setPreview(profile?.photo || "/default-avatar.png");
+    setEditMode(true);
+  };
   const handleCancel = () => {
     setEditMode(false);
     setForm({
@@ -610,14 +622,17 @@ function StudentDashboard() {
                     <input
                       name="class"
                       value={form.class}
-                      onChange={handleChange}
+                      // Make class read-only
+                      readOnly
                       style={{
                         width: "100%",
                         padding: "10px 12px",
                         borderRadius: 6,
                         border: "1.5px solid #e0e0e0",
                         fontSize: 16,
-                        marginTop: 4
+                        marginTop: 4,
+                        background: "#f8f9fa",
+                        color: "#888"
                       }}
                     />
                   </div>
