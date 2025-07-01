@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaClipboardList, FaBookOpen, FaChartBar, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt, FaFilePdf, FaPalette } from "react-icons/fa";
+import { FaClipboardList, FaBookOpen, FaChartBar, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt, FaFilePdf, FaPalette, FaFileVideo } from "react-icons/fa";
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken, logout } from "../../utils/auth.js";
 import ProtectedRoute from '../../components/ProtectedRoute';
@@ -1257,14 +1257,37 @@ function StudentDashboard() {
             <div style={{ color: "#888", fontSize: 17 }}>No AVLRs found.</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              {avlrs.map(a => (
-                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
-                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {a.class} | Subject: {a.subject} | Chapter: {a.chapter}</div>
-                  <div style={{ marginBottom: 8 }}>
-                    <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", fontWeight: 600, wordBreak: 'break-all' }}>{a.link}</a>
+              {avlrs.map(a => {
+                // Extract YouTube video ID if possible
+                let ytId = null;
+                try {
+                  const url = new URL(a.link);
+                  if (url.hostname.includes("youtube.com")) {
+                    const params = new URLSearchParams(url.search);
+                    ytId = params.get("v");
+                  } else if (url.hostname === "youtu.be") {
+                    ytId = url.pathname.slice(1);
+                  }
+                } catch {}
+                const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null;
+                return (
+                  <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 18 }}>
+                    {thumbUrl ? (
+                      <img src={thumbUrl} alt="Video thumbnail" style={{ width: 120, height: 80, borderRadius: 8, objectFit: 'cover', border: '1.5px solid #eee' }} />
+                    ) : (
+                      <div style={{ width: 120, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7fafd', borderRadius: 8, border: '1.5px solid #eee' }}>
+                        <FaFileVideo style={{ fontSize: 38, color: '#1e3c72' }} />
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {a.class} | Subject: {a.subject} | Chapter: {a.chapter}</div>
+                      <div style={{ marginBottom: 8 }}>
+                        <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", fontWeight: 600, wordBreak: 'break-all' }}>{a.link}</a>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ))}
         </div>

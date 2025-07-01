@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from "react";
-import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt, FaFilePdf, FaPalette } from "react-icons/fa";
+import { FaClipboardList, FaNewspaper, FaChartBar, FaBookOpen, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt, FaFilePdf, FaPalette, FaFileVideo } from "react-icons/fa";
 import ProfileMenu from '../ProfileMenu'; // If you want to use the same ProfileMenu as admin
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken, logout } from "../../utils/auth.js";
@@ -219,6 +219,8 @@ function TeacherDashboard() {
   const [ccEditRemoveFiles, setCcEditRemoveFiles] = useState([]);
   const [ccEditStatus, setCcEditStatus] = useState("");
   const [ccDeleteConfirmId, setCcDeleteConfirmId] = useState(null);
+  // Add state for Creative Corner search initiation
+  const [ccSearchInitiated, setCcSearchInitiated] = useState(false);
 
   const router = useRouter();
 
@@ -495,11 +497,13 @@ function TeacherDashboard() {
   // Fetch creative items with filters
   const fetchCreativeItems = useCallback(() => {
     setCcLoading(true);
+    setCcSearchInitiated(true);
     const params = new URLSearchParams();
     if (ccFilterClass) params.append('class', ccFilterClass);
     if (ccFilterSubject) params.append('subject', ccFilterSubject);
     if (ccFilterChapter) params.append('chapter', ccFilterChapter);
     if (ccFilterType) params.append('type', ccFilterType);
+    if (userEmail) params.append('createdBy', userEmail); // Only fetch own items
     fetch(`${BASE_API_URL}/creative-corner?${params.toString()}`)
       .then(res => res.json())
       .then(data => {
@@ -507,7 +511,7 @@ function TeacherDashboard() {
         setCcLoading(false);
       })
       .catch(() => setCcLoading(false));
-  }, [ccFilterClass, ccFilterSubject, ccFilterChapter, ccFilterType]);
+  }, [ccFilterClass, ccFilterSubject, ccFilterChapter, ccFilterType, userEmail]);
   useEffect(() => {
     if (selectedMenu === "creative-corner") fetchCreativeItems();
   }, [selectedMenu, fetchCreativeItems]);
@@ -1272,14 +1276,37 @@ function TeacherDashboard() {
             <div style={{ color: "#888", fontSize: 17 }}>No AVLRs found.</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              {avlrs.map(a => (
-                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
-                  <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {a.class} | Subject: {a.subject} | Chapter: {a.chapter}</div>
-                  <div style={{ marginBottom: 8 }}>
-                    <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", fontWeight: 600, wordBreak: 'break-all' }}>{a.link}</a>
+              {avlrs.map(a => {
+                // Extract YouTube video ID if possible
+                let ytId = null;
+                try {
+                  const url = new URL(a.link);
+                  if (url.hostname.includes("youtube.com")) {
+                    const params = new URLSearchParams(url.search);
+                    ytId = params.get("v");
+                  } else if (url.hostname === "youtu.be") {
+                    ytId = url.pathname.slice(1);
+                  }
+                } catch {}
+                const thumbUrl = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null;
+                return (
+                  <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 18 }}>
+                    {thumbUrl ? (
+                      <img src={thumbUrl} alt="Video thumbnail" style={{ width: 120, height: 80, borderRadius: 8, objectFit: 'cover', border: '1.5px solid #eee' }} />
+                    ) : (
+                      <div style={{ width: 120, height: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f7fafd', borderRadius: 8, border: '1.5px solid #eee' }}>
+                        <FaFileVideo style={{ fontSize: 38, color: '#1e3c72' }} />
+                      </div>
+                    )}
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, color: "#1e3c72", marginBottom: 8 }}>Class: {a.class} | Subject: {a.subject} | Chapter: {a.chapter}</div>
+                      <div style={{ marginBottom: 8 }}>
+                        <a href={a.link} target="_blank" rel="noopener noreferrer" style={{ color: "#007bff", fontWeight: 600, wordBreak: 'break-all' }}>{a.link}</a>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ))}
         </div>
@@ -1373,8 +1400,8 @@ function TeacherDashboard() {
             <input type="text" placeholder="Class" value={ccFilterClass} onChange={e => setCcFilterClass(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }} />
             <input type="text" placeholder="Subject" value={ccFilterSubject} onChange={e => setCcFilterSubject(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }} />
             <input type="text" placeholder="Chapter" value={ccFilterChapter} onChange={e => setCcFilterChapter(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }} />
-            <select value={ccFilterType} onChange={e => setCcFilterType(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }}>
-              <option value="">All Types</option>
+            <select value={ccFilterType} onChange={e => setCcFilterType(e.target.value)} required style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }}>
+              <option value="" disabled>Select Type</option>
               <option value="project">Project</option>
               <option value="activity">Activity</option>
               <option value="poster">Poster</option>
@@ -1386,7 +1413,7 @@ function TeacherDashboard() {
               <option value="other">Other</option>
             </select>
             <button type="button" onClick={fetchCreativeItems} style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Filter</button>
-            <button type="button" onClick={() => { setCcFilterClass(""); setCcFilterSubject(""); setCcFilterChapter(""); setCcFilterType(""); }} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>Clear</button>
+            <button type="button" onClick={() => { setCcFilterClass(""); setCcFilterSubject(""); setCcFilterChapter(""); setCcFilterType(""); setCcSearchInitiated(false); setCreativeItems([]); }} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>Clear</button>
           </div>
           <h3 style={{ fontWeight: 700, fontSize: 22, marginBottom: 18, color: "#1e3c72" }}>All Creative Items</h3>
           {ccLoading ? (
@@ -1394,6 +1421,8 @@ function TeacherDashboard() {
               <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #ff0080', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
               <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
             </div>
+          ) : !ccSearchInitiated ? (
+            <div style={{ color: "#888", fontSize: 17 }}>Enter filter criteria to search Creative Corner items.</div>
           ) : creativeItems.length === 0 ? (
             <div style={{ color: "#888", fontSize: 17 }}>No creative items found.</div>
           ) : (
@@ -1409,40 +1438,14 @@ function TeacherDashboard() {
                         ? <div key={idx} style={{ display: 'inline-block', position: 'relative', width: 120, height: 80, border: '1px solid #eee', borderRadius: 6, background: '#fafafa', textAlign: 'center', verticalAlign: 'middle', lineHeight: '80px', fontWeight: 600, color: '#1e3c72', fontSize: 18, cursor: 'pointer' }} onClick={() => setCcPreviewModal({ open: true, url: f.url, fileType: 'pdf', name: f.originalName })}>
                             <span>PDF</span>
                           </div>
-                        : <img key={idx} src={f.url} alt={f.originalName} style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: '1px solid #eee' }} />
+                        : <img key={idx} src={f.url} alt={f.originalName} style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: "1px solid #eee" }} />
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-                    <button onClick={() => openEditModal(item)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
-                    <button onClick={() => setCcDeleteConfirmId(item._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
-                  </div>
-                  {ccDeleteConfirmId === item._id && (
-                    <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 8, background: '#fff', border: '1.5px solid #c0392b', borderRadius: 10, boxShadow: '0 4px 24px rgba(192,57,43,0.10)', padding: 24, zIndex: 10, textAlign: 'center' }}>
-                      <div style={{ fontWeight: 600, fontSize: 16, color: '#c0392b', marginBottom: 12 }}>
-                        Are you sure you want to delete this creative item?
-                      </div>
-                      <button
-                        onClick={async () => {
-                          setCcStatus('Deleting...');
-                          const res = await fetch(`${BASE_API_URL}/creative-corner/${item._id}`, {
-                            method: 'DELETE',
-                            headers: { 'Authorization': `Bearer ${getToken()}` }
-                          });
-                          if (res.ok) {
-                            setCcStatus('Deleted!');
-                            setCcDeleteConfirmId(null);
-                            fetchCreativeItems();
-                          } else {
-                            setCcStatus('Failed to delete');
-                          }
-                        }}
-                        style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer', marginRight: 12 }}
-                      >Yes, Delete</button>
-                      <button
-                        onClick={() => setCcDeleteConfirmId(null)}
-                        style={{ background: '#eee', color: '#1e3c72', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer' }}
-                      >Cancel</button>
-                      {ccStatus && <div style={{ marginTop: 10, color: ccStatus.includes('Deleted') ? '#28a745' : '#c0392b' }}>{ccStatus}</div>}
+                  {/* Only show Edit/Delete if createdBy matches userEmail */}
+                  {item.createdBy === userEmail && (
+                    <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                      <button onClick={() => openEditModal(item)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                      <button onClick={() => setCcDeleteConfirmId(item._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
                     </div>
                   )}
                 </div>
@@ -1560,6 +1563,13 @@ function TeacherDashboard() {
       </div>
     );
   };
+
+  useEffect(() => {
+    if (selectedMenu === "creative-corner") {
+      setCreativeItems([]);
+      setCcSearchInitiated(false);
+    }
+  }, [selectedMenu]);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa", flexDirection: "column" }}>

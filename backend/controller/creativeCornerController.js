@@ -48,12 +48,13 @@ export const addCreativeItem = async (req, res) => {
 // Get Creative Items (with optional filters)
 export const getCreativeItems = async (req, res) => {
   try {
-    const { class: className, subject, chapter, type } = req.query;
+    const { class: className, subject, chapter, type, createdBy } = req.query;
     const filter = {};
     if (className) filter.class = className.trim().toLowerCase();
     if (subject) filter.subject = subject.trim().toLowerCase();
     if (chapter) filter.chapter = chapter.trim().toLowerCase();
     if (type) filter.type = type;
+    if (createdBy) filter.createdBy = createdBy;
     const items = await CreativeCorner.find(filter).sort({ createdAt: -1 });
     // Convert files to base64 for frontend preview
     const itemsWithFiles = items.map(item => ({
