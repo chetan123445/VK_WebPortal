@@ -447,6 +447,10 @@ function AdminDashboard() {
   };
 
   const handleSave = async () => {
+    if (!form.phone || form.phone.length !== 10) {
+      setStatus('Phone number must be exactly 10 digits');
+      return;
+    }
     setStatus('Saving...');
     try {
       let body;
