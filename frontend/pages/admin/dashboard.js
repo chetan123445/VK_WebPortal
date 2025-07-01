@@ -256,7 +256,6 @@ function AdminDashboard() {
       newValue[idx] = val;
       newValue = newValue.join('').slice(0, 10);
       onChange(newValue);
-      // Move to next box if input
       if (val && idx < 9 && inputsRef.current[idx + 1]) {
         inputsRef.current[idx + 1].focus();
       }
@@ -423,17 +422,6 @@ function AdminDashboard() {
     }
   };
 
-  const handleEdit = (announcement) => {
-    setEditAnnouncement(announcement);
-    setForm({ text: announcement.text, images: [], announcementFor: announcement.announcementFor || '' });
-    setPreview(Array.isArray(announcement.images) ? [...announcement.images] : []);
-    setRemovedImages([]);
-    setEditClasses(Array.isArray(announcement.classes) ? announcement.classes.join(",") : ""); // <-- prefill classes
-    setEditAnnouncementFor(Array.isArray(announcement.announcementFor) ? announcement.announcementFor.join(",") : ""); // <-- prefill announcementFor
-    setShowEdit(true);
-    setStatus('');
-  };
-
   const handleCancel = () => {
     setEditMode(false);
     setForm({
@@ -459,6 +447,10 @@ function AdminDashboard() {
   };
 
   const handleSave = async () => {
+    if (!form.phone || form.phone.length !== 10) {
+      setStatus('Phone number must be exactly 10 digits');
+      return;
+    }
     setStatus('Saving...');
     try {
       let body;
@@ -467,12 +459,16 @@ function AdminDashboard() {
         body = new FormData();
         body.append('name', form.name);
         body.append('phone', form.phone);
+        body.append('school', form.school);
+        body.append('class', form.class);
         body.append('photo', form.photo);
         headers = { 'Authorization': `Bearer ${getToken()}` };
       } else {
         body = JSON.stringify({
           name: form.name,
-          phone: form.phone
+          phone: form.phone,
+          school: form.school,
+          class: form.class
         });
         headers = {
           'Authorization': `Bearer ${getToken()}`,
@@ -1663,6 +1659,9 @@ function AdminDashboard() {
       setDlrStatus('Failed to delete');
     }
   };
+
+  // Add handleEdit for profile editing
+  const handleEdit = () => setEditMode(true);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa", flexDirection: "column" }}>
