@@ -132,25 +132,6 @@ const recommendedBooks = [
 	},
 ];
 
-const authors = [
-	{
-		name: "James Clear",
-		img: "https://randomuser.me/api/portraits/men/32.jpg",
-	},
-	{
-		name: "Nepoleon Hill",
-		img: "https://randomuser.me/api/portraits/men/45.jpg",
-	},
-	{
-		name: "Robert Kiyosaki",
-		img: "https://randomuser.me/api/portraits/men/52.jpg",
-	},
-	{
-		name: "Brian Tracy",
-		img: "https://randomuser.me/api/portraits/men/60.jpg",
-	},
-];
-
 function BookGrid({ books, showAll, onClose }) {
 	const columns = 4; // Always 4 columns
 	const visibleBooks = showAll ? books : books.slice(0, 4);
@@ -638,55 +619,6 @@ export default function Home() {
 						&#8594;
 					</button>
 				</div>
-			</div>
-
-			{/* Author Highlights */}
-			<div
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: "min(18px, 3vw)",
-					margin: "18px 0 0 0",
-					flexWrap: "wrap"
-				}}
-			>
-				{authors.map((author, idx) => (
-					<div
-						key={author.name}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 8,
-							color: "#6d5c3d",
-							fontSize: 15,
-							fontWeight: 500,
-						}}
-					>
-						<img
-							src={author.img}
-							alt={author.name}
-							style={{
-								width: 32,
-								height: 32,
-								borderRadius: "50%",
-								border: "2px solid #eee",
-							}}
-						/>
-						<span>Latest from {author.name}</span>
-						{idx < authors.length - 1 && (
-							<span
-								style={{
-									fontSize: 18,
-									color: "#bdbdbd",
-									margin: "0 8px",
-								}}
-							>
-								›
-							</span>
-						)}
-					</div>
-				))}
 			</div>
 
 			{/* Recommended For You */}
@@ -1230,5 +1162,6 @@ export default function Home() {
 		</div>
 	);
 }
+	
 
 
