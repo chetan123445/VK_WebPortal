@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaClipboardList, FaBookOpen, FaChartBar, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt, FaFilePdf } from "react-icons/fa";
+import { FaClipboardList, FaBookOpen, FaChartBar, FaBullhorn, FaCalendarAlt, FaEnvelope, FaLaptop, FaUser, FaTrashAlt, FaFilePdf, FaPalette } from "react-icons/fa";
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken, logout } from "../../utils/auth.js";
 import ProtectedRoute from '../../components/ProtectedRoute';
@@ -17,7 +17,7 @@ function StudentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
     { key: "mind-maps", label: "Mind Maps", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "dlrs", label: "DLRs", icon: <FaFilePdf style={{ fontSize: 18 }} /> },
     { key: "discussion-panel", label: "Discussion Panel", icon: <FaUser style={{ fontSize: 18 }} /> },
-    { key: "creative-corner", label: "Creative Corner", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
+    { key: "creative-corner", label: "Creative Corner", icon: <FaPalette style={{ fontSize: 18, color: '#ff0080' }} /> },
     { key: "books", label: "Books", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
     { key: "performance", label: "Performance", icon: <FaChartBar style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
@@ -189,6 +189,14 @@ function StudentDashboard() {
 
   // Add previewPdf state and modal
   const [previewPdf, setPreviewPdf] = useState({ open: false, url: '' });
+
+  // Creative Corner state
+  const [ccSubject, setCcSubject] = useState("");
+  const [ccChapter, setCcChapter] = useState("");
+  const [ccType, setCcType] = useState("");
+  const [creativeItems, setCreativeItems] = useState([]);
+  const [ccLoading, setCcLoading] = useState(false);
+  const [ccPreviewModal, setCcPreviewModal] = useState({ open: false, url: '', fileType: '', name: '' });
 
   const fetchAnnouncements = useCallback(() => {
     const studentClass = (profile && profile.class) ? profile.class : globalUserClass;
@@ -489,6 +497,40 @@ function StudentDashboard() {
       setDlrsLoading(false);
     }
   };
+
+  // Fetch creative items for student's class
+  const fetchCreativeItems = useCallback(() => {
+    if (!profile?.class) return;
+    setCcLoading(true);
+    const params = new URLSearchParams();
+    params.append('class', profile.class);
+    if (ccSubject) params.append('subject', ccSubject);
+    if (ccChapter) params.append('chapter', ccChapter);
+    if (ccType) params.append('type', ccType);
+    fetch(`${BASE_API_URL}/creative-corner?${params.toString()}`)
+      .then(res => res.json())
+      .then(data => {
+        setCreativeItems(data.creativeItems || []);
+        setCcLoading(false);
+      })
+      .catch(() => setCcLoading(false));
+  }, [profile, ccSubject, ccChapter, ccType]);
+
+  useEffect(() => {
+    if (selectedMenu === "creative-corner" && profile?.class) {
+      fetchCreativeItems();
+    }
+    // Only run when selectedMenu or filters change
+    // eslint-disable-next-line
+  }, [selectedMenu, profile?.class]);
+
+  // Refetch only when filters change (not on every render)
+  useEffect(() => {
+    if (selectedMenu === "creative-corner" && profile?.class) {
+      fetchCreativeItems();
+    }
+    // eslint-disable-next-line
+  }, [ccSubject, ccChapter, ccType]);
 
   const renderContent = () => {
     if (selectedMenu === "profile") {
@@ -1367,11 +1409,72 @@ function StudentDashboard() {
     }
     if (selectedMenu === "creative-corner") {
       return (
-        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
-          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Creative Corner</h2>
-          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
-            Feature coming soon.
+        <div style={{ padding: 48, maxWidth: 900, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 32, marginBottom: 28, color: "#ff0080", letterSpacing: 1, textAlign: "center" }}>
+            <FaPalette style={{ marginRight: 12, color: "#ff0080", fontSize: 28, verticalAlign: "middle" }} />
+            Creative Corner
+          </h2>
+          {/* Filter Bar */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input type="text" placeholder="Class" value={profile?.class || ""} readOnly style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15, background: '#f7fafd', color: '#888' }} />
+            <input type="text" placeholder="Subject" value={ccSubject} onChange={e => setCcSubject(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }} />
+            <input type="text" placeholder="Chapter" value={ccChapter} onChange={e => setCcChapter(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }} />
+            <select value={ccType} onChange={e => setCcType(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }}>
+              <option value="">All Types</option>
+              <option value="project">Project</option>
+              <option value="activity">Activity</option>
+              <option value="poster">Poster</option>
+              <option value="artwork">Artwork</option>
+              <option value="quiz">Quiz</option>
+              <option value="worksheet">Worksheet</option>
+              <option value="poem">Poem</option>
+              <option value="story">Story</option>
+              <option value="other">Other</option>
+            </select>
+            <button type="button" onClick={fetchCreativeItems} style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Filter</button>
+            <button type="button" onClick={() => { setCcSubject(""); setCcChapter(""); setCcType(""); }} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>Clear</button>
           </div>
+          <h3 style={{ fontWeight: 700, fontSize: 22, marginBottom: 18, color: "#1e3c72" }}>Creative Items for Class {profile?.class}</h3>
+          {ccLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #ff0080', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : creativeItems.length === 0 ? (
+            <div style={{ color: "#888", fontSize: 17 }}>No creative items found for your class.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {creativeItems.map(item => (
+                <div key={item._id} style={{ background: "#fff", borderRadius: 10, boxShadow: "0 2px 8px rgba(30,60,114,0.06)", padding: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontWeight: 600, color: "#ff0080" }}>Subject: {item.subject} | Chapter: {item.chapter} | Type: {item.type} | Title: {item.title}</div>
+                  <div style={{ color: "#222", marginBottom: 6 }}>{item.description}</div>
+                  <div style={{ fontSize: 13, color: "#888", marginBottom: 6 }}>By: {item.createdBy} | {new Date(item.createdAt).toLocaleString()}</div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {item.files && item.files.map((f, idx) => (
+                      f.fileType === 'pdf'
+                        ? <div key={idx} style={{ display: 'inline-block', position: 'relative', width: 120, height: 80, border: '1px solid #eee', borderRadius: 6, background: '#fafafa', textAlign: 'center', verticalAlign: 'middle', lineHeight: '80px', fontWeight: 600, color: '#1e3c72', fontSize: 18, cursor: 'pointer' }} onClick={() => setCcPreviewModal({ open: true, url: f.url, fileType: 'pdf', name: f.originalName })}>
+                          <span>PDF</span>
+                        </div>
+                        : <img key={idx} src={f.url} alt={f.originalName} style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: "1px solid #eee", cursor: 'pointer' }} onClick={() => setCcPreviewModal({ open: true, url: f.url, fileType: 'image', name: f.originalName })} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Preview Modal for image/pdf */}
+          {ccPreviewModal.open && (
+            <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.92)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setCcPreviewModal({ open: false, url: '', fileType: '', name: '' })}>
+              <div style={{ position: 'relative', width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', boxShadow: 'none', borderRadius: 0, padding: 0 }} onClick={e => e.stopPropagation()}>
+                <button onClick={() => setCcPreviewModal({ open: false, url: '', fileType: '', name: '' })} style={{ position: 'fixed', top: 24, right: 32, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 44, height: 44, fontSize: 28, fontWeight: 700, cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }} aria-label="Close">×</button>
+                {ccPreviewModal.fileType === 'pdf' ? (
+                  <iframe src={ccPreviewModal.url} title={ccPreviewModal.name} style={{ width: '80vw', height: '90vh', border: 'none', borderRadius: 8, background: '#fff' }} />
+                ) : (
+                  <img src={ccPreviewModal.url} alt={ccPreviewModal.name} style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 8 }} />
+                )}
+              </div>
+            </div>
+          )}
         </div>
       );
     }

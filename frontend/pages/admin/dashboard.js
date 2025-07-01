@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen, FaLaptop, FaFilePdf } from "react-icons/fa";
+import { FaUsers, FaUserTie, FaBook, FaRegListAlt, FaCog, FaBullhorn, FaChartBar, FaUserShield, FaBars, FaTimes, FaUser, FaBookOpen, FaLaptop, FaFilePdf, FaPalette, FaFileAlt, FaImage, FaBookReader, FaPenFancy, FaTasks } from "react-icons/fa";
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { BASE_API_URL } from '../apiurl.js';
 import { getUserData, getToken, isAuthenticated, isTokenExpired, logout } from "../../utils/auth.js";
@@ -23,6 +23,7 @@ function AdminSidebar({ userEmail, userPhoto, onMenuSelect, selectedMenu, isSupe
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
     { key: "avlrs", label: "AVLRs", icon: <FaLaptop style={{ fontSize: 18 }} /> },
     { key: "dlrs", label: "DLRs", icon: <FaFilePdf style={{ fontSize: 18 }} /> },
+    { key: "creative-corner", label: "Creative Corner", icon: <FaPalette style={{ fontSize: 18, color: '#ff0080' }} /> },
   ];
   return (
     <aside style={{
@@ -178,6 +179,86 @@ function AdminDashboard() {
 
   // Add state for PDF preview modal
   const [previewPdf, setPreviewPdf] = useState({ open: false, url: '' });
+
+  // Creative Corner state
+  const [ccClass, setCcClass] = useState("");
+  const [ccSubject, setCcSubject] = useState("");
+  const [ccChapter, setCcChapter] = useState("");
+  const [ccType, setCcType] = useState("");
+  const [ccTitle, setCcTitle] = useState("");
+  const [ccDescription, setCcDescription] = useState("");
+  const [ccFiles, setCcFiles] = useState([]);
+  const [ccStatus, setCcStatus] = useState("");
+  const [creativeItems, setCreativeItems] = useState([]);
+  const [ccLoading, setCcLoading] = useState(false);
+  const [ccPreviewModal, setCcPreviewModal] = useState({ open: false, url: '', fileType: '', name: '' });
+
+  // Creative Corner filter state
+  const [ccFilterClass, setCcFilterClass] = useState("");
+  const [ccFilterSubject, setCcFilterSubject] = useState("");
+  const [ccFilterChapter, setCcFilterChapter] = useState("");
+  const [ccFilterType, setCcFilterType] = useState("");
+
+  // Creative Corner edit modal state
+  const [ccEditModal, setCcEditModal] = useState({ open: false, item: null });
+  const [ccEditClass, setCcEditClass] = useState("");
+  const [ccEditSubject, setCcEditSubject] = useState("");
+  const [ccEditChapter, setCcEditChapter] = useState("");
+  const [ccEditType, setCcEditType] = useState("");
+  const [ccEditTitle, setCcEditTitle] = useState("");
+  const [ccEditDescription, setCcEditDescription] = useState("");
+  const [ccEditFiles, setCcEditFiles] = useState([]);
+  const [ccEditStatus, setCcEditStatus] = useState("");
+  // For edit modal: track files to remove
+  const [ccEditRemoveFiles, setCcEditRemoveFiles] = useState([]);
+  // For delete confirmation
+  const [ccDeleteConfirmId, setCcDeleteConfirmId] = useState(null);
+
+  // Handle open edit modal
+  const openEditModal = (item) => {
+    setCcEditModal({ open: true, item });
+    setCcEditClass(item.class);
+    setCcEditSubject(item.subject);
+    setCcEditChapter(item.chapter);
+    setCcEditType(item.type);
+    setCcEditTitle(item.title);
+    setCcEditDescription(item.description || "");
+    setCcEditFiles([]);
+    setCcEditRemoveFiles([]);
+    setCcEditStatus("");
+  };
+
+  // Handle save edit
+  const handleSaveEdit = async (e) => {
+    e.preventDefault();
+    setCcEditStatus("Saving...");
+    const formData = new FormData();
+    formData.append("class", ccEditClass);
+    formData.append("subject", ccEditSubject);
+    formData.append("chapter", ccEditChapter);
+    formData.append("type", ccEditType);
+    formData.append("title", ccEditTitle);
+    formData.append("description", ccEditDescription);
+    ccEditFiles.forEach(f => formData.append("files", f));
+    ccEditRemoveFiles.forEach(idx => formData.append("removeFiles", idx));
+    try {
+      const res = await fetch(`${BASE_API_URL}/creative-corner/${ccEditModal.item._id}`, {
+        method: "PUT",
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCcEditStatus("Updated!");
+        setCcEditModal({ open: false, item: null });
+        fetchCreativeItems();
+      } else {
+        setCcEditStatus(data.message || data.error || "Failed to update");
+      }
+    } catch {
+      setCcEditStatus("Failed to update");
+    }
+  };
 
   // Fetch all mind maps
   useEffect(() => {
@@ -1421,6 +1502,184 @@ function AdminDashboard() {
         </div>
       );
     }
+    if (selectedMenu === "creative-corner") {
+      return (
+        <div style={{ padding: 48, maxWidth: 900, margin: "0 auto" }}>
+          <h2 style={{ fontWeight: 700, fontSize: 32, marginBottom: 28, color: "#ff0080", letterSpacing: 1, textAlign: "center" }}>
+            <FaPalette style={{ marginRight: 12, color: "#ff0080", fontSize: 28, verticalAlign: "middle" }} />
+            Creative Corner
+          </h2>
+          {/* Add Form */}
+          <form onSubmit={handleAddCreative} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, marginBottom: 32 }}>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18, flexWrap: "wrap" }}>
+              <input type="text" placeholder="Class" value={ccClass} onChange={e => setCcClass(e.target.value)} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Subject" value={ccSubject} onChange={e => setCcSubject(e.target.value)} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+              <input type="text" placeholder="Chapter" value={ccChapter} onChange={e => setCcChapter(e.target.value)} required style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <div style={{ display: "flex", gap: 18, marginBottom: 18, flexWrap: "wrap" }}>
+              <select value={ccType} onChange={e => setCcType(e.target.value)} required style={{ flex: 1, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }}>
+                <option value="">Select Type</option>
+                <option value="project">Project</option>
+                <option value="activity">Activity</option>
+                <option value="poster">Poster</option>
+                <option value="artwork">Artwork</option>
+                <option value="quiz">Quiz</option>
+                <option value="worksheet">Worksheet</option>
+                <option value="poem">Poem</option>
+                <option value="story">Story</option>
+                <option value="other">Other</option>
+              </select>
+              <input type="text" placeholder="Title" value={ccTitle} onChange={e => setCcTitle(e.target.value)} required style={{ flex: 2, padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16 }} />
+            </div>
+            <textarea placeholder="Description (optional)" value={ccDescription} onChange={e => setCcDescription(e.target.value)} rows={2} style={{ width: "100%", padding: 10, borderRadius: 6, border: "1.5px solid #e0e0e0", fontSize: 16, marginBottom: 18 }} />
+            <input type="file" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple onChange={e => setCcFiles(Array.from(e.target.files))} style={{ marginBottom: 12 }} />
+            <div style={{ marginTop: 10, color: "#1e3c72", fontWeight: 500 }}>{ccStatus}</div>
+            <button type="submit" style={{ background: "#ff0080", color: "#fff", border: "none", borderRadius: 6, padding: "10px 32px", fontWeight: 600, fontSize: 17, cursor: "pointer", marginTop: 12 }}>Add</button>
+          </form>
+          {/* Filter Bar */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+            <input type="text" placeholder="Class" value={ccFilterClass} onChange={e => setCcFilterClass(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }} />
+            <input type="text" placeholder="Subject" value={ccFilterSubject} onChange={e => setCcFilterSubject(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }} />
+            <input type="text" placeholder="Chapter" value={ccFilterChapter} onChange={e => setCcFilterChapter(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }} />
+            <select value={ccFilterType} onChange={e => setCcFilterType(e.target.value)} style={{ flex: 1, padding: 8, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 15 }}>
+              <option value="">All Types</option>
+              <option value="project">Project</option>
+              <option value="activity">Activity</option>
+              <option value="poster">Poster</option>
+              <option value="artwork">Artwork</option>
+              <option value="quiz">Quiz</option>
+              <option value="worksheet">Worksheet</option>
+              <option value="poem">Poem</option>
+              <option value="story">Story</option>
+              <option value="other">Other</option>
+            </select>
+            <button type="button" onClick={fetchCreativeItems} style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Filter</button>
+            <button type="button" onClick={() => { setCcFilterClass(""); setCcFilterSubject(""); setCcFilterChapter(""); setCcFilterType(""); }} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 12px', fontWeight: 600, cursor: 'pointer' }}>Clear</button>
+          </div>
+          <h3 style={{ fontWeight: 700, fontSize: 22, marginBottom: 18, color: "#1e3c72" }}>All Creative Items</h3>
+          {ccLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
+              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #ff0080', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+            </div>
+          ) : creativeItems.length === 0 ? (
+            <div style={{ color: "#888", fontSize: 17 }}>No creative items found.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {creativeItems.map(item => (
+                <div key={item._id} style={{ background: "#fff", borderRadius: 10, boxShadow: "0 2px 8px rgba(30,60,114,0.06)", padding: 18, display: "flex", flexDirection: "column", gap: 8, position: 'relative' }}>
+                  <div style={{ fontWeight: 600, color: "#ff0080" }}>Class: {item.class} | Subject: {item.subject} | Chapter: {item.chapter} | Type: {item.type} | Title: {item.title}</div>
+                  <div style={{ color: "#222", marginBottom: 6 }}>{item.description}</div>
+                  <div style={{ fontSize: 13, color: "#888", marginBottom: 6 }}>By: {item.createdBy} | {new Date(item.createdAt).toLocaleString()}</div>
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {item.files && item.files.map((f, idx) => (
+                      f.fileType === 'pdf'
+                        ? <div key={idx} style={{ display: 'inline-block', position: 'relative', width: 120, height: 80, border: '1px solid #eee', borderRadius: 6, background: '#fafafa', textAlign: 'center', verticalAlign: 'middle', lineHeight: '80px', fontWeight: 600, color: '#1e3c72', fontSize: 18, cursor: 'pointer' }} onClick={() => setCcPreviewModal({ open: true, url: f.url, fileType: 'pdf', name: f.originalName })}>
+                            <span>PDF</span>
+                          </div>
+                        : <img key={idx} src={f.url} alt={f.originalName} style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: "1px solid #eee", cursor: 'pointer' }} onClick={() => setCcPreviewModal({ open: true, url: f.url, fileType: 'image', name: f.originalName })} />
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+                    <button onClick={() => openEditModal(item)} style={{ background: "#1e3c72", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Edit</button>
+                    <button onClick={() => setCcDeleteConfirmId(item._id)} style={{ background: "#c0392b", color: "#fff", border: "none", borderRadius: 6, padding: "6px 18px", fontWeight: 600, cursor: "pointer" }}>Delete</button>
+                  </div>
+                  {ccDeleteConfirmId === item._id && (
+                    <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 8, background: '#fff', border: '1.5px solid #c0392b', borderRadius: 10, boxShadow: '0 4px 24px rgba(192,57,43,0.10)', padding: 24, zIndex: 10, textAlign: 'center' }}>
+                      <div style={{ fontWeight: 600, fontSize: 16, color: '#c0392b', marginBottom: 12 }}>
+                        Are you sure you want to delete this creative item?
+                      </div>
+                      <button
+                        onClick={async () => {
+                          setCcStatus('Deleting...');
+                          const res = await fetch(`${BASE_API_URL}/creative-corner/${item._id}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${getToken()}` }
+                          });
+                          if (res.ok) {
+                            setCcStatus('Deleted!');
+                            setCcDeleteConfirmId(null);
+                            fetchCreativeItems();
+                          } else {
+                            setCcStatus('Failed to delete');
+                          }
+                        }}
+                        style={{ background: '#c0392b', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer', marginRight: 12 }}
+                      >Yes, Delete</button>
+                      <button
+                        onClick={() => setCcDeleteConfirmId(null)}
+                        style={{ background: '#eee', color: '#1e3c72', border: 'none', borderRadius: 8, padding: '8px 28px', fontWeight: 600, cursor: 'pointer' }}
+                      >Cancel</button>
+                      {ccStatus && <div style={{ marginTop: 10, color: ccStatus.includes('Deleted') ? '#28a745' : '#c0392b' }}>{ccStatus}</div>}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Edit Modal */}
+          {ccEditModal.open && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000 }}>
+              <form onSubmit={handleSaveEdit} style={{ background: '#fff', borderRadius: 16, padding: 32, minWidth: 320, boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)', textAlign: 'center', maxWidth: 420 }}>
+                <h3 style={{ marginBottom: 18, color: '#1e3c72' }}>Edit Creative Item</h3>
+                <input type="text" placeholder="Class" value={ccEditClass} onChange={e => setCcEditClass(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <input type="text" placeholder="Subject" value={ccEditSubject} onChange={e => setCcEditSubject(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <input type="text" placeholder="Chapter" value={ccEditChapter} onChange={e => setCcEditChapter(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <select value={ccEditType} onChange={e => setCcEditType(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }}>
+                  <option value="">Select Type</option>
+                  <option value="project">Project</option>
+                  <option value="activity">Activity</option>
+                  <option value="poster">Poster</option>
+                  <option value="artwork">Artwork</option>
+                  <option value="quiz">Quiz</option>
+                  <option value="worksheet">Worksheet</option>
+                  <option value="poem">Poem</option>
+                  <option value="story">Story</option>
+                  <option value="other">Other</option>
+                </select>
+                <input type="text" placeholder="Title" value={ccEditTitle} onChange={e => setCcEditTitle(e.target.value)} required style={{ width: '100%', marginBottom: 12, padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16 }} />
+                <textarea placeholder="Description (optional)" value={ccEditDescription} onChange={e => setCcEditDescription(e.target.value)} rows={2} style={{ width: '100%', padding: 10, borderRadius: 6, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 12 }} />
+                {/* Existing files with remove buttons */}
+                {ccEditModal.item && ccEditModal.item.files && ccEditModal.item.files.length > 0 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontWeight: 600, marginBottom: 6 }}>Existing Files:</div>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      {ccEditModal.item.files.map((f, idx) => (
+                        <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                          {f.fileType === 'pdf'
+                            ? <a href={f.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', border: '1px solid #eee', borderRadius: 6, padding: 4, background: '#fafafa', maxWidth: 120, maxHeight: 80, overflow: 'hidden' }}>PDF {idx + 1}</a>
+                            : <img src={f.url} alt={f.originalName} style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: '1px solid #eee' }} />}
+                          <button type="button" onClick={() => setCcEditRemoveFiles(prev => [...prev, idx])} style={{ position: 'absolute', top: 2, right: 2, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 22, height: 22, fontWeight: 700, cursor: 'pointer' }}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <input type="file" accept="image/jpeg,image/png,image/jpg,application/pdf" multiple onChange={e => setCcEditFiles(Array.from(e.target.files))} style={{ marginBottom: 12 }} />
+                <div style={{ marginTop: 10, color: '#1e3c72', fontWeight: 500 }}>{ccEditStatus}</div>
+                <div style={{ marginTop: 18, display: 'flex', gap: 12, justifyContent: 'center' }}>
+                  <button type="submit" style={{ background: '#1e3c72', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 24px', fontWeight: 600, cursor: 'pointer' }}>Save</button>
+                  <button type="button" onClick={() => setCcEditModal({ open: false, item: null })} style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                </div>
+              </form>
+            </div>
+          )}
+          {/* Preview Modal for image/pdf */}
+          {ccPreviewModal.open && (
+            <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.92)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setCcPreviewModal({ open: false, url: '', fileType: '', name: '' })}>
+              <div style={{ position: 'relative', width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', boxShadow: 'none', borderRadius: 0, padding: 0 }} onClick={e => e.stopPropagation()}>
+                <button onClick={() => setCcPreviewModal({ open: false, url: '', fileType: '', name: '' })} style={{ position: 'fixed', top: 24, right: 32, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 44, height: 44, fontSize: 28, fontWeight: 700, cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }} aria-label="Close">×</button>
+                {ccPreviewModal.fileType === 'pdf' ? (
+                  <iframe src={ccPreviewModal.url} title={ccPreviewModal.name} style={{ width: '80vw', height: '90vh', border: 'none', borderRadius: 8, background: '#fff' }} />
+                ) : (
+                  <img src={ccPreviewModal.url} alt={ccPreviewModal.name} style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 8 }} />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
     // Main content for other menu items
     return (
       <div style={{
@@ -1662,6 +1921,58 @@ function AdminDashboard() {
 
   // Add handleEdit for profile editing
   const handleEdit = () => setEditMode(true);
+
+  // Fetch creative items with filters
+  const fetchCreativeItems = useCallback(() => {
+    setCcLoading(true);
+    const params = new URLSearchParams();
+    if (ccFilterClass) params.append('class', ccFilterClass);
+    if (ccFilterSubject) params.append('subject', ccFilterSubject);
+    if (ccFilterChapter) params.append('chapter', ccFilterChapter);
+    if (ccFilterType) params.append('type', ccFilterType);
+    fetch(`${BASE_API_URL}/creative-corner?${params.toString()}`)
+      .then(res => res.json())
+      .then(data => {
+        setCreativeItems(data.creativeItems || []);
+        setCcLoading(false);
+      })
+      .catch(() => setCcLoading(false));
+  }, [ccFilterClass, ccFilterSubject, ccFilterChapter, ccFilterType]);
+
+  useEffect(() => {
+    if (selectedMenu === "creative-corner") fetchCreativeItems();
+  }, [selectedMenu, fetchCreativeItems]);
+
+  // Handle add creative item
+  const handleAddCreative = async e => {
+    e.preventDefault();
+    setCcStatus("Adding...");
+    const formData = new FormData();
+    formData.append("class", ccClass);
+    formData.append("subject", ccSubject);
+    formData.append("chapter", ccChapter);
+    formData.append("type", ccType);
+    formData.append("title", ccTitle);
+    formData.append("description", ccDescription);
+    ccFiles.forEach(f => formData.append("files", f));
+    try {
+      const res = await fetch(`${BASE_API_URL}/creative-corner`, {
+        method: "POST",
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCcStatus("Creative item added!");
+        setCcClass(""); setCcSubject(""); setCcChapter(""); setCcType(""); setCcTitle(""); setCcDescription(""); setCcFiles([]);
+        fetchCreativeItems();
+      } else {
+        setCcStatus(data.message || data.error || "Failed to add");
+      }
+    } catch {
+      setCcStatus("Failed to add");
+    }
+  };
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa", flexDirection: "column" }}>
