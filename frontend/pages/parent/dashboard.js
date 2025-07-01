@@ -138,7 +138,7 @@ function ParentDashboard() {
   const [userEmail, setUserEmail] = useState("");
   const [profile, setProfile] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState({ name: '', phone: '', school: '', photo: null });
+  const [form, setForm] = useState({ name: '', phone: '', photo: null });
   const [status, setStatus] = useState('');
   const [preview, setPreview] = useState('');
   const fileInputRef = useRef();
@@ -172,8 +172,6 @@ function ParentDashboard() {
           setForm({
             name: data.user.name || '',
             phone: data.user.phone || '',
-            school: data.user.school || '',
-            class: data.user.class || '',
             photo: null
           });
           const photoUrl = data.user.photo && data.user.photo !== "" ? data.user.photo : "/default-avatar.png";
@@ -223,7 +221,6 @@ function ParentDashboard() {
     setForm({
       name: profile?.name || '',
       phone: profile?.phone || '',
-      school: profile?.school || '',
       photo: null
     });
     setPreview(profile?.photo || "/default-avatar.png");
@@ -248,14 +245,12 @@ function ParentDashboard() {
         body = new FormData();
         body.append('name', form.name);
         body.append('phone', form.phone);
-        body.append('school', form.school);
         body.append('photo', form.photo);
         headers = { 'Authorization': `Bearer ${getToken()}` };
       } else {
         body = JSON.stringify({
           name: form.name,
-          phone: form.phone,
-          school: form.school
+          phone: form.phone
         });
         headers = {
           'Authorization': `Bearer ${getToken()}`,
@@ -473,41 +468,6 @@ function ParentDashboard() {
                       onChange={val => setForm(f => ({ ...f, phone: val }))}
                     />
                   </div>
-                  <div>
-                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>School:</label>
-                    <input
-                      name="school"
-                      value={form.school}
-                      onChange={handleChange}
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        borderRadius: 6,
-                        border: "1.5px solid #e0e0e0",
-                        fontSize: 16,
-                        marginTop: 4
-                      }}
-                    />
-                  </div>
-                  {/* Registered As (read-only) */}
-                  <div>
-                    <label style={{ fontWeight: 600, color: "#1e3c72" }}>Registered As:</label>
-                    <input
-                      name="registeredAs"
-                      value={profile?.registeredAs || ""}
-                      disabled
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        borderRadius: 6,
-                        border: "1.5px solid #e0e0e0",
-                        fontSize: 16,
-                        marginTop: 4,
-                        background: "#f8f9fa",
-                        color: "#666"
-                      }}
-                    />
-                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 12, marginTop: 18 }}>
                   <button
@@ -627,25 +587,17 @@ function ParentDashboard() {
                   <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Phone:</span>
                   <span style={{ color: "#222", fontSize: 16 }}>{profile.phone || "-"}</span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>School:</span>
-                  <span style={{ color: "#222", fontSize: 16 }}>{profile.school || "-"}</span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Registered As:</span>
-                  <span style={{ color: "#222", fontSize: 16 }}>{profile.registeredAs}</span>
-                </div>
-                {profile.registeredAs === 'Parent' && profile.childEmail && (
-                  <>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Child Email:</span>
-                      <span style={{ color: "#222", fontSize: 16 }}>{profile.childEmail}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Child Class:</span>
-                      <span style={{ color: "#222", fontSize: 16 }}>{profile.childClass || '-'}</span>
-                    </div>
-                  </>
+                {profile.childEmail && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Child Email:</span>
+                    <span style={{ color: "#222", fontSize: 16 }}>{profile.childEmail}</span>
+                  </div>
+                )}
+                {profile.childClass && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Child Class:</span>
+                    <span style={{ color: "#222", fontSize: 16 }}>{profile.childClass}</span>
+                  </div>
                 )}
               </div>
               <button
