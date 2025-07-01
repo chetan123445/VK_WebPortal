@@ -4,70 +4,131 @@ import { useRouter } from "next/navigation";
 
 const featuredBooks = [
 	{
-		title: "Atomic Habits",
-		author: "James Clear",
-		img: "https://images-na.ssl-images-amazon.com/images/I/91bYsX41DVL.jpg",
+		title: "Xam idea Class 10 Mathematics (2025-26)",
+		img: "//vkpublications.com/cdn/shop/files/10-maths.jpg?v=1749452063",
 	},
 	{
-		title: "Ikigai",
-		author: "Héctor García, Francesc Miralles",
-		img: "https://images-na.ssl-images-amazon.com/images/I/81l3rZK4lnL.jpg",
+		title: "Xam idea Class 12 Mathematics (2025-26)",
+		img: "https://vkpublications.com/cdn/shop/files/9789356124233.jpg?v=1749540189&width=1000",
 	},
 	{
-		title: "The Almanack of Naval Ravikant",
-		author: "Naval Ravikant",
-		img: "https://images-na.ssl-images-amazon.com/images/I/71U0pT9yTGL.jpg",
+		title: "Xam idea Class 12 Physics (2025–26)",
+		img: "https://vkpublications.com/cdn/shop/files/9789356129085.jpg?v=1750235174&width=832",
 	},
 	{
-		title: "Deep Work",
-		author: "Cal Newport",
-		img: "https://images-na.ssl-images-amazon.com/images/I/81l3rZK4lnL._AC_UL600_SR600,600_.jpg",
+		title: "Xam idea Class 12 Chemistry (2025–26)",
+		img: "https://vkpublications.com/cdn/shop/files/9789356123465.jpg?v=1749636505&width=832",
 	},
 	{
-		title: "The Subtle Art of Not Giving a F*ck",
-		author: "Mark Manson",
-		img: "https://images-na.ssl-images-amazon.com/images/I/71QKQ9mwV7L.jpg",
+		title: " Xam idea Class 11 Chemistry (2025-26)",
+		img: "https://vkpublications.com/cdn/shop/files/11-chemistry.jpg?v=1749452666&width=832",
 	},
 	{
-		title: "Rich Dad Poor Dad",
-		author: "Robert Kiyosaki",
-		img: "https://images-na.ssl-images-amazon.com/images/I/81bsw6fnUiL.jpg",
+		title: "Xam idea Class 12 Biology (2025-26)",
+		img: "https://vkpublications.com/cdn/shop/files/9789356124479.jpg?v=1750240240&width=832",
 	},
 	{
-		title: "Thinking, Fast and Slow",
-		author: "Daniel Kahneman",
-		img: "https://images-na.ssl-images-amazon.com/images/I/71p8G+YQJwL.jpg",
+		title: "Xam idea Class 11 Physics (2025-26)",
+		img: "https://vkpublications.com/cdn/shop/files/11-phy.jpg?v=1749452288&width=832",
 	},
 ];
 
 const recommendedBooks = [
 	{
-		title: "Emotional Intelligence",
-		author: "Danyel Goleman",
-		img: "https://images-na.ssl-images-amazon.com/images/I/81-350uU6yL.jpg",
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE 2025-26 Syllabus Class 11th Vol. 1, 2",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-11-2.jpg?v=1744804001&width=1000",
 		rating: 4.9,
 		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-11th-vol-1-2-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=fe6295118&pr_rec_pid=9866708680986&pr_ref_pid=9764102766874&pr_seq=uniform" // example link
 	},
 	{
-		title: "How to talk to anyone",
-		author: "Leil Lowndes",
-		img: "https://images-na.ssl-images-amazon.com/images/I/81QpkIctqPL.jpg",
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE Class 12th Vol. 1, 2 & 3",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-12_1_b9535664-5823-4f44-af45-0d80c810d88a.jpg?v=1739599811",
 		rating: 4.9,
 		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-12th-vol-1-2-3-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=7652e2f0c&pr_rec_pid=9729296957722&pr_ref_pid=9866708680986&pr_seq=uniform"
 	},
 	{
-		title: "Who Moved My Cheese?",
-		author: "Spencer Johnson",
-		img: "https://images-na.ssl-images-amazon.com/images/I/71kxa1-0mfL.jpg",
+		title: "S.M.A.R.T. Minds Mathematics Class 9th CBSE Textbook and Addendum",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-9_2.jpg?v=1748239248&width=832",
 		rating: 4.9,
 		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-class-9th-cbse-textbook-and-addendum-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=1a3116758&pr_rec_pid=9764102766874&pr_ref_pid=9729296957722&pr_seq=uniform"
 	},
 	{
-		title: "The Psychology of Money",
-		author: "Morgan Housel",
-		img: "https://images-na.ssl-images-amazon.com/images/I/71g2ednj0JL.jpg",
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE Class 10th Vol. 1 & 2",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/1_2_8cf8b71c-02c4-4748-bb0d-dee3547381ee.jpg?v=1733995950",
 		rating: 4.9,
 		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-10th-vol-1-2-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=jac&pr_rec_id=fe6295118&pr_rec_pid=9706962452762&pr_ref_pid=9764102766874&pr_seq=uniform"
+	},
+		{
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE 2025-26 Syllabus Class 11th Vol. 1, 2",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-11-2.jpg?v=1744804001&width=1000",
+		rating: 4.9,
+		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-11th-vol-1-2-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=fe6295118&pr_rec_pid=9866708680986&pr_ref_pid=9764102766874&pr_seq=uniform" // example link
+	},
+	{
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE Class 12th Vol. 1, 2 & 3",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-12_1_b9535664-5823-4f44-af45-0d80c810d88a.jpg?v=1739599811",
+		rating: 4.9,
+		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-12th-vol-1-2-3-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=7652e2f0c&pr_rec_pid=9729296957722&pr_ref_pid=9866708680986&pr_seq=uniform"
+	},
+	{
+		title: "S.M.A.R.T. Minds Mathematics Class 9th CBSE Textbook and Addendum",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-9_2.jpg?v=1748239248&width=832",
+		rating: 4.9,
+		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-class-9th-cbse-textbook-and-addendum-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=1a3116758&pr_rec_pid=9764102766874&pr_ref_pid=9729296957722&pr_seq=uniform"
+	},
+	{
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE Class 10th Vol. 1 & 2",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/1_2_8cf8b71c-02c4-4748-bb0d-dee3547381ee.jpg?v=1733995950",
+		rating: 4.9,
+		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-10th-vol-1-2-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=jac&pr_rec_id=fe6295118&pr_rec_pid=9706962452762&pr_ref_pid=9764102766874&pr_seq=uniform"
+	},
+		{
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE 2025-26 Syllabus Class 11th Vol. 1, 2",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-11-2.jpg?v=1744804001&width=1000",
+		rating: 4.9,
+		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-11th-vol-1-2-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=fe6295118&pr_rec_pid=9866708680986&pr_ref_pid=9764102766874&pr_seq=uniform" // example link
+	},
+	{
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE Class 12th Vol. 1, 2 & 3",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-12_1_b9535664-5823-4f44-af45-0d80c810d88a.jpg?v=1739599811",
+		rating: 4.9,
+		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-12th-vol-1-2-3-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=7652e2f0c&pr_rec_pid=9729296957722&pr_ref_pid=9866708680986&pr_seq=uniform"
+	},
+	{
+		title: "S.M.A.R.T. Minds Mathematics Class 9th CBSE Textbook and Addendum",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/Class-9_2.jpg?v=1748239248&width=832",
+		rating: 4.9,
+		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-class-9th-cbse-textbook-and-addendum-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=e5_desc&pr_rec_id=1a3116758&pr_rec_pid=9764102766874&pr_ref_pid=9729296957722&pr_seq=uniform"
+	},
+	{
+		title: "S.M.A.R.T. Minds Mathematics Textbook for CBSE Class 10th Vol. 1 & 2",
+		author: "Parijat Jain (IIT Delhi & IIM Ahmedabad)",
+		img: "https://vkpublications.com/cdn/shop/files/1_2_8cf8b71c-02c4-4748-bb0d-dee3547381ee.jpg?v=1733995950",
+		rating: 4.9,
+		price: 32,
+		shopLink: "https://vkpublications.com/products/s-m-a-r-t-minds-mathematics-textbook-for-cbse-class-10th-vol-1-2-with-audio-visual-learning-resources-by-parijat-jain-iit-delhi-iim-ahmedabad?pr_prod_strat=jac&pr_rec_id=fe6295118&pr_rec_pid=9706962452762&pr_ref_pid=9764102766874&pr_seq=uniform"
 	},
 ];
 
@@ -90,11 +151,146 @@ const authors = [
 	},
 ];
 
+function BookGrid({ books, showAll, onClose }) {
+	const columns = 4; // Always 4 columns
+	const visibleBooks = showAll ? books : books.slice(0, 4);
+
+	return (
+		<div
+			style={{
+				display: "grid",
+				gridTemplateColumns: `repeat(4, 1fr)`, // Always 4 columns
+				gap: "min(18px, 3vw)",
+				marginBottom: showAll ? 24 : 0,
+			}}
+		>
+			{visibleBooks.map((book) => (
+				<div
+					key={book.title}
+					style={{
+						background: "#fff",
+						borderRadius: 12,
+						boxShadow: "0 2px 12px 0 rgba(31, 38, 135, 0.07)",
+						padding: 18,
+						minWidth: 180, // slightly smaller for better fit
+						maxWidth: 200,
+						flex: "1 1 180px",
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+					}}
+				>
+					<img
+						src={book.img}
+						alt={book.title}
+						style={{
+							width: 80, // smaller image for grid
+							height: 115,
+							objectFit: "cover",
+							borderRadius: 6,
+							marginBottom: 14,
+						}}
+					/>
+					<div
+						style={{
+							fontWeight: 600,
+							fontSize: 14,
+							color: "#3a2e1a",
+							textAlign: "center",
+						}}
+					>
+						{book.title}
+					</div>
+					<div
+						style={{
+							color: "#a08b6b",
+							fontSize: 12,
+							marginBottom: 6,
+							textAlign: "center",
+						}}
+					>
+						By : {book.author}
+					</div>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 6,
+							marginBottom: 10,
+						}}
+					>
+						<span
+							style={{
+								color: "#3b4a8b",
+								fontWeight: 700,
+							}}
+						>
+							{book.rating}
+						</span>
+						<span style={{ color: "#3b4a8b" }}>★</span>
+						<span
+							style={{
+								color: "#3a2e1a",
+								fontWeight: 500,
+							}}
+						>
+							${book.price}
+						</span>
+					</div>
+					<button
+						style={{
+							background: "#c97a2b",
+							color: "#fff",
+							border: "none",
+							borderRadius: 6,
+							padding: "8px 20px",
+							fontWeight: 600,
+							cursor: "pointer",
+							fontSize: "1rem",
+							marginTop: 4,
+							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+							transition: "background 0.2s",
+						}}
+						onClick={() => window.open(book.shopLink || "https://vkpublications.com/", "_blank")}
+					>
+						Shop
+					</button>
+				</div>
+			))}
+			{showAll && (
+				<div
+					style={{
+						gridColumn: `span 4`, // Always span 4 columns
+						textAlign: "right",
+						marginTop: 8,
+					}}
+				>
+					<button
+						style={{
+							background: "none",
+							color: "#3b4a8b",
+							border: "none",
+							fontWeight: 600,
+							fontSize: 16,
+							cursor: "pointer",
+							textDecoration: "underline",
+						}}
+						onClick={onClose}
+					>
+						Close
+					</button>
+				</div>
+			)}
+		</div>
+	);
+}
+
 export default function Home() {
 	const router = useRouter();
 	const [slideIdx, setSlideIdx] = useState(0);
-	const [coverIdx, setCoverIdx] = useState(1); // center index for coverflow
+	const [coverIdx, setCoverIdx] = useState(1);
 	const visibleCount = 3;
+	const [showAllBooks, setShowAllBooks] = useState(false);
 
 	const handlePrev = () => {
 		setSlideIdx((prev) =>
@@ -121,26 +317,39 @@ export default function Home() {
 		return () => clearInterval(interval);
 	}, []);
 
+	// Auto-slide for book carousel every 1.5s
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setSlideIdx((prev) =>
+				prev >= featuredBooks.length - visibleCount ? 0 : prev + 1
+			);
+		}, 1500);
+		return () => clearInterval(interval);
+	}, [featuredBooks.length, visibleCount]);
+
 	return (
 		<div
 			style={{
 				minHeight: "100vh",
 				width: "100vw",
-				background: "#f9f7f2",
+				background: "#f6f7fa",
 				fontFamily: "Georgia, 'Segoe UI', Arial, sans-serif",
+				maxWidth: "100vw",
+				margin: 0,
+				boxSizing: "border-box"
 			}}
 		>
 			{/* Navbar */}
 			<div
 				style={{
-					width: "100%",
-					background: "#fff",
-					boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+					width: "90%",
+					background: "#f6f7fa",
+					boxShadow: "0 2px 18px 0 rgba(44, 62, 80, 0.08)",
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "space-between",
-					padding: "0 48px",
-					height: 72,
+					padding: "0 5vw",
+					height: 60,
 					position: "sticky",
 					top: 0,
 					zIndex: 10,
@@ -149,61 +358,84 @@ export default function Home() {
 				<div
 					style={{
 						fontWeight: 700,
-						fontSize: 24,
-						color: "#c97a2b",
+						fontSize: 20,
+						color: "#2d3652", // dark blue from the image
 						letterSpacing: 1,
 					}}
 				>
 					<img
 						src="/vkpublications.png"
 						alt="logo"
-						style={{ height: 48, width: "auto", verticalAlign: "middle" }}
+						style={{ height: 36, width: "auto", verticalAlign: "middle" }}
 					/>
 				</div>
 				<div
 					style={{
 						display: "flex",
-						gap: 18,
+						gap: "min(2vw, 18px)",
 						alignItems: "center",
 					}}
 				>
-					{["Home", "E-book", "About", "Wishlist", "My cart"].map((label, idx) => {
+					{["Home", "E-book", "NCERT", "Our Vision", "About Us"].map((label, idx) => {
+						let isActive = idx === 0;
 						let props = {
 							style: {
-								color: "#222",
-								textDecoration: "none",
-								fontWeight: 500,
-								padding: "8px 22px",
-								borderRadius: 10,
-								background: "#fff",
-								boxShadow: "0 4px 24px 0 rgba(31, 38, 135, 0.10)",
-								border: "1px solid rgba(200,200,200,0.25)",
-								transition: "background 0.2s, box-shadow 0.2s, transform 0.18s cubic-bezier(.36,.07,.19,.97)",
+								background: isActive ? "#e8eaf6" : "transparent", // light blue for active
+								border: isActive ? "1.5px solid #3b4a8b" : "1.5px solid transparent", // blue border
+								color: isActive ? "#2d3652" : "#6b6f7a", // dark blue for active, gray for others
+								fontWeight: isActive ? 700 : 500,
+								fontSize: "1rem",
+								padding: "0.5rem 1.7rem",
+								borderRadius: "2rem",
 								cursor: "pointer",
-								display: "inline-block"
+								transition: "all 0.18s cubic-bezier(.36,.07,.19,.97)",
+								boxShadow: isActive ? "0 2px 12px #3b4a8b22" : "none",
+								position: "relative",
+								outline: "none",
+								marginRight: 0,
 							},
 							onMouseEnter: e => {
-								e.currentTarget.style.transform = "scale(0.92)";
+								e.currentTarget.style.background = "#e8eaf6";
+								e.currentTarget.style.color = "#2d3652";
+								e.currentTarget.style.border = "1.5px solid #3b4a8b";
+								e.currentTarget.style.fontWeight = 700;
+								e.currentTarget.style.boxShadow = "0 2px 12px #3b4a8b22";
 							},
 							onMouseLeave: e => {
-								e.currentTarget.style.transform = "none";
+								e.currentTarget.style.background = isActive ? "#e8eaf6" : "transparent";
+								e.currentTarget.style.color = isActive ? "#2d3652" : "#6b6f7a";
+								e.currentTarget.style.border = isActive ? "1.5px solid #3b4a8b" : "1.5px solid transparent";
+								e.currentTarget.style.fontWeight = isActive ? 700 : 500;
+								e.currentTarget.style.boxShadow = isActive ? "0 2px 12px #3b4a8b22" : "none";
 							}
 						};
 						// Routing logic
 						if (label === "Home") {
 							props.href = "#";
 							props.onClick = e => { e.preventDefault(); router.push("/"); };
-						} else if (label === "About") {
-							props.href = "https://vkpublications.com/pages/vk";
-							props.target = "_blank";
-							props.rel = "noopener noreferrer";
+						} else if (label === "NCERT") {
+							props.onClick = e => { e.preventDefault(); window.open("https://ncert.nic.in/textbook.php", "_blank"); };
+						} else if (label === "About Us") {
+							props.onClick = e => { e.preventDefault(); window.open("https://vkpublications.com/pages/vk", "_blank"); };
 						} else {
 							props.href = "#";
 						}
 						return (
-							<a key={label} {...props}>
+							<button
+								key={label}
+								{...props}
+							>
 								{label}
-							</a>
+								<span className="stars" style={{
+									display: "none",
+									position: "absolute",
+									right: 10,
+									top: 8,
+									fontSize: 14,
+									color: "#3b4a8b",
+									transition: "filter 0.2s"
+								}}>★</span>
+							</button>
 						);
 					})}
 				</div>
@@ -211,13 +443,12 @@ export default function Home() {
 					style={{
 						display: "flex",
 						alignItems: "center",
-						gap: 24,
+						gap: "min(2vw, 24px)",
 					}}
 				>
-					{/* Replace search, EN, and profile pic with Login button */}
 					<button
 						style={{
-							background: "#c97a2b",
+							background: "#3b4a8b", // blue from the image
 							color: "#fff",
 							border: "none",
 							borderRadius: 8,
@@ -225,7 +456,7 @@ export default function Home() {
 							fontWeight: 600,
 							fontSize: 17,
 							cursor: "pointer",
-							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+							boxShadow: "0 2px 8px rgba(44,62,80,0.10)",
 							transition: "background 0.2s",
 						}}
 						onClick={() => router.push("/login")}
@@ -241,18 +472,19 @@ export default function Home() {
 					flexDirection: "row",
 					alignItems: "center",
 					justifyContent: "center",
-					padding: "56px 0 32px 0",
-					gap: 64,
+					padding: "max(24px, 4vw) 0 max(18px, 2vw) 0",
+					gap: "max(32px, 4vw)",
+					flexWrap: "wrap",
 				}}
 			>
-				<div style={{ maxWidth: 420 }}>
+				<div style={{ maxWidth: 400, flex: "1 1 320px" }}>
 					<div
 						style={{
-							fontSize: "3rem",
+							fontSize: "2.1rem", // reduce font size
 							fontWeight: 600,
 							color: "#3a2e1a",
 							lineHeight: 1.1,
-							marginBottom: 16,
+							marginBottom: 12,
 						}}
 					>
 						Find Your
@@ -262,8 +494,8 @@ export default function Home() {
 					<div
 						style={{
 							color: "#6d5c3d",
-							fontSize: "1.15rem",
-							marginBottom: 32,
+							fontSize: "1rem", // reduce font size
+							marginBottom: 18,
 						}}
 					>
 						Discover a world where every page brings a new adventure. At Paper
@@ -275,8 +507,8 @@ export default function Home() {
 							color: "#fff",
 							border: "none",
 							borderRadius: 6,
-							padding: "12px 32px",
-							fontSize: "1.1rem",
+							padding: "8px 20px", // reduce padding
+							fontSize: "1rem",
 							fontWeight: 600,
 							cursor: "pointer",
 							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
@@ -288,22 +520,30 @@ export default function Home() {
 					</button>
 				</div>
 				{/* Book Carousel */}
-				<div style={{ position: "relative", width: 600, height: 320, display: "flex", alignItems: "center", justifyContent: "center" }}>
+				<div style={{
+					position: "relative",
+					width: "min(420px, 90vw)",
+					height: 220,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center"
+				}}>
 					<button
 						onClick={handlePrev}
 						style={{
 							position: "absolute",
-							left: -32,
+							left: -20,
 							top: "50%",
 							transform: "translateY(-50%)",
 							background: "#fff",
 							border: "1px solid #ccc",
 							borderRadius: "50%",
-							width: 32,
-							height: 32,
+							width: 24,
+							height: 24,
 							cursor: "pointer",
 							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
 							zIndex: 2,
+							fontSize: 14,
 						}}
 						aria-label="Previous"
 					>
@@ -311,8 +551,8 @@ export default function Home() {
 					</button>
 					<div
 						style={{
-							width: 540,
-							height: 280,
+							width: "min(380px, 80vw)",
+							height: 180,
 							overflow: "hidden",
 							position: "relative",
 						}}
@@ -321,8 +561,8 @@ export default function Home() {
 							style={{
 								display: "flex",
 								transition: "transform 0.5s cubic-bezier(.36,.07,.19,.97)",
-								transform: `translateX(-${slideIdx * 180}px)`,
-								width: `${featuredBooks.length * 180}px`,
+								transform: `translateX(-${slideIdx * 110}px)`,
+								width: `${featuredBooks.length * 110}px`,
 							}}
 						>
 							{featuredBooks.map((book, idx) => (
@@ -330,14 +570,14 @@ export default function Home() {
 									key={book.title}
 									style={{
 										background: "#fff",
-										borderRadius: 16,
-										boxShadow: "0 4px 24px 0 rgba(31, 38, 135, 0.09)",
-										padding: "32px 24px 40px 24px",
+										borderRadius: 10,
+										boxShadow: "0 2px 12px 0 rgba(31, 38, 135, 0.09)",
+										padding: "12px 8px 18px 8px",
 										textAlign: "center",
-										minWidth: 140,
-										minHeight: 220,
-										width: 180,
-										margin: "0 10px",
+										minWidth: 80,
+										minHeight: 120,
+										width: 110,
+										margin: "0 4px",
 										position: "relative",
 										transition: "box-shadow 0.2s",
 									}}
@@ -346,19 +586,20 @@ export default function Home() {
 										src={book.img}
 										alt={book.title}
 										style={{
-											width: 110,
-											height: 160,
+											width: 70,
+											height: 100,
 											objectFit: "cover",
-											borderRadius: 8,
-											boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
-											marginBottom: 12,
+											borderRadius: 6,
+											boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
+											marginBottom: 8,
 										}}
 									/>
 									<div
 										style={{
 											fontWeight: 600,
-											fontSize: 16,
+											fontSize: 12,
 											color: "#3a2e1a",
+											fontFamily: "'Soria', Georgia, serif",
 										}}
 									>
 										{book.title}
@@ -366,7 +607,7 @@ export default function Home() {
 									<div
 										style={{
 											color: "#a08b6b",
-											fontSize: 14,
+											fontSize: 11,
 										}}
 									>
 										{book.author}
@@ -379,17 +620,18 @@ export default function Home() {
 						onClick={handleNext}
 						style={{
 							position: "absolute",
-							right: -32,
+							right: -20,
 							top: "50%",
 							transform: "translateY(-50%)",
 							background: "#fff",
 							border: "1px solid #ccc",
 							borderRadius: "50%",
-							width: 32,
-							height: 32,
+							width: 24,
+							height: 24,
 							cursor: "pointer",
 							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
 							zIndex: 2,
+							fontSize: 14,
 						}}
 						aria-label="Next"
 					>
@@ -404,8 +646,9 @@ export default function Home() {
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center",
-					gap: 32,
-					margin: "32px 0 0 0",
+					gap: "min(18px, 3vw)",
+					margin: "18px 0 0 0",
+					flexWrap: "wrap"
 				}}
 			>
 				{authors.map((author, idx) => (
@@ -449,9 +692,9 @@ export default function Home() {
 			{/* Recommended For You */}
 			<div
 				style={{
-					margin: "48px auto 0 auto",
-					maxWidth: 1100,
-					width: "95%",
+					margin: "24px auto 0 auto",
+					maxWidth: 900,
+					width: "97%",
 				}}
 			>
 				<div
@@ -474,606 +717,404 @@ export default function Home() {
 					<a
 						href="#"
 						style={{
-							color: "#c97a2b",
+							color: "#3b4a8b",
 							fontWeight: 500,
 							textDecoration: "none",
 							fontSize: 15,
+							cursor: "pointer"
+						}}
+						onClick={e => {
+							e.preventDefault();
+							setShowAllBooks(true);
 						}}
 					>
 						See all &rarr;
 					</a>
 				</div>
-				<div
-					style={{
-						display: "flex",
-						gap: 24,
-						flexWrap: "wrap",
-					}}
-				>
-					{recommendedBooks.map((book) => (
-						<div
-							key={book.title}
-							style={{
-								background: "#fff",
-								borderRadius: 12,
-								boxShadow:
-									"0 2px 12px 0 rgba(31, 38, 135, 0.07)",
-								padding: 18,
-								minWidth: 200,
-								maxWidth: 220,
-								flex: "1 1 200px",
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center",
-							}}
-						>
-							<img
-								src={book.img}
-								alt={book.title}
-								style={{
-									width: 90,
-									height: 130,
-									objectFit: "cover",
-									borderRadius: 6,
-									marginBottom: 14,
-								}}
-							/>
-							<div
-								style={{
-									fontWeight: 600,
-									fontSize: 15,
-									color: "#3a2e1a",
-									textAlign: "center",
-								}}
-							>
-								{book.title}
-							</div>
-							<div
-								style={{
-									color: "#a08b6b",
-									fontSize: 13,
-									marginBottom: 6,
-									textAlign: "center",
-								}}
-							>
-								By : {book.author}
-							</div>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: 6,
-									marginBottom: 10,
-								}}
-							>
-								<span
-									style={{
-										color: "#f5b942",
-										fontWeight: 700,
-									}}
-								>
-									{book.rating}
-								</span>
-								<span style={{ color: "#bdbdbd" }}>★</span>
-								<span
-									style={{
-										color: "#3a2e1a",
-										fontWeight: 500,
-									}}
-								>
-									${book.price}
-								</span>
-							</div>
-							<button
-								style={{
-									background: "#c97a2b",
-									color: "#fff",
-									border: "none",
-									borderRadius: 6,
-									padding: "8px 18px",
-									fontWeight: 600,
-									cursor: "pointer",
-									fontSize: 15,
-									marginTop: 4,
-								}}
-							>
-								Add to cart
-							</button>
-						</div>
-					))}
-				</div>
+				{/* Book Grid */}
+				<BookGrid
+					books={recommendedBooks}
+					showAll={showAllBooks}
+					onClose={() => setShowAllBooks(false)}
+				/>
 			</div>
 
-			{/* 3D Coverflow Carousel */}
-			<div style={{
-				width: "100%",
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				padding: "80px 0 80px 0",
-				background: "linear-gradient(180deg, #f9f7f2 60%, #e9e7e2 100%)"
-			}}>
-				<div style={{ position: "relative", width: 1200, height: 480 }}>
-					<button
-						onClick={handleCoverPrev}
-						style={{
-							position: "absolute",
-							left: 0,
-							top: "50%",
-							transform: "translateY(-50%)",
-							background: "#fff",
-							border: "1px solid #ccc",
-							borderRadius: "50%",
-							width: 56,
-							height: 56,
-							cursor: "pointer",
-							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-							zIndex: 2,
-							fontSize: 32,
-						}}
-						aria-label="Previous"
-					>
-						&#8592;
-					</button>
-					<div style={{
-						width: 1100,
-						height: 480,
-						margin: "0 auto",
-						perspective: 1800,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						overflow: "visible",
-					}}>
-						{featuredBooks.map((book, idx) => {
-							const offset = idx - coverIdx;
-							let transform = "";
-							let zIndex = 10 - Math.abs(offset);
-							let opacity = Math.abs(offset) > 2 ? 0 : 1;
-							if (offset === 0) {
-								transform = "translateX(0px) scale(1.18) rotateY(0deg)";
-							} else if (offset < 0) {
-								transform = `translateX(${offset * 220}px) scale(0.98) rotateY(30deg)`;
-							} else {
-								transform = `translateX(${offset * 220}px) scale(0.98) rotateY(-30deg)`;
-							}
-							return (
-								<div key={book.title}
-									style={{
-										position: "absolute",
-										left: "50%",
-										top: "50%",
-										transform: `translate(-50%, -50%) ${transform}`,
-										transition: "transform 0.5s cubic-bezier(.36,.07,.19,.97), opacity 0.4s",
-										zIndex,
-										opacity,
-										boxShadow: offset === 0
-											? "0 12px 48px rgba(0,0,0,0.18)"
-											: "0 4px 18px rgba(0,0,0,0.10)",
-										background: "#fff",
-										borderRadius: 28,
-										width: 260,
-										height: 380,
-										display: opacity === 0 ? "none" : "flex",
-										flexDirection: "column",
-										alignItems: "center",
-										justifyContent: "center",
-										cursor: offset === 0 ? "default" : "pointer",
-										border: offset === 0 ? "3px solid #c97a2b" : "none",
-									}}
-								>
-									<img
-										src={book.img}
-										alt={book.title}
-										style={{
-											width: 180,
-											height: 260,
-											objectFit: "cover",
-											borderRadius: 16,
-											marginBottom: 22,
-											boxShadow: offset === 0
-												? "0 12px 32px rgba(0,0,0,0.13)"
-												: "0 2px 8px rgba(0,0,0,0.07)",
-										}}
-									/>
-									<div style={{
-										fontWeight: 700,
-										fontSize: 22,
-										color: "#3a2e1a",
-										textAlign: "center",
-										marginBottom: 6,
-									}}>
-										{book.title}
-									</div>
-									<div style={{
-										color: "#a08b6b",
-										fontSize: 17,
-										textAlign: "center",
-									}}>
-										{book.author}
-									</div>
-								</div>
-							);
-						})}
-					</div>
-					<button
-						onClick={handleCoverNext}
-						style={{
-							position: "absolute",
-							right: 0,
-							top: "50%",
-							transform: "translateY(-50%)",
-							background: "#fff",
-							border: "1px solid #ccc",
-							borderRadius: "50%",
-							width: 56,
-							height: 56,
-							cursor: "pointer",
-							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-							zIndex: 2,
-							fontSize: 32,
-						}}
-						aria-label="Next"
-					>
-						&#8594;
-					</button>
-				</div>
-			</div>
-			
 			{/* Footer */}
 			<div
 				style={{
-					marginTop: 56,
-					background: "#fff",
-					borderTop: "1px solid #eee",
-					padding: "40px 0 0 0",
-					color: "#222",
+					marginTop: 28,
+					background: "#f6f7fa",
+					borderTop: "1px solid #e0e3ea",
+					padding: "24px 0 0 0",
+					color: "#2d3652",
 					fontFamily: "Segoe UI, Arial, sans-serif",
+					width: "100%",
+					boxSizing: "border-box",
 				}}
 			>
 				<div
 					style={{
-						maxWidth: 1300,
+						maxWidth: 1100,
 						margin: "0 auto",
-						padding: "0 32px",
+						padding: "0 3vw",
 						display: "flex",
 						justifyContent: "space-between",
 						flexWrap: "wrap",
-						gap: 32,
+						gap: "min(18px, 3vw)",
+						width: "100%",
+						boxSizing: "border-box",
+						alignItems: "flex-start",
 					}}
 				>
-					{/* Logo and copyright */}
-					<div style={{ minWidth: 220, flex: "1 1 220px" }}>
-						<img
-							src="/vkpublications.png"
-							alt="VK Global Group"
-							style={{ height: 56, marginBottom: 12 }}
-						/>
-						<div
-							style={{
-								fontWeight: 700,
-								fontSize: 20,
-								marginBottom: 2,
-							}}
-						>
-							VK Global Group
-						</div>
-						<div
-							style={{
-								fontSize: 13,
-								color: "#444",
-								marginBottom: 8,
-							}}
-						>
-							since 1979
-						</div>
-						<div
-							style={{
-								fontSize: 13,
-								color: "#888",
-								marginBottom: 8,
-							}}
-						>
-							Publishing • Packaging • Printing
-						</div>
-						<div
-							style={{
-								fontSize: 13,
-								color: "#888",
-								marginBottom: 8,
-							}}
-						>
-							© Copyright,
-							<br />
-							<a
-								href="https://vkpublications.com/"
-								target="_blank"
-								rel="noopener noreferrer"
+					<div style={{
+						maxWidth: "100%",
+						width: "100%",
+						minWidth: 0,
+						boxSizing: "border-box",
+						display: "flex",
+						alignItems: "flex-start",
+						justifyContent: "space-between",
+						flexWrap: "wrap",
+						gap: "min(18px, 3vw)",
+						padding: "0",
+					}}>
+						{/* Logo and copyright */}
+						<div style={{ minWidth: 220, flex: "1 1 220px" }}>
+							<img
+								src="/vkpublications.png"
+								alt="VK Global Group"
+								style={{ height: 56, marginBottom: 12 }}
+							/>
+							<div
 								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
+									fontWeight: 700,
+									fontSize: 20,
+									marginBottom: 2,
 								}}
 							>
-								VK Global Publications Pvt. Ltd.
-							</a>
-							<br />
-							{new Date().getFullYear()}
-						</div>
-					</div>
-					{/* About VK Global Group */}
-					<div style={{ minWidth: 180, flex: "1 1 180px" }}>
-						<div
-							style={{ fontWeight: 600, marginBottom: 10 }}
-						>
-							About VK Global Group
-						</div>
-						<div>
-							<a
-								href="#"
+								VK Global Group
+							</div>
+							<div
 								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
+									fontSize: 13,
+									color: "#444",
+									marginBottom: 8,
+								}}
+							>
+								since 1979
+							</div>
+							<div
+								style={{
+									fontSize: 13,
+									color: "#888",
+									marginBottom: 8,
+								}}
+							>
+								Publishing • Packaging • Printing
+							</div>
+							<div
+								style={{
+									fontSize: 13,
+									color: "#888",
+									marginBottom: 8,
+								}}
+							>
+								© Copyright,
+								<br />
+								<a
+									href="https://vkpublications.com/"
+									target="_blank"
+									rel="noopener noreferrer"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+									}}
+								>
+									VK Global Publications Pvt. Ltd.
+								</a>
+								<br />
+								{new Date().getFullYear()}
+							</div>
+						</div>
+						{/* About VK Global Group */}
+						<div style={{ minWidth: 180, flex: "1 1 180px" }}>
+							<div
+								style={{ fontWeight: 600, marginBottom: 10 }}
+							>
+								About VK Global Group
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Packaging
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Printing
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Holographic Films
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Future Kids Publications
+								</a>
+							</div>
+						</div>
+						{/* For Learners */}
+						<div style={{ minWidth: 140, flex: "1 1 140px" }}>
+							<div
+								style={{ fontWeight: 600, marginBottom: 10 }}
+							>
+								For Learners
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Home
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Catalogue
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Resources
+								</a>
+							</div>
+						</div>
+						{/* For Educators */}
+						<div style={{ minWidth: 160, flex: "1 1 160px" }}>
+							<div
+								style={{ fontWeight: 600, marginBottom: 10 }}
+							>
+								For Educators
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Publish with Us
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Sample Request
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Teachers Resources
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Blogs
+								</a>
+							</div>
+						</div>
+						{/* The Company */}
+						<div style={{ minWidth: 200, flex: "1 1 200px" }}>
+							<div
+								style={{ fontWeight: 600, marginBottom: 10 }}
+							>
+								The Company
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Careers
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Cookies
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Privacy Policy
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Terms and Conditions
+								</a>
+							</div>
+							<div>
+								<a
+									href="#"
+									style={{
+										color: "#1e3c72",
+										textDecoration: "underline",
+										fontSize: 15,
+									}}
+								>
+									Orders, Shipping and Refund Policy
+								</a>
+							</div>
+						</div>
+						{/* Address */}
+						<div style={{ minWidth: 220, flex: "1 1 220px" }}>
+							<div
+								style={{ fontWeight: 600, marginBottom: 10 }}
+							>
+								&nbsp;
+							</div>
+							<div
+								style={{
+									color: "#222",
 									fontSize: 15,
+									fontWeight: 500,
+									marginBottom: 2,
 								}}
 							>
-								Packaging
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
+								15/1, Main Mathura Road
+								<br />
+								Sector 31, Faridabad,
+								<br />
+								Haryana, 121003
+							</div>
+							<div
 								style={{
 									color: "#1e3c72",
-									textDecoration: "underline",
+									fontWeight: 700,
 									fontSize: 15,
+									marginTop: 8,
 								}}
 							>
-								Printing
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Holographic Films
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Future Kids Publications
-							</a>
-						</div>
-					</div>
-					{/* For Learners */}
-					<div style={{ minWidth: 140, flex: "1 1 140px" }}>
-						<div
-							style={{ fontWeight: 600, marginBottom: 10 }}
-						>
-							For Learners
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Home
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Catalogue
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Resources
-							</a>
-						</div>
-					</div>
-					{/* For Educators */}
-					<div style={{ minWidth: 160, flex: "1 1 160px" }}>
-						<div
-							style={{ fontWeight: 600, marginBottom: 10 }}
-						>
-							For Educators
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Publish with Us
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Sample Request
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Teachers Resources
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Blogs
-							</a>
-						</div>
-					</div>
-					{/* The Company */}
-					<div style={{ minWidth: 200, flex: "1 1 200px" }}>
-						<div
-							style={{ fontWeight: 600, marginBottom: 10 }}
-						>
-							The Company
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Careers
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Cookies
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Privacy Policy
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Terms and Conditions
-							</a>
-						</div>
-						<div>
-							<a
-								href="#"
-								style={{
-									color: "#1e3c72",
-									textDecoration: "underline",
-									fontSize: 15,
-								}}
-							>
-								Orders, Shipping and Refund Policy
-							</a>
-						</div>
-					</div>
-					{/* Address */}
-					<div style={{ minWidth: 220, flex: "1 1 220px" }}>
-						<div
-							style={{ fontWeight: 600, marginBottom: 10 }}
-						>
-							&nbsp;
-						</div>
-						<div
-							style={{
-								color: "#222",
-								fontSize: 15,
-								fontWeight: 500,
-								marginBottom: 2,
-							}}
-						>
-							15/1, Main Mathura Road
-							<br />
-							Sector 31, Faridabad,
-							<br />
-							Haryana, 121003
-						</div>
-						<div
-							style={{
-								color: "#1e3c72",
-								fontWeight: 700,
-								fontSize: 15,
-								marginTop: 8,
-							}}
-						>
-							VK Global Publications Private Limited
+								VK Global Publications Private Limited
+							</div>
 						</div>
 					</div>
 				</div>
 				<hr
 					style={{
-						margin: "36px 0 24px 0",
+						margin: "18px 0 12px 0",
 						border: "none",
-						borderTop: "1px solid #eee",
+						borderTop: "1px solid #e0e3ea",
+						width: "100%",
+						boxSizing: "border-box",
 					}}
 				/>
 				<div
 					style={{
-						maxWidth: 1300,
+						maxWidth: 1100,
 						margin: "0 auto",
-						padding: "0 32px 24px 32px",
+						padding: "0 3vw 12px 3vw",
 						display: "flex",
 						justifyContent: "space-between",
 						alignItems: "center",
 						flexWrap: "wrap",
-						gap: 24,
+						gap: "min(12px, 2vw)",
+						width: "100%",
+						boxSizing: "border-box",
 					}}
 				>
 					{/* Payment and Social */}
