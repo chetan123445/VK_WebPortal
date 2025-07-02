@@ -14,6 +14,7 @@ import { getCbseUpdates } from '../controller/cbseController.js';
 import { addMindMap, getMindMaps, deleteMindMap, mindMapUpload, updateMindMap } from '../controller/mindMapController.js';
 import { addAVLR, getAVLRs, updateAVLR, deleteAVLR } from '../controller/avlrController.js';
 import { createDLR, getDLRs, updateDLR, deleteDLR, removeDLRPdf, dlrUpload } from '../controller/dlrController.js';
+import { addCreativeItem, getCreativeItems, deleteCreativeItem, creativeCornerUpload, updateCreativeItem } from '../controller/creativeCornerController.js';
 
 const router = express.Router();
 
@@ -98,6 +99,12 @@ router.get('/api/dlrs', getDLRs);
 router.put('/api/dlr/:id', dlrUpload.array('pdfs', 10), updateDLR);
 router.delete('/api/dlr/:id', deleteDLR);
 router.post('/api/dlr/:id/remove-pdf', removeDLRPdf);
+
+// Creative Corner routes
+router.post('/api/creative-corner', authenticateToken, creativeCornerUpload.array('files', 10), addCreativeItem);
+router.get('/api/creative-corner', getCreativeItems);
+router.put('/api/creative-corner/:id', authenticateToken, creativeCornerUpload.array('files', 10), updateCreativeItem);
+router.delete('/api/creative-corner/:id', authenticateToken, deleteCreativeItem);
 
 // Serve announcement images
 router.use('/uploads/announcements', express.static('backend/public/uploads/announcements'));
