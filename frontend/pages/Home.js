@@ -133,14 +133,14 @@ const recommendedBooks = [
 ];
 
 function BookGrid({ books, showAll, onClose }) {
-	const columns = 4; // Always 4 columns
+	const columns = 4;
 	const visibleBooks = showAll ? books : books.slice(0, 4);
 
 	return (
 		<div
 			style={{
 				display: "grid",
-				gridTemplateColumns: `repeat(4, 1fr)`, // Always 4 columns
+				gridTemplateColumns: `repeat(4, 1fr)`,
 				gap: "min(18px, 3vw)",
 				marginBottom: showAll ? 24 : 0,
 			}}
@@ -150,34 +150,41 @@ function BookGrid({ books, showAll, onClose }) {
 					key={book.title}
 					style={{
 						background: "#fff",
-						borderRadius: 12,
-						boxShadow: "0 2px 12px 0 rgba(31, 38, 135, 0.07)",
-						padding: 18,
-						minWidth: 180, // slightly smaller for better fit
-						maxWidth: 200,
+						borderRadius: 16,
+						boxShadow: "0 4px 18px 0 rgba(44, 62, 80, 0.10)", // stronger shadow for card effect
+						padding: "18px 12px 22px 12px",
+						minWidth: 180,
+						maxWidth: 220,
 						flex: "1 1 180px",
 						display: "flex",
 						flexDirection: "column",
 						alignItems: "center",
+						justifyContent: "flex-start",
+						margin: "0 auto",
+						border: "1.5px solid #f2f2f2",
+						transition: "box-shadow 0.18s",
 					}}
 				>
 					<img
 						src={book.img}
 						alt={book.title}
 						style={{
-							width: 80, // smaller image for grid
+							width: 80,
 							height: 115,
 							objectFit: "cover",
-							borderRadius: 6,
+							borderRadius: 8,
 							marginBottom: 14,
+							boxShadow: "0 2px 8px rgba(44,62,80,0.10)",
+							background: "#f8f8f8"
 						}}
 					/>
 					<div
 						style={{
-							fontWeight: 600,
-							fontSize: 14,
+							fontWeight: 700,
+							fontSize: 15,
 							color: "#3a2e1a",
 							textAlign: "center",
+							marginBottom: 4,
 						}}
 					>
 						{book.title}
@@ -215,7 +222,7 @@ function BookGrid({ books, showAll, onClose }) {
 								fontWeight: 500,
 							}}
 						>
-							${book.price}
+							₹{book.price}
 						</span>
 					</div>
 					<button
@@ -238,30 +245,6 @@ function BookGrid({ books, showAll, onClose }) {
 					</button>
 				</div>
 			))}
-			{showAll && (
-				<div
-					style={{
-						gridColumn: `span 4`, // Always span 4 columns
-						textAlign: "right",
-						marginTop: 8,
-					}}
-				>
-					<button
-						style={{
-							background: "none",
-							color: "#3b4a8b",
-							border: "none",
-							fontWeight: 600,
-							fontSize: 16,
-							cursor: "pointer",
-							textDecoration: "underline",
-						}}
-						onClick={onClose}
-					>
-						Close
-					</button>
-				</div>
-			)}
 		</div>
 	);
 }
@@ -289,24 +272,6 @@ export default function Home() {
 	const handleCoverNext = () => {
 		setCoverIdx((prev) => (prev === featuredBooks.length - 1 ? 0 : prev + 1));
 	};
-
-	// Auto-slide for coverflow every 1.5s
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setCoverIdx((prev) => (prev === featuredBooks.length - 1 ? 0 : prev + 1));
-		}, 1500);
-		return () => clearInterval(interval);
-	}, []);
-
-	// Auto-slide for book carousel every 1.5s
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setSlideIdx((prev) =>
-				prev >= featuredBooks.length - visibleCount ? 0 : prev + 1
-			);
-		}, 1500);
-		return () => clearInterval(interval);
-	}, [featuredBooks.length, visibleCount]);
 
 	return (
 		<div
@@ -429,21 +394,42 @@ export default function Home() {
 				>
 					<button
 						style={{
-							background: "#3b4a8b", // blue from the image
+							background: "rgba(59,74,139,0.7)", // glass effect with transparency
 							color: "#fff",
 							border: "none",
-							borderRadius: 8,
+							borderRadius: 16, // more glassy
 							padding: "10px 32px",
 							fontWeight: 600,
 							fontSize: 17,
 							cursor: "pointer",
-							boxShadow: "0 2px 8px rgba(44,62,80,0.10)",
-							transition: "background 0.2s",
+							boxShadow: "0 4px 24px 0 rgba(44,62,80,0.16), 0 1.5px 8px 0 rgba(59,74,139,0.10)", // glassy shadow
+							transition: "background 0.2s, box-shadow 0.2s",
+							backdropFilter: "blur(6px)", // glass blur
+							WebkitBackdropFilter: "blur(6px)",
+							position: "relative",
+							overflow: "hidden",
+							display: "flex",
+							alignItems: "center",
+							gap: 8,
+						}}
+						onMouseEnter={e => {
+							e.currentTarget.style.background = "rgba(59,74,139,0.85)";
+							e.currentTarget.style.boxShadow = "0 8px 32px 0 rgba(44,62,80,0.22), 0 2px 12px 0 rgba(59,74,139,0.18)";
+						}}
+						onMouseLeave={e => {
+							e.currentTarget.style.background = "rgba(59,74,139,0.7)";
+							e.currentTarget.style.boxShadow = "0 4px 24px 0 rgba(44,62,80,0.16), 0 1.5px 8px 0 rgba(59,74,139,0.10)";
 						}}
 						onClick={() => router.push("/login")}
 					>
 						Login
 					</button>
+					<style>{`
+						@keyframes star-glow {
+							0% { filter: drop-shadow(0 0 4px #fff7); opacity: 1; }
+							100% { filter: drop-shadow(0 0 12px #fff); opacity: 0.7; }
+						}
+					`}</style>
 				</div>
 			</div>
 			{/* Hero Section */}
@@ -452,10 +438,12 @@ export default function Home() {
 					display: "flex",
 					flexDirection: "row",
 					alignItems: "center",
-					justifyContent: "center",
+					justifyContent: "flex-start",
 					padding: "max(24px, 4vw) 0 max(18px, 2vw) 0",
 					gap: "max(32px, 4vw)",
 					flexWrap: "wrap",
+					width: "80vw", // match the width of the book grid
+					margin: "0 auto",
 				}}
 			>
 				<div style={{ maxWidth: 400, flex: "1 1 320px" }}>
@@ -503,8 +491,8 @@ export default function Home() {
 				{/* Book Carousel */}
 				<div style={{
 					position: "relative",
-					width: "min(420px, 90vw)",
-					height: 220,
+					width: "min(700px, 100%)", // increased width
+					height: 320, // increased height
 					display: "flex",
 					alignItems: "center",
 					justifyContent: "center"
@@ -519,12 +507,12 @@ export default function Home() {
 							background: "#fff",
 							border: "1px solid #ccc",
 							borderRadius: "50%",
-							width: 24,
-							height: 24,
+							width: 32, // increased button size
+							height: 32,
 							cursor: "pointer",
 							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
 							zIndex: 2,
-							fontSize: 14,
+							fontSize: 18,
 						}}
 						aria-label="Previous"
 					>
@@ -532,8 +520,8 @@ export default function Home() {
 					</button>
 					<div
 						style={{
-							width: "min(380px, 80vw)",
-							height: 180,
+							width: "min(660px, 95vw)", // increased carousel width
+							height: 260, // increased carousel height
 							overflow: "hidden",
 							position: "relative",
 						}}
@@ -542,8 +530,8 @@ export default function Home() {
 							style={{
 								display: "flex",
 								transition: "transform 0.5s cubic-bezier(.36,.07,.19,.97)",
-								transform: `translateX(-${slideIdx * 110}px)`,
-								width: `${featuredBooks.length * 110}px`,
+								transform: `translateX(-${slideIdx * 140}px)`, // adjust for larger cards
+								width: `${featuredBooks.length * 140}px`,
 							}}
 						>
 							{featuredBooks.map((book, idx) => (
@@ -553,12 +541,12 @@ export default function Home() {
 										background: "#fff",
 										borderRadius: 10,
 										boxShadow: "0 2px 12px 0 rgba(31, 38, 135, 0.09)",
-										padding: "12px 8px 18px 8px",
+										padding: "18px 10px 22px 10px",
 										textAlign: "center",
-										minWidth: 80,
-										minHeight: 120,
-										width: 110,
-										margin: "0 4px",
+										minWidth: 110,
+										minHeight: 160,
+										width: 140,
+										margin: "0 8px",
 										position: "relative",
 										transition: "box-shadow 0.2s",
 									}}
@@ -567,18 +555,18 @@ export default function Home() {
 										src={book.img}
 										alt={book.title}
 										style={{
-											width: 70,
-											height: 100,
+											width: 100,
+											height: 140,
 											objectFit: "cover",
-											borderRadius: 6,
+											borderRadius: 8,
 											boxShadow: "0 4px 12px rgba(0,0,0,0.10)",
-											marginBottom: 8,
+											marginBottom: 10,
 										}}
 									/>
 									<div
 										style={{
 											fontWeight: 600,
-											fontSize: 12,
+											fontSize: 13,
 											color: "#3a2e1a",
 											fontFamily: "'Soria', Georgia, serif",
 										}}
@@ -607,12 +595,12 @@ export default function Home() {
 							background: "#fff",
 							border: "1px solid #ccc",
 							borderRadius: "50%",
-							width: 24,
-							height: 24,
+							width: 32,
+							height: 32,
 							cursor: "pointer",
 							boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
 							zIndex: 2,
-							fontSize: 14,
+							fontSize: 18,
 						}}
 						aria-label="Next"
 					>
@@ -625,8 +613,8 @@ export default function Home() {
 			<div
 				style={{
 					margin: "24px auto 0 auto",
-					maxWidth: 900,
-					width: "97%",
+					maxWidth: "80vw",
+					width: "80vw",
 				}}
 			>
 				<div
@@ -657,10 +645,10 @@ export default function Home() {
 						}}
 						onClick={e => {
 							e.preventDefault();
-							setShowAllBooks(true);
+							setShowAllBooks(showAllBooks => !showAllBooks);
 						}}
 					>
-						See all &rarr;
+						{showAllBooks ? "Close" : "See all"} &rarr;
 					</a>
 				</div>
 				{/* Book Grid */}
@@ -802,7 +790,7 @@ export default function Home() {
 							<div>
 								<a
 									href="#"
-									style={{
+								style={{
 										color: "#1e3c72",
 										textDecoration: "underline",
 										fontSize: 15,
@@ -1162,6 +1150,6 @@ export default function Home() {
 		</div>
 	);
 }
-	
+
 
 
