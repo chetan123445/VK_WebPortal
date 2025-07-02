@@ -209,11 +209,10 @@ function StudentDashboard() {
       .then(data => {
         // Filter announcements: show if classes includes 'ALL' or student's class
         const filtered = (data.announcements || []).filter(a => {
-          // Case-insensitive check for Student in announcementFor
-          if (a.announcementFor && Array.isArray(a.announcementFor) && !a.announcementFor.some(role => role.toLowerCase() === 'student')) return false;
-          if (!a.classes || a.classes.length === 0) return true;
-          if (a.classes.some(c => c && typeof c === 'string' && c.trim().toLowerCase() === 'all')) return true;
-          return a.classes.includes(studentClass);
+          // Case-insensitive check for Student or All in announcementFor
+          if (a.announcementFor && Array.isArray(a.announcementFor) && !a.announcementFor.some(role => role.toLowerCase() === 'student' || role.toLowerCase() === 'all')) return false;
+          if (!a.classes || a.classes.includes('ALL') || a.classes.includes(studentClass)) return true;
+          return false;
         });
         setAnnouncements(filtered);
         setAnnouncementsLoading(false);

@@ -320,15 +320,15 @@ function ParentDashboard() {
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        // Filter announcements: show if for Parent, or for Student and class matches
+        // Filter announcements: show if for Parent or All, or for Student and class matches
         const filtered = (data.announcements || []).filter(a => {
-          // For Parent
-          if (a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'parent')) return true;
+          // For Parent or All
+          if (a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'parent' || role.toLowerCase() === 'all')) return true;
           // For Student and class matches
           if (
             profile && profile.childClass &&
             a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'student') &&
-            a.classes && Array.isArray(a.classes) && (a.classes.includes('ALL') || a.classes.includes(profile.childClass))
+            a.classes && (a.classes.includes('ALL') || a.classes.includes(profile.childClass))
           ) return true;
           return false;
         });

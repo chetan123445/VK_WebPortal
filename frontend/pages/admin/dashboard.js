@@ -2555,12 +2555,12 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
           {(
             isSuperAdmin
               ? announcements
-              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
+              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'admin' || role.toLowerCase() === 'all'))
           ).length === 0 && <div>No announcements yet.</div>}
           {(
             isSuperAdmin
               ? announcements
-              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.includes('Admin'))
+              : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'admin' || role.toLowerCase() === 'all'))
           ).map(a => (
             <div key={a._id} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(30,60,114,0.08)', padding: 24, position: 'relative', marginBottom: 8 }}>
               {isSuperAdmin && (

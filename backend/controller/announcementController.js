@@ -104,6 +104,9 @@ export const getAnnouncements = async (req, res) => {
     let registeredAs = req.query.registeredAs;
     let announcements = await Announcement.find({}).sort({ createdAt: -1 });
 
+    // Debug: Print all announcements to backend terminal
+    console.log('All announcements fetched:', announcements);
+
     // Log the query parameters
     console.log('Fetching announcements for:', { registeredAs, class: studentClass });
 

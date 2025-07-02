@@ -268,8 +268,8 @@ function TeacherDashboard() {
       .then(res => res.json())
       .then(data => {
         const filtered = (data.announcements || []).filter(a => {
-          // Case-insensitive check for Teacher in announcementFor
-          if (a.announcementFor && Array.isArray(a.announcementFor) && !a.announcementFor.some(role => role.toLowerCase() === 'teacher')) return false;
+          // Case-insensitive check for Teacher or All in announcementFor
+          if (a.announcementFor && Array.isArray(a.announcementFor) && !a.announcementFor.some(role => role.toLowerCase() === 'teacher' || role.toLowerCase() === 'all')) return false;
           return true;
         });
         setAnnouncements(filtered);
