@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const DiscussionPostSchema = new mongoose.Schema({
   thread: { type: mongoose.Schema.Types.ObjectId, ref: 'DiscussionThread', required: true },
@@ -8,4 +8,4 @@ const DiscussionPostSchema = new mongoose.Schema({
   replies: [{ type: mongoose.Schema.Types.ObjectId, ref: 'DiscussionPost' }], // nested replies
 }, { timestamps: true });
 
-module.exports = mongoose.model('DiscussionPost', DiscussionPostSchema); 
+export default mongoose.model('DiscussionPost', DiscussionPostSchema); 
