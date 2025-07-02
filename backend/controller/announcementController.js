@@ -101,8 +101,6 @@ export const createAnnouncement = async (req, res) => {
 // Accepts optional ?class=10&registeredAs=Student parameter to filter
 export const getAnnouncements = async (req, res) => {
   try {
-    console.log('HIT: getAnnouncements');
-    console.log('req.user:', req.user);
     let studentClass = req.query.class;
     let registeredAs = req.query.registeredAs;
     let announcements = await Announcement.find({}).sort({ createdAt: -1 });
@@ -111,12 +109,9 @@ export const getAnnouncements = async (req, res) => {
     let viewedIds = [];
     if (req.user && req.user._id) {
       const userType = req.user.isAdmin ? 'Admin' : 'User';
-      console.log('Querying AnnouncementView for:', { userId: req.user._id, userType });
       const views = await AnnouncementView.find({ userId: req.user._id, userType });
-      console.log('Found AnnouncementView records:', views);
       viewedIds = views.map(v => v.announcementId.toString());
     }
-    console.log('viewedIds:', viewedIds);
 
     // Filter by announcementFor
     if (registeredAs) {
@@ -318,12 +313,9 @@ export const removeAnnouncementImage = async (req, res) => {
 // Mark an announcement as viewed
 export const markAnnouncementAsViewed = async (req, res) => {
   try {
-    console.log('HIT: markAnnouncementAsViewed');
-    console.log('req.user:', req.user);
     const userId = req.user && req.user._id;
     const userType = req.user && req.user.isAdmin ? 'Admin' : 'User';
     const announcementId = req.params.announcementId;
-    console.log('Marking as viewed:', { userId, userType, announcementId });
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     if (!announcementId) return res.status(400).json({ message: 'Announcement ID required' });
     const result = await AnnouncementView.updateOne(
@@ -331,7 +323,6 @@ export const markAnnouncementAsViewed = async (req, res) => {
       { $set: { viewedAt: new Date() } },
       { upsert: true }
     );
-    console.log('AnnouncementView updateOne result:', result);
     res.json({ message: 'Announcement marked as viewed' });
   } catch (err) {
     res.status(500).json({ message: 'Error marking as viewed', error: err.message });
