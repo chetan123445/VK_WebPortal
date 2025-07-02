@@ -3,16 +3,22 @@ import Admin from '../models/Admin.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { sendAnnouncementEmails } from './userController.js';
 
 // Multer config for memory storage (buffer)
 const storage = multer.memoryStorage();
 export const announcementUpload = multer({
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB per file
+  limits: { 
+    fileSize: 10 * 1024 * 1024, // 10MB per file (increased from 2MB)
+    files: 10 // Allow up to 10 files
+  },
   fileFilter: (req, file, cb) => {
     // Accept jpg/jpeg/png images and pdfs
     const allowed = ['image/jpeg', 'image/png', 'image/jpg', 'image/pjpeg', 'application/pdf'];
-    if (!allowed.includes(file.mimetype)) return cb(new Error('Only jpg, png images and pdf files allowed'));
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error(`File type ${file.mimetype} not allowed. Only jpg, png images and pdf files are allowed.`));
+    }
     cb(null, true);
   }
 });
@@ -20,6 +26,17 @@ export const announcementUpload = multer({
 // Create announcement (images and pdfs as Buffer)
 export const createAnnouncement = async (req, res) => {
   try {
+    // Check for multer errors
+    if (req.fileValidationError) {
+      return res.status(400).json({ message: req.fileValidationError });
+    }
+    
+    if (req.files && req.files.length > 0) {
+      // Log file sizes for debugging
+      req.files.forEach((file, index) => {
+        console.log(`File ${index + 1}: ${file.originalname}, Size: ${(file.size / 1024 / 1024).toFixed(2)}MB, Type: ${file.mimetype}`);
+      });
+    }
     const { text, createdBy, classes, announcementFor } = req.body;
     if (!text || text.trim() === "") {
       return res.status(400).json({ message: 'Announcement text is required' });
@@ -62,6 +79,17 @@ export const createAnnouncement = async (req, res) => {
       announcementFor: announcementForStored,
       createdBy: creatorEmail
     });
+    
+    // Send announcement emails
+    try {
+      console.log(`Sending announcement emails for: ${announcementForStored.join(', ')}`);
+      const emailResult = await sendAnnouncementEmails(announcementForStored, finalClasses, text, creatorEmail);
+      console.log(`Email sending completed:`, emailResult);
+    } catch (emailError) {
+      console.error('Failed to send announcement emails:', emailError);
+      // Don't fail the announcement creation if email fails
+    }
+    
     res.status(201).json({ message: 'Announcement created', announcement });
   } catch (err) {
     res.status(500).json({ message: 'Error creating announcement', error: err.message });

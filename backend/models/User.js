@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema({
   registeredAs: {
     type: String,
     enum: ['Student', 'Teacher', 'Parent'],
-    required: true
+    required: true,
+    index: true
   },
   email: {
     type: String,
@@ -23,7 +24,8 @@ const userSchema = new mongoose.Schema({
     type: String
   },
   class: {
-    type: String
+    type: String,
+    index: true
   },
   phone: {
     type: String,
@@ -45,6 +47,9 @@ const userSchema = new mongoose.Schema({
     contentType: String
   }
 });
+
+// Create compound index for parent-child relationship queries
+userSchema.index({ registeredAs: 1, childClass: 1 });
 
 const User = mongoose.model('User', userSchema);
 
