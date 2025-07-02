@@ -317,14 +317,15 @@ function ParentDashboard() {
     if (profile && profile.childClass) {
       url += `&class=${encodeURIComponent(profile.childClass)}`;
     }
-    fetch(url)
+    fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
       .then(res => res.json())
       .then(data => {
-        // Filter announcements: show if for Parent or All, or for Student and class matches
         const filtered = (data.announcements || []).filter(a => {
-          // For Parent or All
           if (a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'parent' || role.toLowerCase() === 'all')) return true;
-          // For Student and class matches
           if (
             profile && profile.childClass &&
             a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'student') &&
@@ -356,6 +357,27 @@ function ParentDashboard() {
       fetchCbseUpdates();
     }
   }, [selectedMenu, fetchAnnouncements, fetchCbseUpdates]);
+
+  // Mark announcement as viewed
+  const markAsViewed = async (announcementId) => {
+    try {
+      await fetch(`${BASE_API_URL}/announcement/${announcementId}/view`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+    } catch {}
+  };
+
+  // Mark announcements as viewed when they're displayed
+  useEffect(() => {
+    announcements.forEach(announcement => {
+      if (announcement.isNew) {
+        markAsViewed(announcement._id);
+      }
+    });
+  }, [announcements]);
 
   const renderContent = () => {
     if (selectedMenu === "profile") {
@@ -953,7 +975,25 @@ function ParentDashboard() {
                     minHeight: 70,
                     width: '100%',
                     maxWidth: 'none',
+                    position: 'relative'
                   }}>
+                    {/* NEW indicator */}
+                    {a.isNew && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 8,
+                        left: 8,
+                        background: '#ff0080',
+                        color: '#fff',
+                        padding: '4px 8px',
+                        borderRadius: 12,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        zIndex: 2
+                      }}>
+                        NEW
+                      </div>
+                    )}
                     {/* Date column */}
                     <div style={{
                       minWidth: 60,

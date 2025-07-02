@@ -2077,6 +2077,43 @@ function AdminDashboard() {
     }
   }, [selectedMenu]);
 
+  // Fetch announcements
+  const fetchAnnouncements = useCallback(() => {
+    setLoading(true);
+    fetch(`${BASE_API_URL}/getannouncements`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
+      .then(res => res.json())
+      .then(data => {
+        setAnnouncements(data.announcements || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // Mark announcement as viewed
+  const markAsViewed = async (announcementId) => {
+    try {
+      await fetch(`${BASE_API_URL}/announcement/${announcementId}/view`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+    } catch {}
+  };
+
+  // Mark announcements as viewed when they're displayed
+  useEffect(() => {
+    announcements.forEach(announcement => {
+      if (announcement.isNew) {
+        markAsViewed(announcement._id);
+      }
+    });
+  }, [announcements]);
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa", flexDirection: "column" }}>
       <div style={{ display: "flex", flex: 1 }}>
@@ -2294,7 +2331,11 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   // Fetch announcements
   const fetchAnnouncements = useCallback(() => {
     setLoading(true);
-    fetch(`${BASE_API_URL}/getannouncements`)
+    fetch(`${BASE_API_URL}/getannouncements`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
       .then(res => res.json())
       .then(data => {
         setAnnouncements(data.announcements || []);
@@ -2563,6 +2604,23 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
               : announcements.filter(a => Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'admin' || role.toLowerCase() === 'all'))
           ).map(a => (
             <div key={a._id} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(30,60,114,0.08)', padding: 24, position: 'relative', marginBottom: 8 }}>
+              {/* NEW indicator */}
+              {a.isNew && (
+                <div style={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  background: '#ff0080',
+                  color: '#fff',
+                  padding: '4px 8px',
+                  borderRadius: 12,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  zIndex: 2
+                }}>
+                  NEW
+                </div>
+              )}
               {isSuperAdmin && (
                 <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 8 }}>
                   <button onClick={() => handleEdit(a)} style={{ background: '#f7ca18', color: '#222', border: 'none', borderRadius: 4, padding: '4px 12px', fontWeight: 600, cursor: 'pointer' }}>Edit</button>

@@ -205,14 +205,16 @@ function StudentDashboard() {
     setAnnouncementsLoading(true);
     setLastFetchedClass(studentClass);
     const classParam = `?class=${encodeURIComponent(studentClass)}&registeredAs=Student`;
-    fetch(`${BASE_API_URL}/getannouncements${classParam}`)
+    fetch(`${BASE_API_URL}/getannouncements${classParam}`, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    })
       .then(res => res.json())
       .then(data => {
-        // Filter announcements: show if classes includes 'ALL' or student's class
         const filtered = (data.announcements || []).filter(a => {
-          // Case-insensitive check for Student or All in announcementFor
           if (a.announcementFor && Array.isArray(a.announcementFor) && !a.announcementFor.some(role => role.toLowerCase() === 'student' || role.toLowerCase() === 'all')) return false;
-          if (!a.classes || a.classes.includes('ALL') || a.classes.includes(studentClass)) return true;
+          if (!a.classes || a.classes.length === 0 || a.classes.map(c => c && c.toLowerCase()).includes('all') || a.classes.includes(studentClass)) return true;
           return false;
         });
         setAnnouncements(filtered);
@@ -531,6 +533,27 @@ function StudentDashboard() {
     }
     // eslint-disable-next-line
   }, [ccSubject, ccChapter, ccType]);
+
+  // Mark announcement as viewed
+  const markAsViewed = async (announcementId) => {
+    try {
+      await fetch(`${BASE_API_URL}/announcement/${announcementId}/view`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+    } catch {}
+  };
+
+  // Mark announcements as viewed when they're displayed
+  useEffect(() => {
+    announcements.forEach(announcement => {
+      if (announcement.isNew) {
+        markAsViewed(announcement._id);
+      }
+    });
+  }, [announcements]);
 
   const renderContent = () => {
     if (selectedMenu === "profile") {
@@ -1048,7 +1071,24 @@ function StudentDashboard() {
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
               {announcements.length === 0 && <div>No announcements yet.</div>}
               {announcements.map(a => (
-                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8 }}>
+                <div key={a._id} style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 24, marginBottom: 8, position: 'relative' }}>
+                  {/* NEW indicator */}
+                  {a.isNew && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      background: '#ff0080',
+                      color: '#fff',
+                      padding: '4px 8px',
+                      borderRadius: 12,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      zIndex: 2
+                    }}>
+                      NEW
+                    </div>
+                  )}
                   <div style={{ fontSize: 17, color: "#222", marginBottom: 12, whiteSpace: "pre-line" }}>{a.text}</div>
                   {a.images && a.images.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 8 }}>

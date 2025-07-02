@@ -4,6 +4,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { sendAnnouncementEmails } from './userController.js';
+import AnnouncementView from '../models/AnnouncementView.js';
 
 // Multer config for memory storage (buffer)
 const storage = multer.memoryStorage();
@@ -100,33 +101,35 @@ export const createAnnouncement = async (req, res) => {
 // Accepts optional ?class=10&registeredAs=Student parameter to filter
 export const getAnnouncements = async (req, res) => {
   try {
+    console.log('HIT: getAnnouncements');
+    console.log('req.user:', req.user);
     let studentClass = req.query.class;
     let registeredAs = req.query.registeredAs;
     let announcements = await Announcement.find({}).sort({ createdAt: -1 });
 
-    // Debug: Print all announcements to backend terminal
-    console.log('All announcements fetched:', announcements);
-
-    // Log the query parameters
-    console.log('Fetching announcements for:', { registeredAs, class: studentClass });
+    // Get viewed announcements for this user (if authenticated)
+    let viewedIds = [];
+    if (req.user && req.user._id) {
+      const views = await AnnouncementView.find({ userId: req.user._id });
+      viewedIds = views.map(v => v.announcementId.toString());
+    }
+    console.log('viewedIds:', viewedIds);
 
     // Filter by announcementFor
     if (registeredAs) {
       announcements = announcements.filter(a => {
-        // Always include announcements for Parent
-        if (Array.isArray(a.announcementFor) && a.announcementFor.includes("Parent")) return true;
-
-        // If class param is present, also include Student announcements for that class
+        const roles = Array.isArray(a.announcementFor)
+          ? a.announcementFor.map(role => (role || '').toLowerCase())
+          : [];
+        if (roles.includes('parent')) return true;
         if (
           studentClass &&
-          Array.isArray(a.announcementFor) && a.announcementFor.includes("Student") &&
-          Array.isArray(a.classes) && (a.classes.includes("ALL") || a.classes.includes(studentClass))
+          roles.includes('student') &&
+          Array.isArray(a.classes) && (a.classes.map(c => (c || '').toLowerCase()).includes('all') || a.classes.includes(studentClass))
         ) {
           return true;
         }
-
-        // Fallback to original logic
-        return Array.isArray(a.announcementFor) && (a.announcementFor.includes(registeredAs) || a.announcementFor.includes("All"));
+        return roles.includes(registeredAs.toLowerCase()) || roles.includes('all');
       });
     }
 
@@ -152,7 +155,8 @@ export const getAnnouncements = async (req, res) => {
         announcementFor: a.announcementFor,
         createdBy: a.createdBy,
         createdAt: a.createdAt,
-        updatedAt: a.updatedAt
+        updatedAt: a.updatedAt,
+        isNew: req.user && req.user._id ? !viewedIds.includes(a._id.toString()) : false
       };
     });
     res.json({ announcements: announcementsWithBase64 });
@@ -234,6 +238,9 @@ export const updateAnnouncement = async (req, res) => {
     announcement.updatedAt = Date.now();
     await announcement.save();
     
+    // Delete all AnnouncementView records for this announcement (force all users to see as EDITED)
+    await AnnouncementView.deleteMany({ announcementId: announcement._id });
+
     // Convert images to base64 for response
     const images = (announcement.images || []).map(img =>
       img && img.data
@@ -273,6 +280,8 @@ export const deleteAnnouncement = async (req, res) => {
       return res.status(404).json({ message: 'Announcement not found' });
     }
     await Announcement.findByIdAndDelete(id);
+    // Delete all AnnouncementView records for this announcement
+    await AnnouncementView.deleteMany({ announcementId: id });
     res.json({ message: 'Announcement deleted', id });
   } catch (err) {
     res.status(500).json({ message: 'Error deleting announcement', error: err.message });
@@ -300,5 +309,26 @@ export const removeAnnouncementImage = async (req, res) => {
     res.json({ message: 'Image removed from announcement', announcement });
   } catch (err) {
     res.status(500).json({ message: 'Error removing image', error: err.message });
+  }
+};
+
+// Mark an announcement as viewed
+export const markAnnouncementAsViewed = async (req, res) => {
+  try {
+    console.log('HIT: markAnnouncementAsViewed');
+    console.log('req.user:', req.user);
+    const userId = req.user && req.user._id;
+    const announcementId = req.params.announcementId;
+    console.log('announcementId:', announcementId);
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!announcementId) return res.status(400).json({ message: 'Announcement ID required' });
+    await AnnouncementView.updateOne(
+      { userId, announcementId },
+      { $set: { viewedAt: new Date() } },
+      { upsert: true }
+    );
+    res.json({ message: 'Announcement marked as viewed' });
+  } catch (err) {
+    res.status(500).json({ message: 'Error marking as viewed', error: err.message });
   }
 };
