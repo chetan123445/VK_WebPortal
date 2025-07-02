@@ -66,4 +66,37 @@ export const deleteVideo = async (id, token) => {
   return res.data;
 };
 
+// Discussion API
+export async function createDiscussionThread(data, token) {
+  return api.post('/discussion/threads', data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function fetchDiscussionThreads() {
+  return api.get('/discussion/threads');
+}
+
+export async function fetchDiscussionThread(threadId) {
+  return api.get(`/discussion/threads/${threadId}`);
+}
+
+export async function addDiscussionPost(threadId, data, token) {
+  return api.post(`/discussion/threads/${threadId}/posts`, data, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function voteThread(threadId, value, token) {
+  return api.post(`/discussion/threads/${threadId}/vote`, { value }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function votePost(threadId, postId, value, token) {
+  return api.post(`/discussion/threads/${threadId}/posts/${postId}/vote`, { value }, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 

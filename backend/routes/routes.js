@@ -15,6 +15,7 @@ import { addMindMap, getMindMaps, deleteMindMap, mindMapUpload, updateMindMap } 
 import { addAVLR, getAVLRs, updateAVLR, deleteAVLR } from '../controller/avlrController.js';
 import { createDLR, getDLRs, updateDLR, deleteDLR, removeDLRPdf, dlrUpload } from '../controller/dlrController.js';
 import { addCreativeItem, getCreativeItems, deleteCreativeItem, creativeCornerUpload, updateCreativeItem } from '../controller/creativeCornerController.js';
+import * as discussionController from '../controller/discussionController.js';
 
 const router = express.Router();
 
@@ -105,6 +106,14 @@ router.post('/api/creative-corner', authenticateToken, creativeCornerUpload.arra
 router.get('/api/creative-corner', getCreativeItems);
 router.put('/api/creative-corner/:id', authenticateToken, creativeCornerUpload.array('files', 10), updateCreativeItem);
 router.delete('/api/creative-corner/:id', authenticateToken, deleteCreativeItem);
+
+// Discussion routes
+router.post('/api/discussion/threads', authenticateToken, discussionController.createThread);
+router.get('/api/discussion/threads', discussionController.getThreads);
+router.get('/api/discussion/threads/:threadId', discussionController.getThread);
+router.post('/api/discussion/threads/:threadId/posts', authenticateToken, discussionController.addPost);
+router.post('/api/discussion/threads/:threadId/vote', authenticateToken, discussionController.voteThread);
+router.post('/api/discussion/threads/:threadId/posts/:postId/vote', authenticateToken, discussionController.votePost);
 
 // Serve announcement images
 router.use('/uploads/announcements', express.static('backend/public/uploads/announcements'));

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const DiscussionVoteSchema = new mongoose.Schema({
   post: { type: mongoose.Schema.Types.ObjectId, ref: 'DiscussionPost', required: true },
@@ -8,4 +8,4 @@ const DiscussionVoteSchema = new mongoose.Schema({
 
 DiscussionVoteSchema.index({ post: 1, user: 1 }, { unique: true }); // one vote per user per post
 
-module.exports = mongoose.model('DiscussionVote', DiscussionVoteSchema); 
+export default mongoose.model('DiscussionVote', DiscussionVoteSchema); 

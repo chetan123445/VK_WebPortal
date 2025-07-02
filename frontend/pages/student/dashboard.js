@@ -5,6 +5,7 @@ import { BASE_API_URL } from '../apiurl.js';
 import { getToken, logout } from "../../utils/auth.js";
 import ProtectedRoute from '../../components/ProtectedRoute';
 import { useRouter } from 'next/navigation';
+import DiscussionPanel from '../discussion';
 
 // Sidebar component for Student (always visible, no hamburger)
 function StudentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedMenu }) {
@@ -1420,14 +1421,7 @@ function StudentDashboard() {
       );
     }
     if (selectedMenu === "discussion-panel") {
-      return (
-        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
-          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Discussion Panel</h2>
-          <div style={{ background: "#fff", borderRadius: 12, boxShadow: "0 2px 8px rgba(30,60,114,0.08)", padding: 32, textAlign: "center", color: "#888", fontSize: 18 }}>
-            Feature coming soon.
-          </div>
-        </div>
-      );
+      return <DiscussionPanel />;
     }
     if (selectedMenu === "creative-corner") {
       return (
