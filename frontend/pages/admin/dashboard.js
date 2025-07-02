@@ -2095,6 +2095,7 @@ function AdminDashboard() {
 
   // Mark announcement as viewed
   const markAsViewed = async (announcementId) => {
+    console.log('Admin markAsViewed called for:', announcementId);
     try {
       await fetch(`${BASE_API_URL}/announcement/${announcementId}/view`, {
         method: 'POST',
@@ -2107,12 +2108,18 @@ function AdminDashboard() {
 
   // Mark announcements as viewed when they're displayed
   useEffect(() => {
+    let anyMarked = false;
     announcements.forEach(announcement => {
       if (announcement.isNew) {
         markAsViewed(announcement._id);
+        anyMarked = true;
       }
     });
-  }, [announcements]);
+    if (anyMarked) {
+      // Refetch announcements after marking as viewed to update the UI
+      setTimeout(() => fetchAnnouncements(), 300);
+    }
+  }, [announcements, fetchAnnouncements]);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f4f7fa", flexDirection: "column" }}>
@@ -2576,6 +2583,28 @@ function AnnouncementsSection({ isSuperAdmin, userEmail }) {
   const handleCancelRemoveImage = () => {
     setRemovingImage({ announcementId: null, imageIndex: null, loading: false });
   };
+
+  // Mark announcement as viewed
+  const markAsViewed = async (announcementId) => {
+    console.log('Admin markAsViewed called for:', announcementId);
+    try {
+      await fetch(`${BASE_API_URL}/announcement/${announcementId}/view`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`
+        }
+      });
+    } catch {}
+  };
+
+  // Mark announcements as viewed when they're displayed
+  useEffect(() => {
+    announcements.forEach(announcement => {
+      if (announcement.isNew) {
+        markAsViewed(announcement._id);
+      }
+    });
+  }, [announcements]);
 
   return (
     <div style={{ padding: 48, maxWidth: 700, margin: '0 auto' }}>

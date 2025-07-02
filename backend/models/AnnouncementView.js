@@ -3,7 +3,11 @@ import mongoose from 'mongoose';
 const announcementViewSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    required: true
+  },
+  userType: {
+    type: String,
+    enum: ['User', 'Admin'],
     required: true
   },
   announcementId: {
@@ -17,8 +21,8 @@ const announcementViewSchema = new mongoose.Schema({
   }
 });
 
-// Ensure a user can only have one view record per announcement
-announcementViewSchema.index({ userId: 1, announcementId: 1 }, { unique: true });
+// Ensure a user can only have one view record per announcement per userType
+announcementViewSchema.index({ userId: 1, userType: 1, announcementId: 1 }, { unique: true });
 
 const AnnouncementView = mongoose.model('AnnouncementView', announcementViewSchema);
 export default AnnouncementView; 
