@@ -1,4 +1,5 @@
 # VK WebPortal
+![image](https://github.com/user-attachments/assets/c894ac5e-5e9f-48b4-a83a-c243e69d1b4d)
 
 ## Setup Instructions
 
