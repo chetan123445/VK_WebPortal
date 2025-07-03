@@ -54,5 +54,5 @@
 
 ---
 
-- Make sure the backend is running before using the frontend(so that database connection is established)
+- Make sure the backend is running before using the frontend.
 - Place your `default-avatar.png` in the `frontend/public/` folder for the default profile picture.

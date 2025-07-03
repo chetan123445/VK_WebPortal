@@ -1,9 +1,12 @@
 import Announcement from '../models/Announcement.js';
+import Student from '../models/Student.js';
+import Teacher from '../models/Teacher.js';
+import Guardian from '../models/Guardian.js';
 import Admin from '../models/Admin.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { sendAnnouncementEmails } from './userController.js';
+import { sendAnnouncementEmails } from './AnnouncementEmailController.js';
 import AnnouncementView from '../models/AnnouncementView.js';
 
 // Multer config for memory storage (buffer)
@@ -108,7 +111,21 @@ export const getAnnouncements = async (req, res) => {
     // Get viewed announcements for this user (if authenticated)
     let viewedIds = [];
     if (req.user && req.user._id) {
-      const userType = req.user.isAdmin ? 'Admin' : 'User';
+      // Determine user type based on the user's role or model
+      let userType = 'User'; // default
+      if (req.user.isAdmin) {
+        userType = 'Admin';
+      } else if (req.user.role) {
+        // Use the role from the user object (Student, Teacher, Guardian)
+        // Ensure proper capitalization to match AnnouncementView schema
+        const role = req.user.role.toLowerCase();
+        if (role === 'student') userType = 'Student';
+        else if (role === 'teacher') userType = 'Teacher';
+        else if (role === 'guardian') userType = 'Guardian';
+        else if (role === 'admin') userType = 'Admin';
+        else userType = 'User';
+      }
+      
       const views = await AnnouncementView.find({ userId: req.user._id, userType });
       viewedIds = views.map(v => v.announcementId.toString());
     }
@@ -119,13 +136,26 @@ export const getAnnouncements = async (req, res) => {
         const roles = Array.isArray(a.announcementFor)
           ? a.announcementFor.map(role => (role || '').toLowerCase())
           : [];
-        if (roles.includes('parent')) return true;
+        
+        // Handle both 'parent' and 'guardian' roles
+        if (roles.includes('parent') || roles.includes('guardian')) return true;
+        
         if (
           studentClass &&
           roles.includes('student') &&
-          Array.isArray(a.classes) && (a.classes.map(c => (c || '').toLowerCase()).includes('all') || a.classes.includes(studentClass))
+          Array.isArray(a.classes)
         ) {
-          return true;
+          // Handle multiple classes (comma-separated)
+          const requestedClasses = studentClass.split(',').map(c => c.trim());
+          const announcementClasses = a.classes.map(c => (c || '').toLowerCase());
+          
+          // Check if any of the requested classes match the announcement classes
+          const hasMatch = announcementClasses.includes('all') || 
+            requestedClasses.some(reqClass => announcementClasses.includes(reqClass.toLowerCase()));
+          
+          if (hasMatch) {
+            return true;
+          }
         }
         return roles.includes(registeredAs.toLowerCase()) || roles.includes('all');
       });
@@ -145,6 +175,9 @@ export const getAnnouncements = async (req, res) => {
           fileType: 'image'
         };
       }).filter(Boolean);
+      
+      const isNew = req.user && req.user._id ? !viewedIds.includes(a._id.toString()) : false;
+      
       return {
         _id: a._id,
         text: a.text,
@@ -154,7 +187,7 @@ export const getAnnouncements = async (req, res) => {
         createdBy: a.createdBy,
         createdAt: a.createdAt,
         updatedAt: a.updatedAt,
-        isNew: req.user && req.user._id ? !viewedIds.includes(a._id.toString()) : false
+        isNew: isNew
       };
     });
     res.json({ announcements: announcementsWithBase64 });
@@ -314,15 +347,33 @@ export const removeAnnouncementImage = async (req, res) => {
 export const markAnnouncementAsViewed = async (req, res) => {
   try {
     const userId = req.user && req.user._id;
-    const userType = req.user && req.user.isAdmin ? 'Admin' : 'User';
+    
+    // Determine user type based on the user's role or model
+    let userType = 'User'; // default
+    if (req.user && req.user.isAdmin) {
+      userType = 'Admin';
+    } else if (req.user && req.user.role) {
+      // Use the role from the user object (Student, Teacher, Guardian)
+      // Ensure proper capitalization to match AnnouncementView schema
+      const role = req.user.role.toLowerCase();
+      if (role === 'student') userType = 'Student';
+      else if (role === 'teacher') userType = 'Teacher';
+      else if (role === 'guardian') userType = 'Guardian';
+      else if (role === 'admin') userType = 'Admin';
+      else userType = 'User';
+    }
+    
     const announcementId = req.params.announcementId;
+    
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     if (!announcementId) return res.status(400).json({ message: 'Announcement ID required' });
+    
     const result = await AnnouncementView.updateOne(
       { userId, userType, announcementId },
       { $set: { viewedAt: new Date() } },
       { upsert: true }
     );
+    
     res.json({ message: 'Announcement marked as viewed' });
   } catch (err) {
     res.status(500).json({ message: 'Error marking as viewed', error: err.message });

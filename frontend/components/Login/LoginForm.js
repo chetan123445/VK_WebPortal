@@ -448,7 +448,7 @@ function RegisterCardModal({ vkGradient, vkPrimary, vkAccent, vkShadow, setShowR
   const handleContinue = () => {
     if (selected === "student") router.push("/register-student");
     else if (selected === "teacher") router.push("/register-teacher");
-    else if (selected === "Guardian") router.push("/register-parent");
+    else if (selected === "Guardian") router.push("/register-guardian");
     setShowRegister(false);
   };
   return (

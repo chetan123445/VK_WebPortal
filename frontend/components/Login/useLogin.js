@@ -61,7 +61,7 @@ export default function useLogin() {
     setMsg("");
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password;
-    let adminNotFound = false;
+    // Try admin first
     try {
       const adminRes = await fetch(`${BASE_API_URL}/admin/login`, {
         method: "POST",
@@ -78,56 +78,78 @@ export default function useLogin() {
         router.push("/admin/dashboard");
         return;
       }
-      if (adminRes.status === 404) {
-        adminNotFound = true;
-      }
       if (adminRes.status === 401) {
         setError("Incorrect password.");
         return;
       }
     } catch (err) {}
+    // Try student
     try {
-      const res = await fetch(`${BASE_API_URL}/user/login`, {
+      const studentRes = await fetch(`${BASE_API_URL}/login-student`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
       });
-      if (res.status === 404) {
-        if (adminNotFound) {
-          setError("");
-          setShowNotFoundPopup(true);
-        }
-        return;
-      }
-      if (res.status === 401) {
-        setError("Incorrect password.");
-        return;
-      }
-      if (res.ok) {
-        const data = await res.json();
-        setMsg("Login successful!");
-        setError("");
+      if (studentRes.ok) {
+        const data = await studentRes.json();
         setToken(data.token);
         setUserData(data.user);
         localStorage.setItem("userEmail", cleanEmail);
-        if (data.user && data.user.registeredAs && data.token) {
-          const role = data.user.registeredAs.toLowerCase();
-          setTimeout(() => {
-            if (role === "student") router.replace("/student/dashboard");
-            else if (role === "teacher") router.replace("/teacher/dashboard");
-            else if (role === "parent") router.replace("/parent/dashboard");
-            else router.replace("/login");
-          }, 100);
-        } else {
-          router.replace("/login");
-        }
-      } else {
-        const data = await res.json();
-        setError(data.message || "Login failed.");
+        setMsg("Student login successful!");
+        setError("");
+        router.push("/student/dashboard");
+        return;
       }
-    } catch (err) {
-      setError("Login failed. Please try again.");
-    }
+      if (studentRes.status === 401) {
+        setError("Incorrect password.");
+        return;
+      }
+    } catch (err) {}
+    // Try teacher
+    try {
+      const teacherRes = await fetch(`${BASE_API_URL}/login-teacher`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
+      });
+      if (teacherRes.ok) {
+        const data = await teacherRes.json();
+        setToken(data.token);
+        setUserData(data.user);
+        localStorage.setItem("userEmail", cleanEmail);
+        setMsg("Teacher login successful!");
+        setError("");
+        router.push("/teacher/dashboard");
+        return;
+      }
+      if (teacherRes.status === 401) {
+        setError("Incorrect password.");
+        return;
+      }
+    } catch (err) {}
+    // Try guardian/parent
+    try {
+      const guardianRes = await fetch(`${BASE_API_URL}/login-guardian`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, password: cleanPassword })
+      });
+      if (guardianRes.ok) {
+        const data = await guardianRes.json();
+        setToken(data.token);
+        setUserData(data.user);
+        localStorage.setItem("userEmail", cleanEmail);
+        setMsg("Parent login successful!");
+        setError("");
+        router.push("/guardian/dashboard");
+        return;
+      }
+      if (guardianRes.status === 401) {
+        setError("Incorrect password.");
+        return;
+      }
+    } catch (err) {}
+    setError("User not found.");
   };
 
   const handleSendOtp = async () => {

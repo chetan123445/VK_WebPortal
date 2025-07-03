@@ -7,7 +7,7 @@ const announcementViewSchema = new mongoose.Schema({
   },
   userType: {
     type: String,
-    enum: ['User', 'Admin'],
+    enum: ['Student', 'Teacher', 'Guardian', 'Admin', 'User'],
     required: true
   },
   announcementId: {

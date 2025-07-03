@@ -1,13 +1,11 @@
 import express from 'express';
-import { registerUser, findUserByEmail, loginUser, sendRegisterOtp, verifyRegisterOtp, sendLoginOtp, verifyLoginOtp, deleteUser } from '../controller/userController.js';
-import { getProfile, updateProfile, upload, verifyToken } from '../controller/profileController.js';
+import { sendRegisterOtp,verifyRegisterOtp,registerStudent,registerGuardian,registerTeacher,loginStudent,loginGuardian,loginTeacher,deleteUser,sendChildOtp,verifyChildOtp,checkChildVerified,verifyLoginOtp,sendLoginOtp } from '../controller/authController.js';
+import { getProfile, updateProfile, upload, verifyToken, getUserInfoById } from '../controller/profileController.js';
 import { getAdmins, addAdmin, removeAdmin, isAdmin, adminLogin, checkSuperAdmin } from '../controller/adminController.js';
 import { authenticateToken } from '../middleware/auth.js';
 import multer from 'multer';
 import studentController from '../controller/studentController.js';
 import teacherController from '../controller/teacherController.js';
-import * as parentController from '../controller/parentController.js';
-import { getChildProfile } from '../controller/parentChildController.js';
 import { findUserByEmail as manageFindUserByEmail, deleteUserByEmail as manageDeleteUserByEmail } from '../controller/manageUserController.js';
 import { createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnouncement, announcementUpload, removeAnnouncementImage, markAnnouncementAsViewed } from '../controller/announcementController.js';
 import { getCbseUpdates } from '../controller/cbseController.js';
@@ -15,7 +13,8 @@ import { addMindMap, getMindMaps, deleteMindMap, mindMapUpload, updateMindMap } 
 import { addAVLR, getAVLRs, updateAVLR, deleteAVLR } from '../controller/avlrController.js';
 import { createDLR, getDLRs, updateDLR, deleteDLR, removeDLRPdf, dlrUpload } from '../controller/dlrController.js';
 import { addCreativeItem, getCreativeItems, deleteCreativeItem, creativeCornerUpload, updateCreativeItem } from '../controller/creativeCornerController.js';
-import * as discussionController from '../controller/discussionController.js';
+import { verifyChildEmail, verifyChildOtp as verifyGuardianChildOtp } from '../controller/guardianController';
+import { checkGuardianEmail, validateGuardianPassword } from '../controller/guardianController';
 
 const router = express.Router();
 
@@ -23,14 +22,26 @@ const memoryStorage = multer.memoryStorage();
 const memoryUpload = multer({ storage: memoryStorage });
 
 // Public routes
-router.post('/api/user/send-register-otp', sendRegisterOtp);
-router.post('/api/user/verify-register-otp', verifyRegisterOtp);
-router.post('/api/user/send-login-otp', sendLoginOtp);
-router.post('/api/user/verify-login-otp', verifyLoginOtp);
-router.post('/api/user/register', registerUser);
-router.post('/api/user/find', findUserByEmail);
-router.post('/api/user/find-by-email', findUserByEmail); // <-- Add this line
-router.post('/api/user/login', loginUser);
+router.post('/api/send-register-otp', sendRegisterOtp);
+router.post('/api/verify-register-otp', verifyRegisterOtp);
+router.post('/api/send-child-otp', sendChildOtp);
+router.post('/api/verify-child-otp', verifyChildOtp);
+
+// Registration
+router.post('/api/register-student', registerStudent);
+router.post('/api/register-guardian', registerGuardian);
+router.post('/api/register-teacher', registerTeacher);
+
+// Login
+router.post('/api/login-student', loginStudent);
+router.post('/api/login-guardian', loginGuardian);
+router.post('/api/login-teacher', loginTeacher);
+
+// OTP Login
+router.post('/api/verify-login-otp', verifyLoginOtp); // Unified OTP login verification for all user types
+
+// Unified OTP send endpoint for all user types
+router.post('/api/send-login-otp', sendLoginOtp);
 
 // Student routes
 router.post('/api/student/send-otp', studentController.sendOtp);
@@ -42,15 +53,11 @@ router.post('/api/teacher/send-otp', teacherController.sendOtp);
 router.post('/api/teacher/register', teacherController.register);
 router.post('/api/teacher/find', teacherController.find);
 
-// Parent routes
-router.post('/api/parent/verify-child-email', parentController.verifyChildEmail);
-router.post('/api/parent/verify-child-otp', parentController.verifyChildOtp); // <-- Add this line
-router.get('/api/parent/child-profile', authenticateToken, getChildProfile);
-
 // Protected routes (require JWT authentication)
 router.get('/api/verify-token', authenticateToken, verifyToken);
 router.get('/api/profile', authenticateToken, getProfile);
 router.put('/api/profile', authenticateToken, memoryUpload.single('photo'), updateProfile);
+router.post('/api/user/delete', authenticateToken, deleteUser);
 
 // Admin routes
 router.get('/api/getadmins', getAdmins);
@@ -59,7 +66,6 @@ router.post('/api/addadmins', addAdmin);
 router.delete('/api/removeadmin', removeAdmin);
 router.post('/api/admin/login', adminLogin); // Secure admin login route
 router.post('/api/check-superadmin', checkSuperAdmin);
-router.post('/api/user/delete', deleteUser);
 router.post('/api/admin/find-user', manageFindUserByEmail); // Superadmin only
 router.delete('/api/admin/delete-user', manageDeleteUserByEmail); // Superadmin only
 
@@ -73,6 +79,9 @@ router.post('/api/announcement/:announcementId/view', authenticateToken, markAnn
 
 // CBSE Updates route
 router.get('/api/cbse-updates', getCbseUpdates);
+
+// Check Child Verified route
+router.get('/api/check-child-verified', checkChildVerified);
 
 // Mind Map routes
 router.post('/api/mindmap', authenticateToken, mindMapUpload.array('mindmap', 10), addMindMap);
@@ -108,15 +117,17 @@ router.get('/api/creative-corner', getCreativeItems);
 router.put('/api/creative-corner/:id', authenticateToken, creativeCornerUpload.array('files', 10), updateCreativeItem);
 router.delete('/api/creative-corner/:id', authenticateToken, deleteCreativeItem);
 
-// Discussion routes
-router.post('/api/discussion/threads', authenticateToken, discussionController.createThread);
-router.get('/api/discussion/threads', discussionController.getThreads);
-router.get('/api/discussion/threads/:threadId', discussionController.getThread);
-router.post('/api/discussion/threads/:threadId/posts', authenticateToken, discussionController.addPost);
-router.post('/api/discussion/threads/:threadId/vote', authenticateToken, discussionController.voteThread);
-router.post('/api/discussion/threads/:threadId/posts/:postId/vote', authenticateToken, discussionController.votePost);
+
+// User Info route
+router.get('/api/userinfo', getUserInfoById);
 
 // Serve announcement images
 router.use('/uploads/announcements', express.static('backend/public/uploads/announcements'));
+
+// Guardian routes
+router.post('/api/guardian/verify-child-email', verifyChildEmail);
+router.post('/api/guardian/verify-child-otp', verifyGuardianChildOtp);
+router.post('/api/guardian/check-email', checkGuardianEmail);
+router.post('/api/guardian/validate-password', validateGuardianPassword);
 
 export default router;

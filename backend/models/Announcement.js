@@ -28,7 +28,7 @@ const announcementSchema = new mongoose.Schema({
     default: Date.now
   },
   announcementFor: [{
-    type: String, // "Student", "Teacher", "Parent", "All"
+    type: String, // "Student", "Teacher", "Guardian", "All"
     required: true
   }]
 });

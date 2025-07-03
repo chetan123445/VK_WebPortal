@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { FaUser, FaBars, FaTimes, FaChild, FaClipboardList, FaEnvelope, FaBookOpen, FaBullhorn, FaCalendarAlt, FaLaptop, FaTrashAlt } from "react-icons/fa";
+import { FaUser, FaBars, FaTimes, FaChild, FaClipboardList, FaEnvelope, FaBookOpen, FaBullhorn, FaCalendarAlt, FaLaptop, FaTrashAlt, FaPalette } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { BASE_API_URL } from '../apiurl.js';
 import { getToken, logout } from "../../utils/auth.js";
@@ -13,12 +13,13 @@ function ParentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedM
     { key: "assignments", label: "Assignments", icon: <FaClipboardList style={{ fontSize: 18 }} /> },
     { key: "messages", label: "Messages", icon: <FaEnvelope style={{ fontSize: 18 }} /> },
     { key: "books", label: "Books", icon: <FaBookOpen style={{ fontSize: 18 }} /> },
-    { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> }, // <-- Added
-    { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
+    { key: "cbse-updates", label: "CBSE Updates", icon: <FaBullhorn style={{ fontSize: 18 }} /> },
+    { key: "announcements", label: "Announcements", icon: <FaBullhorn style={{ fontSize: 18 }} />, action: () => window.location.href = "/announcement" },
     { key: "timetable", label: "Timetable", icon: <FaCalendarAlt style={{ fontSize: 18 }} /> },
     { key: "resources", label: "Digital Resources", icon: <FaLaptop style={{ fontSize: 18 }} /> },
     { key: "profile", label: "Profile", icon: <FaUser style={{ fontSize: 18 }} /> },
     { key: "delete-account", label: "Delete Account", icon: <span style={{fontSize:18, color:'#c00'}}>🗑️</span> },
+    { key: "creative-corner", label: "Creative Corner", icon: <FaPalette style={{ fontSize: 18, color: '#ff0080' }} />, action: () => window.location.href = "/creative-corner" },
   ];
   return (
     <aside style={{
@@ -49,7 +50,7 @@ function ParentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selectedM
           {menuItems.map(item => (
             <button
               key={item.key}
-              onClick={() => { onMenuSelect(item.key); }}
+              onClick={() => { item.action ? item.action() : onMenuSelect(item.key); }}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -156,6 +157,7 @@ function ParentDashboard() {
   const [cbseLoading, setCbseLoading] = useState(false);
   const router = useRouter();
   const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '' });
+  const [saveAttempted, setSaveAttempted] = useState(false);
 
   // Fetch parent profile on mount and when userEmail changes
   const fetchProfile = useCallback(() => {
@@ -237,8 +239,10 @@ function ParentDashboard() {
     }
   };
   const handleSave = async () => {
-    if (!form.phone || form.phone.length !== 10) {
-      setStatus('Phone number must be exactly 10 digits');
+    setSaveAttempted(true);
+    // Only show error if phone is not empty and not 10 digits
+    if (form.phone && form.phone.length > 0 && form.phone.length !== 10) {
+      setStatus('Phone number must be exactly 10 digits or left empty.');
       return;
     }
     setStatus('Saving...');
@@ -248,13 +252,13 @@ function ParentDashboard() {
       if (form.photo) {
         body = new FormData();
         body.append('name', form.name);
-        body.append('phone', form.phone);
+        body.append('phone', form.phone ? form.phone : '');
         body.append('photo', form.photo);
         headers = { 'Authorization': `Bearer ${getToken()}` };
       } else {
         body = JSON.stringify({
           name: form.name,
-          phone: form.phone
+          phone: form.phone ? form.phone : ''
         });
         headers = {
           'Authorization': `Bearer ${getToken()}`,
@@ -312,11 +316,20 @@ function ParentDashboard() {
 
   const fetchAnnouncements = useCallback(() => {
     setAnnouncementsLoading(true);
-    // If profile.childClass exists, fetch with class param for Student announcements
-    let url = `${BASE_API_URL}/getannouncements?registeredAs=Parent`;
-    if (profile && profile.childClass) {
-      url += `&class=${encodeURIComponent(profile.childClass)}`;
+    // Get all child classes from the child array
+    let childClasses = [];
+    if (profile && profile.child && Array.isArray(profile.child)) {
+      childClasses = profile.child
+        .map(child => child.class)
+        .filter(className => className && className.trim() !== '');
     }
+    
+    let url = `${BASE_API_URL}/getannouncements?registeredAs=Parent`;
+    // If we have child classes, add them to the URL
+    if (childClasses.length > 0) {
+      url += `&class=${encodeURIComponent(childClasses.join(','))}`;
+    }
+    
     fetch(url, {
       headers: {
         'Authorization': `Bearer ${getToken()}`
@@ -325,12 +338,16 @@ function ParentDashboard() {
       .then(res => res.json())
       .then(data => {
         const filtered = (data.announcements || []).filter(a => {
-          if (a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'parent' || role.toLowerCase() === 'all')) return true;
+          // Show announcements for parents/guardians
+          if (a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'parent' || role.toLowerCase() === 'guardian' || role.toLowerCase() === 'all')) return true;
+          
+          // Show student announcements if guardian has children in the specified classes
           if (
-            profile && profile.childClass &&
+            profile && profile.child && Array.isArray(profile.child) &&
             a.announcementFor && Array.isArray(a.announcementFor) && a.announcementFor.some(role => role.toLowerCase() === 'student') &&
-            a.classes && (a.classes.includes('ALL') || a.classes.includes(profile.childClass))
+            a.classes && (a.classes.includes('ALL') || childClasses.some(childClass => a.classes.includes(childClass)))
           ) return true;
+          
           return false;
         });
         setAnnouncements(filtered);
@@ -531,6 +548,9 @@ function ParentDashboard() {
                     Cancel
                   </button>
                 </div>
+                {saveAttempted && form.phone && form.phone.length > 0 && form.phone.length !== 10 && (
+                  <div style={{ color: '#c00', fontSize: 13, marginTop: 4 }}>Phone number must be exactly 10 digits or left empty.</div>
+                )}
                 {status && <div style={{ marginTop: 10, color: "#1e3c72" }}>{status}</div>}
               </div>
             </div>
@@ -613,16 +633,34 @@ function ParentDashboard() {
                   <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Phone:</span>
                   <span style={{ color: "#222", fontSize: 16 }}>{profile.phone || "-"}</span>
                 </div>
-                {profile.childEmail && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Child Email:</span>
-                    <span style={{ color: "#222", fontSize: 16 }}>{profile.childEmail}</span>
-                  </div>
-                )}
-                {profile.childClass && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Child Class:</span>
-                    <span style={{ color: "#222", fontSize: 16 }}>{profile.childClass}</span>
+                {profile.child && profile.child.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 80 }}>Children:</span>
+                    {profile.child.map((child, index) => (
+                      <div key={index} style={{ 
+                        display: "flex", 
+                        flexDirection: "column", 
+                        gap: 4, 
+                        padding: "8px 12px", 
+                        background: "#fff", 
+                        borderRadius: 6, 
+                        border: "1px solid #e0e0e0",
+                        marginLeft: 80
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 60, fontSize: 14 }}>Email:</span>
+                          <span style={{ color: "#222", fontSize: 14 }}>{child.email || "Not specified"}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 60, fontSize: 14 }}>Class:</span>
+                          <span style={{ color: "#222", fontSize: 14 }}>{child.class || "Not specified"}</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontWeight: 600, color: "#1e3c72", minWidth: 60, fontSize: 14 }}>Role:</span>
+                          <span style={{ color: "#222", fontSize: 14 }}>{child.role ? child.role : "Not specified"}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -940,130 +978,6 @@ function ParentDashboard() {
             </div>
           )}
         </>
-      );
-    }
-    // Announcements
-    if (selectedMenu === "announcements") {
-      return (
-        <div style={{ padding: 48, maxWidth: 700, margin: "0 auto" }}>
-          <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: "#1e3c72" }}>Announcements</h2>
-          {announcementsLoading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 120 }}>
-              <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-              <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              {announcements.length === 0 && <div>No announcements yet.</div>}
-              {announcements.map(a => {
-                const dateObj = new Date(a.createdAt);
-                const day = dateObj.toLocaleString('en-US', { day: '2-digit' });
-                const month = dateObj.toLocaleString('en-US', { month: 'short' });
-                const year = dateObj.getFullYear();
-                const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                return (
-                  <div key={a._id} style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    background: 'linear-gradient(90deg, #f0f4ff 0%, #e8eafc 100%)',
-                    borderRadius: 12,
-                    padding: '20px 32px',
-                    marginBottom: 18,
-                    boxShadow: 'none',
-                    border: 'none',
-                    gap: 24,
-                    minHeight: 70,
-                    width: '100%',
-                    maxWidth: 'none',
-                    position: 'relative'
-                  }}>
-                    {/* NEW indicator */}
-                    {a.isNew && (
-                      <div style={{
-                        position: 'absolute',
-                        top: 8,
-                        left: 8,
-                        background: '#ff0080',
-                        color: '#fff',
-                        padding: '4px 8px',
-                        borderRadius: 12,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        zIndex: 2
-                      }}>
-                        NEW
-                      </div>
-                    )}
-                    {/* Date column */}
-                    <div style={{
-                      minWidth: 60,
-                      textAlign: 'right',
-                      color: '#b0b0b0',
-                      fontWeight: 500,
-                      fontSize: 15,
-                      lineHeight: 1.2,
-                      marginTop: 2
-                    }}>
-                      <div>{day}</div>
-                      <div>{month}</div>
-                      <div>{year !== new Date().getFullYear() ? year : time}</div>
-                    </div>
-                    {/* Announcement content */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ color: '#222', fontSize: 17, fontWeight: 400, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
-                        {a.text || ''}
-                      </div>
-                      {/* Images or files if any */}
-                      {a.images && a.images.length > 0 && (
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8 }}>
-                          {a.images.map((img, idx) => (
-                            <img key={idx} src={img.url} alt="Announcement" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6 }} />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {/* Preview Modal for image/pdf */}
-          {previewModal.open && (
-            <div
-              style={{
-                position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
-                background: "rgba(0,0,0,0.7)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center"
-              }}
-              onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}
-            >
-              <div
-                style={{
-                  background: "#fff", borderRadius: 12, padding: 16, maxWidth: "90vw", maxHeight: "90vh",
-                  boxShadow: "0 4px 24px rgba(30,60,114,0.18)", position: "relative", display: "flex", alignItems: "center", justifyContent: "center"
-                }}
-                onClick={e => e.stopPropagation()}
-              >
-                <button
-                  onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}
-                  style={{
-                    position: "absolute", top: 8, right: 12, background: "#c0392b", color: "#fff", border: "none",
-                    borderRadius: "50%", width: 32, height: 32, fontSize: 22, fontWeight: 700, cursor: "pointer", zIndex: 2
-                  }}
-                  aria-label="Close"
-                >×</button>
-                {previewModal.fileType === "pdf" ? (
-                  <PDFWithLoader url={previewModal.url} />
-                ) : (
-                  <img
-                    src={previewModal.url}
-                    alt="Preview"
-                    style={{ maxWidth: "80vw", maxHeight: "80vh", borderRadius: 8 }}
-                  />
-                )}
-              </div>
-            </div>
-          )}
-        </div>
       );
     }
     // CBSE Updates
