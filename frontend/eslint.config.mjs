@@ -1,5 +1,8 @@
+import js from '@eslint/js';
+
 export default [
+  js.configs.recommended,
   {
-    extends: ["next/core-web-vitals"],
+    ignores: ['**/node_modules/**'],
   },
 ];
