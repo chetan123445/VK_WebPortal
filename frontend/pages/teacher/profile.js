@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ProtectedRoute from '../../components/ProtectedRoute';
-import { BASE_API_URL } from "../../utils/auth.js";
+import { BASE_API_URL } from "../../utils/apiurl.js";
 import { getUserData, getToken } from "../../utils/auth.js";
 import ProfileCommon from "../ProfileCommon";
 
@@ -156,4 +156,4 @@ function TeacherProfilePage() {
   );
 }
 
-export default TeacherProfilePage; 
+export default TeacherProfilePage;
