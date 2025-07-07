@@ -156,4 +156,4 @@ function AdminProfilePage() {
   );
 }
 
-export default AdminProfilePage; 
+export default AdminProfilePage;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ProtectedRoute from '../components/ProtectedRoute';
-import { BASE_API_URL } from '../utils/apiurl.js';
+import { BASE_API_URL } from "../utils/apiurl";
 import { getUserData, getToken, logout } from "../utils/auth.js";
 
 // Add this style block at the top of the file (or in a global CSS if preferred)

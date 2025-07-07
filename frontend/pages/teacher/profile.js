@@ -156,4 +156,4 @@ function TeacherProfilePage() {
   );
 }
 
-export default TeacherProfilePage; 
+export default TeacherProfilePage;
