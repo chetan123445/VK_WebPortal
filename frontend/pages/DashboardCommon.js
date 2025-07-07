@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ProtectedRoute from '../components/ProtectedRoute';
-import { BASE_API_URL } from "../utils/apiurl";
+import { BASE_API_URL } from '../utils/apiurl.js';
 import { getUserData, getToken, logout } from "../utils/auth.js";
 
 // Add this style block at the top of the file (or in a global CSS if preferred)
@@ -186,8 +186,14 @@ export default function DashboardCommon({
               handleEdit,
               handleCancel,
               handleChange,
-              fetchProfile
-            }) : children}
+              fetchProfile,
+              newAnnouncementCount,
+              setNewAnnouncementCount
+            }) : React.Children.map(children, child =>
+              React.isValidElement(child)
+                ? React.cloneElement(child, { newAnnouncementCount, setNewAnnouncementCount })
+                : child
+            )}
           </main>
         </div>
       </div>
