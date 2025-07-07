@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
-import { BASE_API_URL } from "./apiurl";
+import { BASE_API_URL } from "../utils/apiurl";
 import { getUserData, getToken } from "../utils/auth";
 
 // PDFWithLoader helper
@@ -38,6 +38,17 @@ function PDFWithLoader({ url, fullscreen }) {
     </div>
   );
 }
+
+// Add blink-badge CSS if not already present
+const blinkStyle = `
+@keyframes blink-badge {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.blink-badge {
+  animation: blink-badge 1s steps(1, end) infinite;
+}
+`;
 
 const AnnouncementPage = () => {
   const router = useRouter();
@@ -390,6 +401,7 @@ const AnnouncementPage = () => {
 
   return (
     <div style={{ padding: 48, maxWidth: 700, margin: '0 auto' }}>
+      <style>{blinkStyle}</style>
       <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 24, color: '#1e3c72' }}>Announcements</h2>
       {isSuperAdmin && (
         <button onClick={() => { setShowCreate(true); setForm({ text: '', images: [], announcementFor: '' }); setPreview(''); setStatus(''); }}
@@ -409,7 +421,7 @@ const AnnouncementPage = () => {
             <div key={a._id} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(30,60,114,0.08)', padding: 24, position: 'relative', marginBottom: 8 }}>
               {/* NEW indicator */}
               {a.isNew && (
-                <div style={{
+                <div className="blink-badge" style={{
                   position: 'absolute',
                   top: 8,
                   left: 8,

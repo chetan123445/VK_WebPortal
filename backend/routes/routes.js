@@ -6,7 +6,7 @@ import { authenticateToken } from '../middleware/auth.js';
 import multer from 'multer';
 import studentController from '../controller/studentController.js';
 import teacherController from '../controller/teacherController.js';
-import { findUserByEmail as manageFindUserByEmail, deleteUserByEmail as manageDeleteUserByEmail } from '../controller/manageUserController.js';
+import { findUserByEmail as manageFindUserByEmail, deleteUserByEmail as manageDeleteUserByEmail, findStudentByEmail, findTeacherByEmail, findGuardianByEmail, getAllStudents, getAllTeachers, getAllGuardians } from '../controller/manageUserController.js';
 import { createAnnouncement, getAnnouncements, updateAnnouncement, deleteAnnouncement, announcementUpload, removeAnnouncementImage, markAnnouncementAsViewed } from '../controller/announcementController.js';
 import { getCbseUpdates } from '../controller/cbseController.js';
 import { addMindMap, getMindMaps, deleteMindMap, mindMapUpload, updateMindMap } from '../controller/mindMapController.js';
@@ -18,6 +18,7 @@ import { checkGuardianEmail, validateGuardianPassword } from '../controller/guar
 import * as discussionController from '../controller/discussionController.js';
 import { threadUpload, postUpload, getDiscussionNotifications, markDiscussionNotificationRead, deleteDiscussionNotification } from '../controller/discussionController.js';
 import { deleteAccount } from '../controller/deleteAccountController.js';
+import * as forgotPasswordController from '../controller/forgotPasswordController.js';
 
 const router = express.Router();
 
@@ -29,6 +30,11 @@ router.post('/api/send-register-otp', sendRegisterOtp);
 router.post('/api/verify-register-otp', verifyRegisterOtp);
 router.post('/api/send-child-otp', sendChildOtp);
 router.post('/api/verify-child-otp', verifyChildOtp);
+
+// Forgot Password routes
+router.post('/api/forgot-password/send-otp', forgotPasswordController.sendForgotPasswordOtp);
+router.post('/api/forgot-password/verify-otp', forgotPasswordController.verifyForgotPasswordOtp);
+router.post('/api/forgot-password/reset', forgotPasswordController.resetPassword);
 
 // Registration
 router.post('/api/register-student', registerStudent);
@@ -72,6 +78,12 @@ router.post('/api/admin/login', adminLogin); // Secure admin login route
 router.post('/api/check-superadmin', checkSuperAdmin);
 router.post('/api/admin/find-user', manageFindUserByEmail); // Superadmin only
 router.delete('/api/admin/delete-user', manageDeleteUserByEmail); // Superadmin only
+router.post('/api/admin/find-student', findStudentByEmail); // Superadmin only
+router.post('/api/admin/find-teacher', findTeacherByEmail); // Superadmin only
+router.post('/api/admin/find-guardian', findGuardianByEmail); // Superadmin only
+router.post('/api/admin/all-students', getAllStudents); // Superadmin only
+router.post('/api/admin/all-teachers', getAllTeachers); // Superadmin only
+router.post('/api/admin/all-guardians', getAllGuardians); // Superadmin only
 
 // Announcement routes (RESTful, explicit)
 router.post('/api/addannouncement', authenticateToken, announcementUpload.array('images', 5), createAnnouncement);

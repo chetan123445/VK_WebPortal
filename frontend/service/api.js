@@ -3,7 +3,7 @@ import { getToken, removeToken, isTokenExpired } from '../utils/auth.js';
 
 // You can set the baseURL as needed
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://educationvk.onrender.com/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
 });
 
 // Request interceptor to add JWT token to all requests
