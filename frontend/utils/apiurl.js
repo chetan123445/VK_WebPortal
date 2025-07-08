@@ -1,4 +1,4 @@
-export const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://educationvk.onrender.com";
+export const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://vk-webportal.onrender.com";
 
 // Optional: helper for fetch requests
 export function apiFetch(path, options = {}) {
