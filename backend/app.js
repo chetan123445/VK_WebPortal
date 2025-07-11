@@ -10,6 +10,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy for real client IPs
+app.set('trust proxy', true);
+
 // Middleware
 const corsOptions = {
   origin: [
@@ -17,7 +20,6 @@ const corsOptions = {
     'http://127.0.0.1:3000',
     'http://172.16.201.50:3000',
     //add frontend URL here
-    'https://frontend-9faf.onrender.com' // Added deployed frontend URL
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

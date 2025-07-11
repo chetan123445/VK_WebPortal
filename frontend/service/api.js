@@ -3,7 +3,7 @@ import { getToken, removeToken, isTokenExpired } from '../utils/auth.js';
 
 // You can set the baseURL as needed
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://backend-65uw.onrender.com',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
 });
 
 // Request interceptor to add JWT token to all requests
@@ -125,4 +125,9 @@ export async function deleteDiscussionPost(threadId, postId, token) {
   return api.delete(`/discussion/threads/${threadId}/posts/${postId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+
+// Search discussion threads by title/heading
+export async function searchDiscussionThreads(query) {
+  return api.get(`/discussion/posts/search?query=${encodeURIComponent(query)}`);
 }

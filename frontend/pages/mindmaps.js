@@ -16,7 +16,7 @@ const MindMapsPage = () => {
   const [editItem, setEditItem] = useState(null);
   const [form, setForm] = useState({ class: '', subject: '', chapter: '', files: [] });
   const [status, setStatus] = useState('');
-  const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '' });
+  const [previewModal, setPreviewModal] = useState({ open: false, url: '', fileType: '', loaded: false, id: '', idx: 0, imgLoaded: false });
   const [filter, setFilter] = useState({ class: '', subject: '', chapter: '' });
   const [searchInitiated, setSearchInitiated] = useState(false);
 
@@ -274,10 +274,10 @@ const MindMapsPage = () => {
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 {item.mindmap && item.mindmap.map((f, idx) => (
                   f.fileType === 'pdf'
-                    ? <div key={idx} style={{ display: 'inline-block', position: 'relative', width: 120, height: 80, border: '1px solid #eee', borderRadius: 6, background: '#fafafa', textAlign: 'center', verticalAlign: 'middle', lineHeight: '80px', fontWeight: 600, color: '#1e3c72', fontSize: 18, cursor: 'pointer' }} onClick={() => setPreviewModal({ open: true, url: f.url, fileType: 'pdf' })}>
+                    ? <div key={idx} style={{ display: 'inline-block', position: 'relative', width: 120, height: 80, border: '1px solid #eee', borderRadius: 6, background: '#fafafa', textAlign: 'center', verticalAlign: 'middle', lineHeight: '80px', fontWeight: 600, color: '#1e3c72', fontSize: 18, cursor: 'pointer' }} onClick={() => setPreviewModal({ open: true, url: `${BASE_API_URL}/mindmap/${item._id}/pdf/${idx}`, fileType: 'pdf', loaded: false, id: item._id, idx, imgLoaded: false })}>
                         <span>PDF</span>
                       </div>
-                    : <img key={idx} src={f.url} alt="mindmap" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: "1px solid #eee", cursor: 'pointer' }} onClick={() => setPreviewModal({ open: true, url: f.url, fileType: 'image' })} />
+                    : <img key={idx} src={f.url} alt="mindmap" style={{ maxWidth: 120, maxHeight: 80, borderRadius: 6, border: "1px solid #eee", cursor: 'pointer' }} onClick={() => setPreviewModal({ open: true, url: f.url, fileType: 'image', loaded: false, id: item._id, idx, imgLoaded: false })} />
                 ))}
               </div>
               {role !== 'student' && (
@@ -309,13 +309,38 @@ const MindMapsPage = () => {
       )}
       {/* Preview Modal for image/pdf */}
       {previewModal.open && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.92)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })}>
+        <div style={{ position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh", background: "rgba(0,0,0,0.92)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }} onClick={() => setPreviewModal({ open: false, url: '', fileType: '', loaded: false, imgLoaded: false })}>
           <div style={{ position: 'relative', width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'transparent', boxShadow: 'none', borderRadius: 0, padding: 0 }} onClick={e => e.stopPropagation()}>
-            <button onClick={() => setPreviewModal({ open: false, url: '', fileType: '' })} style={{ position: 'fixed', top: 24, right: 32, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 44, height: 44, fontSize: 28, fontWeight: 700, cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }} aria-label="Close">×</button>
+            <button onClick={() => setPreviewModal({ open: false, url: '', fileType: '', loaded: false, imgLoaded: false })} style={{ position: 'fixed', top: 24, right: 32, background: '#c0392b', color: '#fff', border: 'none', borderRadius: '50%', width: 44, height: 44, fontSize: 28, fontWeight: 700, cursor: 'pointer', zIndex: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }} aria-label="Close">×</button>
             {previewModal.fileType === 'pdf' ? (
-              <iframe src={previewModal.url} title="PDF Preview" style={{ width: '80vw', height: '90vh', border: 'none', borderRadius: 8, background: '#fff' }} />
+              <div style={{ position: 'relative', width: '80vw', height: '90vh' }}>
+                {!previewModal.loaded && (
+                  <>
+                    <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', zIndex: 2 }}>
+                      <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    </div>
+                  </>
+                )}
+                <iframe
+                  src={previewModal.url}
+                  title="PDF Preview"
+                  style={{ width: '100%', height: '100%', border: 'none', borderRadius: 8, background: '#fff', zIndex: 1 }}
+                  onLoad={() => setPreviewModal(prev => ({ ...prev, loaded: true }))}
+                />
+              </div>
             ) : (
-              <img src={previewModal.url} alt="Preview" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 8 }} />
+              <div style={{ position: 'relative', width: '80vw', height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {!previewModal.imgLoaded && (
+                  <>
+                    <style>{`@keyframes spin { 0% { transform: rotate(0deg);} 100% { transform: rotate(360deg);} }`}</style>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', zIndex: 2 }}>
+                      <div className="spinner" style={{ width: 48, height: 48, border: '6px solid #eee', borderTop: '6px solid #1e3c72', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    </div>
+                  </>
+                )}
+                <img src={previewModal.url} alt="Preview" style={{ maxWidth: '90vw', maxHeight: '90vh', borderRadius: 8, zIndex: 3 }} onLoad={() => setPreviewModal(prev => ({ ...prev, imgLoaded: true }))} />
+              </div>
             )}
           </div>
         </div>

@@ -1,4 +1,4 @@
-export const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "https://backend-65uw.onrender.com";
+export const BASE_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 // Optional: helper for fetch requests
 export function apiFetch(path, options = {}) {
