@@ -154,6 +154,28 @@ function StudentSidebar({ userEmail, userPhoto, userName, onMenuSelect, selected
           </nav>
           <div className="sidebar-section-label">HELP & SUPPORT</div>
         </div>
+        {/* Logout Button */}
+        <div style={{ padding: 24, borderTop: '1px solid #1d4ed8', background: '#2563eb' }}>
+          <button
+            onClick={async () => { await logout(); window.location.href = '/login'; }}
+            style={{
+              width: '100%',
+              padding: '12px 0',
+              background: '#dc3545',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseEnter={e => e.target.style.background = '#c82333'}
+            onMouseLeave={e => e.target.style.background = '#dc3545'}
+          >
+            Logout
+          </button>
+        </div>
       </aside>
     </>
   );
