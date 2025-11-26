@@ -62,7 +62,7 @@ function buildPostTree(posts: DiscussionPost[]): DiscussionPost[] {
   return roots;
 }
 
-export default function ThreadDetailPage({ userType = 'Student', ...props }: { userType?: string }) {
+const ThreadDetailPage: React.FC<{ userType?: string }> = ({ userType = 'Student', ...props }) => {
   const params = useParams();
   const threadId =
     params && typeof params.threadId === 'string'
@@ -249,4 +249,6 @@ export default function ThreadDetailPage({ userType = 'Student', ...props }: { u
       </div>
     </div>
   );
-} 
+};
+
+export default ThreadDetailPage;
