@@ -1,8 +1,7 @@
 "use client";
 import React from "react";
-import { ThreadDetailContent } from "../../../student/discussion/[threadId]/page";
+import ThreadDetailContent from "../../../../components/ThreadDetailContent";
 
-export default function AdminThreadDetailPage(props) {
-  // Optionally, you can add admin-specific props or wrappers here
+export default function AdminThreadDetailPage(props: any) {
   return <ThreadDetailContent userType="Admin" {...props} />;
 }
