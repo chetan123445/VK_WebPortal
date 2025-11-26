@@ -1,19 +1,21 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { getQuiz } from '../../../../quiz/utils/api';
-import { latex2Html } from '../utils/latex2Html';
-import LatexPreviewer from '../utils/LatexPreviewerApp';
+import React, { Suspense } from 'react';
 
-export default function QuizReportStandalonePage() {
+// Move all logic into a separate client component
+function QuizReportContent() {
+  const { useSearchParams } = require('next/navigation');
+  const { useState, useEffect } = require('react');
+  const { getQuiz } = require('../../../../quiz/utils/api');
+  const { latex2Html } = require('../utils/latex2Html');
+  const LatexPreviewer = require('../utils/LatexPreviewerApp').default;
+
   const searchParams = useSearchParams();
   const quizId = searchParams.get('quizId');
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // FIX: Declare showSolutionArr state and effect BEFORE any early returns
   const [showSolutionArr, setShowSolutionArr] = useState([]);
+
   useEffect(() => {
     if (quiz && Array.isArray(quiz.questions)) {
       setShowSolutionArr(Array(quiz.questions.length).fill(false));
@@ -511,4 +513,18 @@ export default function QuizReportStandalonePage() {
       </div>
     </div>
   );
-} 
+}
+
+// Fallback component for Suspense
+function LoadingFallback() {
+  return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
+}
+
+// Main page component wrapped with Suspense
+export default function QuizReportStandalonePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <QuizReportContent />
+    </Suspense>
+  );
+}
