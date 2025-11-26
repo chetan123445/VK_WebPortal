@@ -98,14 +98,14 @@ const PostTree: React.FC<PostTreeProps> = ({ post, currentUser, onReply, onVote,
         )}
         <div className="flex gap-4 text-gray-500 mt-3 items-center text-sm">
           <button
-            className={`flex items-center gap-1 hover:text-blue-600 ${getUserVote(post.votes, currentUser?._id, currentUser?.role) === 1 ? 'text-blue-600 font-bold' : ''}`}
+            className={`flex items-center gap-1 hover:text-blue-600 ${getUserVote(post.votes, currentUser?._id || '', currentUser?.role || '') === 1 ? 'text-blue-600 font-bold' : ''}`}
             onClick={() => onVote(post._id, 1)}
           >
             ▲
           </button>
           <span className="font-semibold min-w-[24px] text-center text-gray-800">{getVoteCount(post.votes)}</span>
           <button
-            className={`flex items-center gap-1 hover:text-red-500 ${getUserVote(post.votes, currentUser?._id, currentUser?.role) === -1 ? 'text-red-500 font-bold' : ''}`}
+            className={`flex items-center gap-1 hover:text-red-500 ${getUserVote(post.votes, currentUser?._id || '', currentUser?.role || '') === -1 ? 'text-red-500 font-bold' : ''}`}
             onClick={() => onVote(post._id, -1)}
           >
             ▼
