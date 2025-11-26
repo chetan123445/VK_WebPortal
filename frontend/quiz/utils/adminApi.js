@@ -1,7 +1,6 @@
 // Admin Quiz API utility
 // Use main backend server port (default 8000)
-import { BASE_API_URL } from '../../utils/apiurl';
-const BASE_URL = `${BASE_API_URL}/admin/quiz`;
+const BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'}/admin/quiz`;
 
 export async function getQuestions(filters = {}) {
   const params = new URLSearchParams(filters).toString();
