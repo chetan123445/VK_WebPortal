@@ -62,7 +62,7 @@ function buildPostTree(posts: DiscussionPost[]): DiscussionPost[] {
   return roots;
 }
 
-const ThreadDetailPage: React.FC<{ userType?: string }> = ({ userType = 'Student', ...props }) => {
+export const ThreadDetailContent: React.FC<{ userType?: string }> = ({ userType = 'Student' }) => {
   const params = useParams();
   const threadId =
     params && typeof params.threadId === 'string'
@@ -251,4 +251,7 @@ const ThreadDetailPage: React.FC<{ userType?: string }> = ({ userType = 'Student
   );
 };
 
-export default ThreadDetailPage;
+// Default page export must have no custom props — wrapper for Next page system
+export default function Page() {
+  return <ThreadDetailContent />;
+}
